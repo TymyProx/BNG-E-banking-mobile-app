@@ -207,27 +207,56 @@ export default function Beneficiaries() {
     }
   }
 
-  const handleDeleteBeneficiary = () => {
+  const handleToggleStatus = async () => {
     setShowActionModal(false)
-    if (selectedBeneficiary) {
-      Alert.alert(
-        "Supprimer le bénéficiaire",
-        `Êtes-vous sûr de vouloir supprimer ${selectedBeneficiary.name} de vos bénéficiaires ?`,
-        [
-          {
-            text: "Annuler",
-            style: "cancel",
+    if (!selectedBeneficiary) return
+
+    try {
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        throw new Error("Token d'authentification non trouvé")
+      }
+
+      const newStatus = selectedBeneficiary.status === 0 ? 1 : 0
+      const statusText = newStatus === 0 ? "activé" : "désactivé"
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, selectedBeneficiary.id)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: () => {
-              setBeneficiaries((prev) => prev.filter((ben) => ben.id !== selectedBeneficiary.id))
-              Alert.alert("Succès", `${selectedBeneficiary.name} a été supprimé(e) de vos bénéficiaires.`)
+          body: JSON.stringify({
+            data: {
+              beneficiaryId: selectedBeneficiary.beneficiaryId,
+              customerId: selectedBeneficiary.customerId,
+              name: selectedBeneficiary.name,
+              accountNumber: selectedBeneficiary.accountNumber,
+              bankCode: selectedBeneficiary.bankCode,
+              bankName: selectedBeneficiary.bankName,
+              status: newStatus,
+              typeBeneficiary: selectedBeneficiary.typeBeneficiary,
+              favoris: selectedBeneficiary.favoris,
             },
-          },
-        ],
+          }),
+        },
       )
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour du statut")
+      }
+
+      // Update local state
+      setBeneficiaries((prev) =>
+        prev.map((ben) => (ben.id === selectedBeneficiary.id ? { ...ben, status: newStatus } : ben)),
+      )
+
+      Alert.alert("Succès", `Le bénéficiaire a été ${statusText}`)
+    } catch (err) {
+      console.error("Error toggling status:", err)
+      Alert.alert("Erreur", "Impossible de mettre à jour le statut du bénéficiaire")
     }
   }
 
@@ -458,12 +487,17 @@ export default function Beneficiaries() {
                 <Text style={[styles.modalActionText, { color: colors.text }]}>Modifier</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.modalAction, { borderBottomWidth: 0 }]}
-                onPress={handleDeleteBeneficiary}
-              >
-                <IconSymbol name="trash" size={20} color="#ef4444" />
-                <Text style={[styles.modalActionText, { color: "#ef4444" }]}>Supprimer</Text>
+              <TouchableOpacity style={[styles.modalAction, { borderBottomWidth: 0 }]} onPress={handleToggleStatus}>
+                <IconSymbol
+                  name={selectedBeneficiary?.status === 0 ? "xmark.circle" : "checkmark.circle"}
+                  size={20}
+                  color={selectedBeneficiary?.status === 0 ? "#ef4444" : "#10b981"}
+                />
+                <Text
+                  style={[styles.modalActionText, { color: selectedBeneficiary?.status === 0 ? "#ef4444" : "#10b981" }]}
+                >
+                  {selectedBeneficiary?.status === 0 ? "Désactiver" : "Réactiver"}
+                </Text>
               </TouchableOpacity>
             </View>
 
