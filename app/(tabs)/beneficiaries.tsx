@@ -166,10 +166,10 @@ export default function Beneficiaries() {
   const handleViewDetails = () => {
     setShowActionModal(false)
     if (selectedBeneficiary) {
-      Alert.alert(
-        "Détails du bénéficiaire",
-        `Nom: ${selectedBeneficiary.fullName}\nBanque: ${selectedBeneficiary.bank}\nCompte: ${selectedBeneficiary.number}\nTéléphone: ${selectedBeneficiary.phoneNumber}${selectedBeneficiary.email ? `\nEmail: ${selectedBeneficiary.email}` : ""}\nDernier virement: ${selectedBeneficiary.lastTransfer}`,
-      )
+      router.push({
+        pathname: "/beneficiary-details",
+        params: { beneficiaryId: selectedBeneficiary.id },
+      })
     }
   }
 

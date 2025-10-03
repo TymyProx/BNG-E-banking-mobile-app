@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
   BENEFICIARY: {
     CREATE: (tenantId: string) => `/tenant/${tenantId}/beneficiaire`,
     LIST: (tenantId: string) => `/tenant/${tenantId}/beneficiaire`,
+    DETAILS: (tenantId: string, beneficiaryId: string) => `/tenant/${tenantId}/beneficiaire/${beneficiaryId}`,
     UPDATE: (tenantId: string, beneficiaryId: string) => `/tenant/${tenantId}/beneficiaire/${beneficiaryId}`,
     DELETE: (tenantId: string, beneficiaryId: string) => `/tenant/${tenantId}/beneficiaire/${beneficiaryId}`,
   },
