@@ -4,7 +4,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { router } from "expo-router"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   Animated,
   Dimensions,
@@ -34,6 +34,8 @@ interface Account {
 }
 
 const { width } = Dimensions.get("window")
+const CARD_WIDTH = width - 48
+const CARD_SPACING = 16
 
 export default function AccountsScreen() {
   const colorScheme = useColorScheme() ?? "light"
@@ -45,10 +47,13 @@ export default function AccountsScreen() {
   const [slideAnim] = useState(new Animated.Value(50))
   const { tenantId } = useAuth()
 
+  const [activeIndex, setActiveIndex] = useState(0)
+  const scrollViewRef = useRef<ScrollView>(null)
+  const autoScrollInterval = useRef<NodeJS.Timeout | null>(null)
+
   const loadAccounts = async () => {
     setIsLoading(true)
     try {
-      // Get token from SecureStore
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
@@ -58,7 +63,6 @@ export default function AccountsScreen() {
         return
       }
 
-      // Fetch accounts from API
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
         method: "GET",
         headers: {
@@ -72,16 +76,14 @@ export default function AccountsScreen() {
       }
 
       const data = await response.json()
-      console.log("[v0] Accounts fetched:", data)
 
-      // Map API response to Account interface
       const mappedAccounts: Account[] = data.rows.map((account: any) => ({
         id: account.id,
         name: account.accountName || "Compte sans nom",
         number: account.accountNumber || "N/A",
         balance: Number.parseFloat(account.availableBalance || "0"),
         type: account.type?.toLowerCase() || "checking",
-        change: 0, // Change percentage not provided by API
+        change: 0,
         status: account.status?.toLowerCase() || "active",
         currency: account.currency || "GNF",
         lastUpdate: account.updatedAt ? new Date(account.updatedAt).toLocaleDateString("fr-FR") : "N/A",
@@ -89,7 +91,6 @@ export default function AccountsScreen() {
 
       setAccounts(mappedAccounts)
 
-      // Animation d'entrée
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -115,6 +116,41 @@ export default function AccountsScreen() {
     setRefreshing(true)
     await loadAccounts()
     setRefreshing(false)
+  }
+
+  useEffect(() => {
+    if (accounts.length > 1 && !isLoading) {
+      autoScrollInterval.current = setInterval(() => {
+        setActiveIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % accounts.length
+          scrollViewRef.current?.scrollTo({
+            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
+            animated: true,
+          })
+          return nextIndex
+        })
+      }, 4000) // Auto-scroll every 4 seconds
+
+      return () => {
+        if (autoScrollInterval.current) {
+          clearInterval(autoScrollInterval.current)
+        }
+      }
+    }
+  }, [accounts.length, isLoading])
+
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
+    setActiveIndex(index)
+  }
+
+  const handleDotPress = (index: number) => {
+    scrollViewRef.current?.scrollTo({
+      x: index * (CARD_WIDTH + CARD_SPACING),
+      animated: true,
+    })
+    setActiveIndex(index)
   }
 
   useEffect(() => {
@@ -183,8 +219,8 @@ export default function AccountsScreen() {
       case "en attente":
       case "attente":
         return {
-          background: "#FEF3C7", // Yellow background
-          color: "#F59E0B", // Orange color
+          background: "#FEF3C7",
+          color: "#F59E0B",
         }
       case "inactive":
       case "inactif":
@@ -227,9 +263,8 @@ export default function AccountsScreen() {
   }
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
-  const activeAccounts = accounts.filter((account) => account.status === "active").length
 
-  const AccountCard = ({ account, index }: { account: Account; index: number }) => {
+  const AccountCard = ({ account }: { account: Account }) => {
     const [scaleAnim] = useState(new Animated.Value(1))
 
     const handlePressIn = () => {
@@ -249,9 +284,10 @@ export default function AccountsScreen() {
     return (
       <Animated.View
         style={[
+          styles.carouselCard,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            transform: [{ scale: scaleAnim }],
           },
         ]}
       >
@@ -268,40 +304,34 @@ export default function AccountsScreen() {
               <View style={[styles.accountIcon, { backgroundColor: getAccountBackground(account.type) }]}>
                 <IconSymbol
                   name={getAccountIcon(account.type) as any}
-                  size={28}
+                  size={32}
                   color={getAccountColor(account.type)}
                 />
               </View>
               <View style={styles.accountInfo}>
-                <View style={styles.accountNameRow}>
-                  <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(account.status).background }]}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(account.status).color }]} />
-                    <Text style={[styles.statusText, { color: getStatusColor(account.status).color }]}>
-                      {account.status}
-                    </Text>
-                  </View>
-                </View>
+                <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
                 <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
                   •••• •••• •••• {account.number.slice(-4)}
                 </Text>
               </View>
             </View>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(account.status).background }]}>
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(account.status).color }]} />
+              <Text style={[styles.statusText, { color: getStatusColor(account.status).color }]}>{account.status}</Text>
+            </View>
           </View>
 
-          {/* Solde principal */}
+          {/* Solde principal - plus grand pour le carousel */}
           <View style={styles.balanceSection}>
-            <View style={styles.balanceRow}>
-              <View style={styles.balanceLeft}>
-                <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
-                <View style={styles.balanceAmountRow}>
-                  <Text style={[styles.accountBalance, { color: account.balance >= 0 ? colors.text : colors.error }]}>
-                    {account.balance >= 0 ? "" : "-"}
-                    {formatAmount(account.balance)}
-                  </Text>
-                  <Text style={[styles.currency, { color: colors.textSecondary }]}>GNF</Text>
-                </View>
-              </View>
+            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
+            <View style={styles.balanceAmountRow}>
+              <Text style={[styles.accountBalance, { color: account.balance >= 0 ? colors.text : colors.error }]}>
+                {account.balance >= 0 ? "" : "-"}
+                {formatAmount(account.balance)}
+              </Text>
+              <Text style={[styles.currency, { color: colors.textSecondary }]}>{account.currency}</Text>
+            </View>
+            {account.change !== 0 && (
               <View style={styles.changeContainer}>
                 <View
                   style={[
@@ -311,7 +341,7 @@ export default function AccountsScreen() {
                 >
                   <IconSymbol
                     name={account.change > 0 ? "arrow.up" : "arrow.down"}
-                    size={12}
+                    size={14}
                     color={account.change > 0 ? colors.success : colors.error}
                   />
                   <Text
@@ -323,11 +353,27 @@ export default function AccountsScreen() {
                 </View>
                 <Text style={[styles.changeLabel, { color: colors.textTertiary }]}>Ce mois</Text>
               </View>
-            </View>
+            )}
           </View>
 
           {/* Séparateur */}
           <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
+
+          {/* Quick actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primaryBackground }]}>
+              <IconSymbol name="arrow.up.circle.fill" size={20} color={colors.primary} />
+              <Text style={[styles.actionText, { color: colors.primary }]}>Envoyer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.successBackground }]}>
+              <IconSymbol name="arrow.down.circle.fill" size={20} color={colors.success} />
+              <Text style={[styles.actionText, { color: colors.success }]}>Recevoir</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.secondaryBackground }]}>
+              <IconSymbol name="clock.fill" size={20} color={colors.secondary} />
+              <Text style={[styles.actionText, { color: colors.secondary }]}>Historique</Text>
+            </TouchableOpacity>
+          </View>
         </TouchableOpacity>
       </Animated.View>
     )
@@ -353,35 +399,83 @@ export default function AccountsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
-        {/* Liste des comptes */}
-        <View style={styles.accountsList}>
-          {isLoading
-            ? // Loading skeleton amélioré
-              Array.from({ length: 3 }).map((_, index) => (
-                <View key={index} style={[styles.skeletonCard, { backgroundColor: colors.cardBackground }]}>
-                  <View style={styles.skeletonHeader}>
-                    <View style={[styles.skeletonIcon, { backgroundColor: colors.borderLight }]} />
-                    <View style={styles.skeletonContent}>
-                      <View style={[styles.skeletonLine, { backgroundColor: colors.borderLight, width: "70%" }]} />
-                      <View style={[styles.skeletonLineSmall, { backgroundColor: colors.borderLight, width: "50%" }]} />
-                    </View>
-                  </View>
-                  <View style={styles.skeletonBalance}>
-                    <View style={[styles.skeletonLine, { backgroundColor: colors.borderLight, width: "40%" }]} />
-                    <View style={[styles.skeletonLineSmall, { backgroundColor: colors.borderLight, width: "30%" }]} />
-                  </View>
-                  <View style={[styles.skeletonSeparator, { backgroundColor: colors.borderLight }]} />
-                  <View style={styles.skeletonActions}>
-                    <View style={[styles.skeletonButton, { backgroundColor: colors.borderLight }]} />
-                    <View style={[styles.skeletonButton, { backgroundColor: colors.borderLight }]} />
-                    <View style={[styles.skeletonButtonSmall, { backgroundColor: colors.borderLight }]} />
-                  </View>
-                </View>
-              ))
-            : accounts.map((account, index) => <AccountCard key={account.id} account={account} index={index} />)}
-        </View>
+        {/* Summary Card */}
+        {!isLoading && accounts.length > 0 && (
+          <Animated.View
+            style={[
+              styles.summaryCard,
+              { backgroundColor: colors.primary, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            <Text style={styles.summaryLabel}>Solde total</Text>
+            <View style={styles.summaryAmountRow}>
+              <Text style={styles.summaryAmount}>{formatAmount(totalBalance)}</Text>
+              <Text style={styles.summaryCurrency}>GNF</Text>
+            </View>
+            <View style={styles.summaryFooter}>
+              <Text style={styles.summarySubtext}>{accounts.length} compte(s)</Text>
+            </View>
+          </Animated.View>
+        )}
 
-        {/* Empty State modernisé */}
+        {!isLoading && accounts.length > 0 && (
+          <View style={styles.carouselContainer}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled={false}
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CARD_WIDTH + CARD_SPACING}
+              decelerationRate="fast"
+              contentContainerStyle={styles.carouselContent}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
+              {accounts.map((account) => (
+                <AccountCard key={account.id} account={account} />
+              ))}
+            </ScrollView>
+
+            {accounts.length > 1 && (
+              <View style={styles.paginationContainer}>
+                {accounts.map((_, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleDotPress(index)}
+                    style={[
+                      styles.paginationDot,
+                      {
+                        backgroundColor: index === activeIndex ? colors.primary : colors.borderLight,
+                        width: index === activeIndex ? 24 : 8,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Loading skeleton */}
+        {isLoading && (
+          <View style={styles.carouselContainer}>
+            <View style={[styles.carouselCard, { backgroundColor: colors.cardBackground }]}>
+              <View style={styles.skeletonHeader}>
+                <View style={[styles.skeletonIcon, { backgroundColor: colors.borderLight }]} />
+                <View style={styles.skeletonContent}>
+                  <View style={[styles.skeletonLine, { backgroundColor: colors.borderLight, width: "70%" }]} />
+                  <View style={[styles.skeletonLineSmall, { backgroundColor: colors.borderLight, width: "50%" }]} />
+                </View>
+              </View>
+              <View style={styles.skeletonBalance}>
+                <View style={[styles.skeletonLine, { backgroundColor: colors.borderLight, width: "40%" }]} />
+                <View style={[styles.skeletonLineSmall, { backgroundColor: colors.borderLight, width: "30%" }]} />
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Empty State */}
         {!isLoading && accounts.length === 0 && (
           <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <View style={[styles.emptyIcon, { backgroundColor: colors.primaryBackground }]}>
@@ -401,7 +495,6 @@ export default function AccountsScreen() {
           </Animated.View>
         )}
 
-        {/* Espacement en bas */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
@@ -412,8 +505,8 @@ const colors = {
   background: "#F9FAFB",
   surface: "#FFFFFF",
   surfaceSecondary: "#F1F3F6",
-  primary: "#6C4AB6", // Violet profond
-  primaryLight: "#A88BEB", // Violet clair
+  primary: "#6C4AB6",
+  primaryLight: "#A88BEB",
   onPrimary: "#FFFFFF",
   text: "#1F2937",
   textSecondary: "#6B7280",
@@ -461,9 +554,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: -0.3,
   },
-  headerSpacer: {
-    width: 40,
-  },
   addButton: {
     width: 40,
     height: 40,
@@ -480,208 +570,209 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 24,
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: 24,
     padding: 24,
     borderRadius: 24,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primary,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 1,
     shadowRadius: 16,
     elevation: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  summaryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
   },
   summaryLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
+    color: "rgba(255,255,255,0.8)",
   },
   summaryAmountRow: {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 8,
+    marginBottom: 8,
   },
   summaryAmount: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "800",
     letterSpacing: -1.2,
+    color: "#FFFFFF",
   },
   summaryCurrency: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-  },
-  eyeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    color: "rgba(255,255,255,0.9)",
   },
   summaryFooter: {
     marginTop: 4,
   },
-  summaryStats: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  summaryStatItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
   summarySubtext: {
     fontSize: 13,
     fontWeight: "500",
+    color: "rgba(255,255,255,0.7)",
   },
-  accountsList: {
+  carouselContainer: {
+    marginBottom: 32,
+  },
+  carouselContent: {
     paddingHorizontal: 24,
-    gap: 20,
+    gap: CARD_SPACING,
+  },
+  carouselCard: {
+    width: CARD_WIDTH,
   },
   accountCard: {
-    padding: 24,
-    borderRadius: 24,
+    padding: 28,
+    borderRadius: 28,
     backgroundColor: colors.surface,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowRadius: 20,
+    elevation: 8,
     borderWidth: 1,
     borderColor: colors.border,
+    minHeight: 320,
   },
-
   cardHeader: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   accountLeft: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 16,
+    marginBottom: 12,
   },
   accountIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
   },
   accountInfo: {
     flex: 1,
   },
-  accountNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
   accountName: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: "700",
-    letterSpacing: -0.4,
-    flex: 1,
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  accountNumber: {
+    fontSize: 16,
+    fontWeight: "500",
+    letterSpacing: 1,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+    alignSelf: "flex-start",
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   statusText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  accountNumber: {
-    fontSize: 15,
-    fontWeight: "500",
-    letterSpacing: 1,
-  },
   balanceSection: {
-    marginBottom: 20,
-  },
-  balanceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  balanceLeft: {
-    flex: 1,
+    marginBottom: 24,
   },
   balanceLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   balanceAmountRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 8,
+    gap: 10,
+    marginBottom: 12,
   },
   accountBalance: {
-    fontSize: 20,
+    fontSize: 36,
     fontWeight: "800",
-    letterSpacing: -0.8,
+    letterSpacing: -1.5,
   },
   currency: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "600",
   },
   changeContainer: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   changeBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
     gap: 4,
-    marginBottom: 4,
   },
   accountChangeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
   },
   changeLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "500",
   },
   separator: {
-    height: 3,
+    height: 1,
     marginBottom: 20,
   },
-  // Skeleton styles améliorés
-  skeletonCard: {
-    padding: 24,
-    borderRadius: 24,
-    marginBottom: 20,
+  quickActions: {
+    flexDirection: "row",
+    gap: 12,
   },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 6,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 20,
+  },
+  paginationDot: {
+    height: 8,
+    borderRadius: 4,
+    transition: "all 0.3s ease",
+  },
+  // Skeleton styles
   skeletonHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   skeletonIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     marginRight: 16,
   },
   skeletonContent: {
@@ -699,25 +790,7 @@ const styles = StyleSheet.create({
   skeletonBalance: {
     marginBottom: 20,
   },
-  skeletonSeparator: {
-    height: 1,
-    marginBottom: 20,
-  },
-  skeletonActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  skeletonButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 16,
-  },
-  skeletonButtonSmall: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-  },
-  // Empty state amélioré
+  // Empty state
   emptyState: {
     alignItems: "center",
     paddingVertical: 80,
