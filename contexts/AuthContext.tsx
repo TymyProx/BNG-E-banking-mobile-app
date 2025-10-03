@@ -1,6 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
@@ -123,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUserData = async () => {
     try {
-      const token = await SecureStore.getItemAsync("authToken")
+      const token = await SecureStore.getItemAsync("token")
       if (token) {
         const userData = await fetchUserData(token)
         if (userData) {
@@ -138,15 +139,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = await SecureStore.getItemAsync("authToken")
+        const token = await SecureStore.getItemAsync("token")
         if (token) {
           setIsLoading(true)
           const userData = await fetchUserData(token)
           if (userData) {
             setUser(userData)
           } else {
-            // Token is invalid, clear it
-            await SecureStore.deleteItemAsync("authToken")
+            await SecureStore.deleteItemAsync("token")
           }
           setIsLoading(false)
         }
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      await SecureStore.setItemAsync("authToken", token)
+      await SecureStore.setItemAsync("token", token)
 
       const userData = await fetchUserData(token)
       if (userData) {
@@ -301,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync("authToken")
+      await SecureStore.deleteItemAsync("token")
       setUser(null)
       setTenantId(null)
       setPendingOTPVerification(false)
