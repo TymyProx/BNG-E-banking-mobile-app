@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensi
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
-import { LinearGradient } from "expo-linear-gradient"
 
 interface MenuItem {
   id: string
@@ -12,16 +11,13 @@ interface MenuItem {
   subtitle: string
   icon: keyof typeof Ionicons.glyphMap
   route: string
-  color: string
-  gradient: string[]
   isNew?: boolean
 }
 
 const { width } = Dimensions.get("window")
-const cardWidth = (width - 60) / 2 // 2 cards per row with padding
+const cardWidth = (width - 60) / 2
 
 export default function MenuScreen() {
-  // Default user data since BankingContext might not be available
   const user = {
     name: "Utilisateur",
     email: "user@example.com",
@@ -34,8 +30,6 @@ export default function MenuScreen() {
       subtitle: "Informations",
       icon: "person-outline",
       route: "/profile",
-      color: "#10B981",
-      gradient: ["#10B981", "#059669"],
     },
     {
       id: "accounts",
@@ -43,8 +37,6 @@ export default function MenuScreen() {
       subtitle: "Consulter",
       icon: "wallet-outline",
       route: "/(tabs)/accounts",
-      color: "#FFD700",
-      gradient: ["#FFD700", "#F4A460"],
     },
     {
       id: "cards",
@@ -52,8 +44,6 @@ export default function MenuScreen() {
       subtitle: "Gérer",
       icon: "card-outline",
       route: "/(tabs)/cards",
-      color: "#8B5CF6",
-      gradient: ["#8B5CF6", "#7C3AED"],
     },
     {
       id: "e-services",
@@ -61,8 +51,6 @@ export default function MenuScreen() {
       subtitle: "Demandes",
       icon: "document-text-outline",
       route: "/(tabs)/e-services",
-      color: "#F59E0B",
-      gradient: ["#F59E0B", "#D97706"],
       isNew: true,
     },
     {
@@ -71,8 +59,6 @@ export default function MenuScreen() {
       subtitle: "Télécharger",
       icon: "document-outline",
       route: "/(tabs)/statements",
-      color: "#3B82F6",
-      gradient: ["#3B82F6", "#2563EB"],
     },
     {
       id: "beneficiaries",
@@ -80,8 +66,6 @@ export default function MenuScreen() {
       subtitle: "Gérer",
       icon: "people-outline",
       route: "/(tabs)/beneficiaries",
-      color: "#10B981",
-      gradient: ["#10B981", "#059669"],
     },
     {
       id: "bills",
@@ -89,8 +73,6 @@ export default function MenuScreen() {
       subtitle: "Payer",
       icon: "receipt-outline",
       route: "/(tabs)/bills",
-      color: "#EF4444",
-      gradient: ["#EF4444", "#DC2626"],
     },
     {
       id: "insights",
@@ -98,8 +80,6 @@ export default function MenuScreen() {
       subtitle: "Dépenses",
       icon: "analytics-outline",
       route: "/(tabs)/insights",
-      color: "#06B6D4",
-      gradient: ["#06B6D4", "#0891B2"],
     },
     {
       id: "support",
@@ -107,8 +87,6 @@ export default function MenuScreen() {
       subtitle: "Aide",
       icon: "help-circle-outline",
       route: "/(tabs)/support",
-      color: "#6B7280",
-      gradient: ["#6B7280", "#4B5563"],
     },
     {
       id: "settings",
@@ -116,8 +94,6 @@ export default function MenuScreen() {
       subtitle: "Configuration",
       icon: "settings-outline",
       route: "/(tabs)/settings",
-      color: "#64748B",
-      gradient: ["#64748B", "#475569"],
     },
   ]
 
@@ -138,7 +114,7 @@ export default function MenuScreen() {
         contentContainerStyle={{ paddingBottom: Platform.OS === "ios" ? 120 : 100 }}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient colors={["#10B981", "#059669"]} style={styles.header}>
+        <View style={styles.header}>
           <View style={styles.userInfo}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user?.name?.charAt(0) || "U"}</Text>
@@ -148,7 +124,7 @@ export default function MenuScreen() {
               <Text style={styles.userEmail}>{user?.email || "user@example.com"}</Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         <View style={styles.menuContainer}>
           <Text style={styles.sectionTitle}>Services</Text>
@@ -160,18 +136,18 @@ export default function MenuScreen() {
                 onPress={() => handleMenuPress(item.route)}
                 activeOpacity={0.7}
               >
-                <LinearGradient colors={item.gradient} style={styles.cardGradient}>
+                <View style={styles.cardContent}>
                   {item.isNew && (
                     <View style={styles.newBadge}>
                       <Text style={styles.newBadgeText}>NEW</Text>
                     </View>
                   )}
                   <View style={styles.cardIconContainer}>
-                    <Ionicons name={item.icon} size={32} color="#FFFFFF" />
+                    <Ionicons name={item.icon} size={28} color="#111827" />
                   </View>
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -179,10 +155,10 @@ export default function MenuScreen() {
 
         <View style={styles.logoutContainer}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-            <LinearGradient colors={["#EF4444", "#DC2626"]} style={styles.logoutGradient}>
-              <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+            <View style={styles.logoutContent}>
+              <Ionicons name="log-out-outline" size={22} color="#EF4444" />
               <Text style={styles.logoutText}>Déconnexion</Text>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -202,6 +178,9 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 16,
     paddingBottom: 32,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
   userInfo: {
     flexDirection: "row",
@@ -211,17 +190,17 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#F3F4F6",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
-    borderWidth: 3,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
   },
   avatarText: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#111827",
   },
   userDetails: {
     flex: 1,
@@ -229,12 +208,12 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#111827",
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "#6B7280",
   },
   menuContainer: {
     padding: 20,
@@ -255,17 +234,20 @@ const styles = StyleSheet.create({
     width: cardWidth,
     marginBottom: 16,
     borderRadius: 16,
+    backgroundColor: "#FFFFFF",
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
   },
-  cardGradient: {
+  cardContent: {
     padding: 20,
     minHeight: 140,
     justifyContent: "center",
@@ -275,36 +257,38 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "#FFD700",
+    backgroundColor: "#111827",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   newBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#111827",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
   },
   cardIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#F9FAFB",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#111827",
     textAlign: "center",
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "#6B7280",
     textAlign: "center",
   },
   logoutContainer: {
@@ -313,17 +297,20 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FEE2E2",
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: "#EF4444",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 2,
   },
-  logoutGradient: {
+  logoutContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -333,6 +320,6 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#EF4444",
   },
 })
