@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
-import { useRouter, useLocalSearchParams } from "expo-router"
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 
@@ -43,7 +43,7 @@ export default function BeneficiaryDetails() {
   const router = useRouter()
   const { beneficiaryId } = useLocalSearchParams()
 
-  const fetchBeneficiaryDetails = async () => {
+  const fetchBeneficiaryDetails = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -77,13 +77,15 @@ export default function BeneficiaryDetails() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    if (beneficiaryId) {
-      fetchBeneficiaryDetails()
-    }
   }, [beneficiaryId])
+
+  useFocusEffect(
+    useCallback(() => {
+      if (beneficiaryId) {
+        fetchBeneficiaryDetails()
+      }
+    }, [beneficiaryId, fetchBeneficiaryDetails]),
+  )
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

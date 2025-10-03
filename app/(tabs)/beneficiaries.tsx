@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
-import { useRouter } from "expo-router"
+import { useRouter, useFocusEffect } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 
@@ -55,7 +55,7 @@ export default function Beneficiaries() {
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
 
-  const fetchBeneficiaries = async () => {
+  const fetchBeneficiaries = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -106,12 +106,14 @@ export default function Beneficiaries() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    console.log("Beneficiaries page mounted")
-    fetchBeneficiaries()
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Beneficiaries screen focused, fetching data...")
+      fetchBeneficiaries()
+    }, [fetchBeneficiaries]),
+  )
 
   const filteredBeneficiaries = beneficiaries.filter((ben) => {
     const matchesSearch =
