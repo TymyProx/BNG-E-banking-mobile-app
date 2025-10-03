@@ -16,7 +16,7 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { name: "home", icon: "home", label: "Accueil", route: "/(tabs)" },
+  { name: "home", icon: "home", label: "Accueil", route: "/(tabs)/" },
   { name: "transfer", icon: "swap-horizontal", label: "Transfert", route: "/(tabs)/transfer" },
   { name: "beneficiaries", icon: "people", label: "Bénéficiaires", route: "/(tabs)/beneficiaries" },
   { name: "cards", icon: "card", label: "Cartes", route: "/(tabs)/cards" },
@@ -47,14 +47,14 @@ export default function BottomNavBar() {
       }),
     ]).start()
 
-    router.push(route as any)
+    router.replace(route as any)
   }
 
   const isActive = (route: string) => {
-    if (route === "/(tabs)") {
-      return pathname === "/" || pathname === "/(tabs)"
+    if (route === "/(tabs)/") {
+      return pathname === "/" || pathname === "/(tabs)/" || pathname === "/(tabs)"
     }
-    return pathname.includes(route.replace("/(tabs)", ""))
+    return pathname === route || pathname.startsWith(route)
   }
 
   return (
