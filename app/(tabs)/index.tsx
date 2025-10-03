@@ -16,8 +16,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter } from "expo-router"
-import * as SecureStore from 'expo-secure-store'
-import React from "react"
+import * as SecureStore from "expo-secure-store"
 
 // const { width } = Dimensions.get("window")
 
@@ -83,7 +82,7 @@ export default function Dashboard() {
       const response = await fetch("http://192.168.1.200:8080/api/auth/me", {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       })
@@ -111,7 +110,7 @@ export default function Dashboard() {
         email: "user@example.com",
         phoneNumber: null,
         emailVerified: false,
-        tenants: []
+        tenants: [],
       })
     } finally {
       setIsLoadingUser(false)
@@ -185,25 +184,20 @@ export default function Dashboard() {
       route: "transfer",
     },
     {
-      icon: "doc.text",
-      label: "Factures",
-      route: "bills",
-    },
-    {
       icon: "creditcard",
       label: "Cartes",
       route: "cards",
     },
     {
-      icon: "building.columns",
-      label: "Comptes",
-      route: "accounts",
+      icon: "line.3.horizontal",
+      label: "Menu",
+      route: "menu",
     },
   ]
 
   const handleNavigation = (route: string) => {
     console.log(`RN Dashboard: Navigating to ${route}`)
-    router.push(`/(tabs)/${route}`as any)
+    router.push(`/(tabs)/${route}` as any)
   }
 
   const handleProfilePress = () => {
@@ -279,21 +273,23 @@ export default function Dashboard() {
     if (user.fullName && user.fullName.trim()) {
       return user.fullName
     }
-    
+
     const firstName = user.firstName || ""
     const lastName = user.lastName || ""
-    
+
     if (firstName && lastName) {
       return `${firstName} ${lastName}`
     }
-    
+
     return firstName || lastName || "Utilisateur"
   }
 
   // Si les données utilisateur sont en cours de chargement
   if (isLoadingUser) {
     return (
-      <View style={[styles.screen, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[styles.screen, { backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }]}
+      >
         <Text style={[{ color: colors.text }]}>Chargement...</Text>
       </View>
     )
@@ -727,7 +723,7 @@ const styles = StyleSheet.create({
   },
 
   actionCard: {
-    width: "22%",
+    width: "30%",
     paddingVertical: 16,
     borderRadius: 16,
     backgroundColor: "#F9FAFB",
