@@ -492,6 +492,153 @@ export default function AccountsScreen() {
           </Animated.View>
         )}
 
+        {/* Account Types Showcase Section */}
+        {!isLoading && (
+          <Animated.View style={[styles.accountTypesSection, { opacity: fadeAnim }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Types de comptes disponibles</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                Choisissez le compte qui correspond à vos besoins
+              </Text>
+            </View>
+
+            <View style={styles.accountTypesGrid}>
+              {/* Compte Courant */}
+              <TouchableOpacity
+                style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
+                onPress={handleNewAccount}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.accountTypeIconContainer, { backgroundColor: "#EEF2FF" }]}>
+                  <IconSymbol name="creditcard.fill" size={32} color="#6366F1" />
+                </View>
+                <View style={styles.accountTypeContent}>
+                  <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Courant</Text>
+                  <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
+                    Pour vos transactions quotidiennes
+                  </Text>
+                  <View style={styles.accountTypeFeatures}>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#6366F1" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Carte bancaire gratuite</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#6366F1" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Virements illimités</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#6366F1" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Découvert autorisé</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.accountTypeBadge, { backgroundColor: "#EEF2FF" }]}>
+                  <Text style={[styles.accountTypeBadgeText, { color: "#6366F1" }]}>Populaire</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Compte Épargne */}
+              <TouchableOpacity
+                style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
+                onPress={handleNewAccount}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.accountTypeIconContainer, { backgroundColor: "#ECFDF5" }]}>
+                  <IconSymbol name="banknote.fill" size={32} color="#10B981" />
+                </View>
+                <View style={styles.accountTypeContent}>
+                  <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Épargne</Text>
+                  <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
+                    Faites fructifier votre argent
+                  </Text>
+                  <View style={styles.accountTypeFeatures}>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#10B981" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Taux d'intérêt 3.5%</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#10B981" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Pas de frais de gestion</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#10B981" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Retraits flexibles</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Compte Professionnel */}
+              <TouchableOpacity
+                style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
+                onPress={handleNewAccount}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.accountTypeIconContainer, { backgroundColor: "#FEF3C7" }]}>
+                  <IconSymbol name="briefcase.fill" size={32} color="#F59E0B" />
+                </View>
+                <View style={styles.accountTypeContent}>
+                  <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Professionnel</Text>
+                  <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
+                    Pour votre activité professionnelle
+                  </Text>
+                  <View style={styles.accountTypeFeatures}>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Gestion multi-devises</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Outils comptables</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Terminal de paiement</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.accountTypeBadge, { backgroundColor: "#FEF3C7" }]}>
+                  <Text style={[styles.accountTypeBadgeText, { color: "#F59E0B" }]}>Exclusif</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Compte Premium */}
+              <TouchableOpacity
+                style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
+                onPress={handleNewAccount}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.accountTypeIconContainer, { backgroundColor: "#F3E8FF" }]}>
+                  <IconSymbol name="star.fill" size={32} color="#A855F7" />
+                </View>
+                <View style={styles.accountTypeContent}>
+                  <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Premium</Text>
+                  <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
+                    Services exclusifs et privilèges
+                  </Text>
+                  <View style={styles.accountTypeFeatures}>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Conseiller dédié</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Assurances incluses</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
+                      <Text style={[styles.featureText, { color: colors.textSecondary }]}>Cashback 2%</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.accountTypeBadge, { backgroundColor: "#F3E8FF" }]}>
+                  <Text style={[styles.accountTypeBadgeText, { color: "#A855F7" }]}>Exclusif</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
+
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
@@ -820,5 +967,96 @@ const styles = StyleSheet.create({
   lastUpdateText: {
     fontSize: 12,
     fontWeight: "500",
+  },
+  // Account Types Showcase Section
+  accountTypesSection: {
+    marginTop: 40,
+    marginHorizontal: 24,
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 15,
+    fontWeight: "500",
+    lineHeight: 22,
+  },
+  accountTypesGrid: {
+    gap: 16,
+  },
+  accountTypeCard: {
+    padding: 24,
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    position: "relative",
+  },
+  accountTypeIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  accountTypeContent: {
+    flex: 1,
+  },
+  accountTypeTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  accountTypeDescription: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  accountTypeFeatures: {
+    gap: 12,
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  featureDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  featureText: {
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+  },
+  accountTypeBadge: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  accountTypeBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 })
