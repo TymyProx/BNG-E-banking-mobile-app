@@ -37,6 +37,7 @@ export default function BeneficiaryDetails() {
   const [beneficiary, setBeneficiary] = useState<BeneficiaryDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [updating, setUpdating] = useState(false)
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
@@ -96,9 +97,9 @@ export default function BeneficiaryDetails() {
   const getStatusText = (status: number) => {
     switch (status) {
       case 0:
-        return "Inactif"
-      case 1:
         return "Actif"
+      case 1:
+        return "Inactif"
       default:
         return "Inconnu"
     }
@@ -107,12 +108,80 @@ export default function BeneficiaryDetails() {
   const getStatusColor = (status: number) => {
     switch (status) {
       case 0:
-        return "#ef4444"
-      case 1:
         return "#22c55e"
+      case 1:
+        return "#ef4444"
       default:
         return colors.textSecondary
     }
+  }
+
+  const handleDeactivate = async () => {
+    if (!beneficiary) return
+
+    Alert.alert("Désactiver le bénéficiaire", `Êtes-vous sûr de vouloir désactiver ${beneficiary.name} ?`, [
+      {
+        text: "Annuler",
+        style: "cancel",
+      },
+      {
+        text: "Désactiver",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setUpdating(true)
+
+            const token = await SecureStore.getItemAsync("token")
+            if (!token) {
+              throw new Error("Token d'authentification non trouvé")
+            }
+
+            const response = await fetch(
+              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiary.id)}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  data: {
+                    beneficiaryId: beneficiary.beneficiaryId,
+                    customerId: beneficiary.customerId,
+                    name: beneficiary.name,
+                    accountNumber: beneficiary.accountNumber,
+                    bankCode: beneficiary.bankCode,
+                    bankName: beneficiary.bankName,
+                    status: 1, // Set status to 1 for inactive
+                    typeBeneficiary: beneficiary.typeBeneficiary,
+                    favoris: beneficiary.favoris,
+                  },
+                }),
+              },
+            )
+
+            if (!response.ok) {
+              throw new Error("Erreur lors de la désactivation")
+            }
+
+            Alert.alert("Succès", "Le bénéficiaire a été désactivé avec succès", [
+              {
+                text: "OK",
+                onPress: () => {
+                  // Refresh the beneficiary details
+                  fetchBeneficiaryDetails()
+                },
+              },
+            ])
+          } catch (err) {
+            console.error("Error deactivating beneficiary:", err)
+            Alert.alert("Erreur", "Impossible de désactiver le bénéficiaire")
+          } finally {
+            setUpdating(false)
+          }
+        },
+      },
+    ])
   }
 
   if (loading) {
@@ -275,6 +344,28 @@ export default function BeneficiaryDetails() {
             <IconSymbol name="pencil" size={20} color={colors.primary} />
             <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Modifier</Text>
           </TouchableOpacity>
+
+          {beneficiary.status === 0 && (
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.dangerButton,
+                { borderColor: "#ef4444" },
+                updating && styles.disabledButton,
+              ]}
+              onPress={handleDeactivate}
+              disabled={updating}
+            >
+              {updating ? (
+                <ActivityIndicator size="small" color="#ef4444" />
+              ) : (
+                <>
+                  <IconSymbol name="xmark.circle" size={20} color="#ef4444" />
+                  <Text style={[styles.dangerButtonText, { color: "#ef4444" }]}>Désactiver</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -462,5 +553,15 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  dangerButton: {
+    borderWidth: 2,
+  },
+  dangerButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 })
