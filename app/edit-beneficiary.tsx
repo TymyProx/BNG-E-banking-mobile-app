@@ -16,7 +16,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter, useLocalSearchParams } from "expo-router"
-import React from "react"
+import * as SecureStore from "expo-secure-store"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/APIConfig"
 
 interface FormData {
   firstName: string
@@ -164,26 +165,78 @@ export default function EditBeneficiary() {
   // Récupérer les agences de la BNG pour "même banque"
   const bngAgencies = banks.find((bank) => bank.name === "Banque Nationale de Guinée")?.agencies || []
 
-  // Simuler le chargement des données du bénéficiaire
   useEffect(() => {
-    const loadBeneficiaryData = () => {
-      // Simulation des données existantes - exemple avec type "same_zone"
-      const mockData = {
-        firstName: "Marie",
-        lastName: "Diallo",
-        beneficiaryType: "same_zone",
-        agencyCode: "",
-        accountNumber: "1234567890123456",
-        ribKey: "",
-        bank: "Société Générale de Banque en Guinée",
-        bankCode: "SGBG002",
-        selectedAgencyCode: "001",
-        iban: "",
-        swiftCode: "",
-        phoneNumber: "+224 123 456 789",
-        email: "marie.diallo@email.com",
+    const loadBeneficiaryData = async () => {
+      if (!beneficiaryId) {
+        Alert.alert("Erreur", "ID du bénéficiaire manquant")
+        router.back()
+        return
       }
-      setFormData(mockData)
+
+      try {
+        setIsLoading(true)
+
+        const token = await SecureStore.getItemAsync("token")
+        if (!token) {
+          throw new Error("Token d'authentification non trouvé")
+        }
+
+        const response = await fetch(
+          `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.DETAILS(API_CONFIG.TENANT_ID, beneficiaryId as string)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des détails")
+        }
+
+        const data = await response.json()
+
+        // Map API data to form fields
+        const nameParts = data.name.split(" ")
+        const firstName = nameParts[0] || ""
+        const lastName = nameParts.slice(1).join(" ") || ""
+
+        // Determine beneficiary type based on available data
+        let beneficiaryType = "same_zone"
+        if (data.iban) {
+          beneficiaryType = "international"
+        } else if (data.bankCode === "BNG001") {
+          beneficiaryType = "same_bank"
+        }
+
+        setFormData({
+          firstName,
+          lastName,
+          beneficiaryType,
+          agencyCode: data.agencyCode || "",
+          accountNumber: data.accountNumber || "",
+          ribKey: data.ribKey || "",
+          bank: data.bankName || "",
+          bankCode: data.bankCode || "",
+          selectedAgencyCode: data.agencyCode || "",
+          iban: data.iban || "",
+          swiftCode: data.swiftCode || "",
+          phoneNumber: data.phoneNumber || "",
+          email: data.email || "",
+        })
+      } catch (err) {
+        console.error("Error loading beneficiary data:", err)
+        Alert.alert("Erreur", "Impossible de charger les données du bénéficiaire", [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     loadBeneficiaryData()
@@ -256,8 +309,40 @@ export default function EditBeneficiary() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        throw new Error("Token d'authentification non trouvé")
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiaryId as string)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              accountNumber: formData.accountNumber,
+              bankCode: formData.bankCode,
+              bankName: formData.bank,
+              typeBeneficiary: formData.beneficiaryType,
+              phoneNumber: formData.phoneNumber,
+              email: formData.email,
+              agencyCode: formData.agencyCode || formData.selectedAgencyCode,
+              ribKey: formData.ribKey,
+              iban: formData.iban,
+              swiftCode: formData.swiftCode,
+            },
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la modification")
+      }
 
       Alert.alert(
         "Succès",
@@ -270,6 +355,7 @@ export default function EditBeneficiary() {
         ],
       )
     } catch (error) {
+      console.error("Error updating beneficiary:", error)
       Alert.alert("Erreur", "Une erreur est survenue lors de la modification du bénéficiaire.")
     } finally {
       setIsLoading(false)
