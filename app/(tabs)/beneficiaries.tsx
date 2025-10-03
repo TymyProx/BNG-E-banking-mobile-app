@@ -35,9 +35,12 @@ interface Beneficiary {
   bankName: string
   favoris?: boolean
   status: number // 0 = Actif, 1 = Désactivé
+  beneficiaryId?: string
+  customerId?: string
+  typeBeneficiary?: string
 }
 
-type FilterType = "tous" | "actif" | "desactive"
+type FilterType = "tous" | "actif" | "desactive" | "favoris"
 
 export default function Beneficiaries() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -90,6 +93,9 @@ export default function Beneficiaries() {
         phoneNumber: item.customerId || "N/A",
         favoris: item.favoris,
         status: item.status,
+        beneficiaryId: item.beneficiaryId,
+        customerId: item.customerId,
+        typeBeneficiary: item.typeBeneficiary,
       }))
 
       setBeneficiaries(mappedBeneficiaries)
@@ -117,10 +123,59 @@ export default function Beneficiaries() {
       matchesStatus = ben.status === 0
     } else if (filter === "desactive") {
       matchesStatus = ben.status === 1
+    } else if (filter === "favoris") {
+      matchesStatus = ben.favoris === true
     }
 
     return matchesSearch && matchesStatus
   })
+
+  const handleToggleFavorite = async (beneficiary: Beneficiary) => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        throw new Error("Token d'authentification non trouvé")
+      }
+
+      const newFavorisValue = !beneficiary.favoris
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiary.id)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: {
+              beneficiaryId: beneficiary.beneficiaryId,
+              customerId: beneficiary.customerId,
+              name: beneficiary.name,
+              accountNumber: beneficiary.accountNumber,
+              bankCode: beneficiary.bankCode,
+              bankName: beneficiary.bankName,
+              status: beneficiary.status,
+              typeBeneficiary: beneficiary.typeBeneficiary,
+              favoris: newFavorisValue,
+            },
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour du favori")
+      }
+
+      // Update local state
+      setBeneficiaries((prev) =>
+        prev.map((ben) => (ben.id === beneficiary.id ? { ...ben, favoris: newFavorisValue } : ben)),
+      )
+    } catch (err) {
+      console.error("Error toggling favorite:", err)
+      Alert.alert("Erreur", "Impossible de mettre à jour le favori")
+    }
+  }
 
   const handleTransferTo = (beneficiaryId: string) => {
     console.log(`Initiating transfer to beneficiary: ${beneficiaryId}`)
@@ -224,64 +279,86 @@ export default function Beneficiaries() {
         </View>
       </View>
 
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "tous" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
-            { borderColor: colors.border },
-          ]}
-          onPress={() => setFilter("tous")}
-        >
-          <Text
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScrollContainer}>
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
             style={[
-              styles.filterButtonText,
-              { color: filter === "tous" ? "white" : colors.textSecondary },
-              filter === "tous" && styles.filterButtonTextActive,
+              styles.filterButton,
+              filter === "tous" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
+              { borderColor: colors.border },
             ]}
+            onPress={() => setFilter("tous")}
           >
-            Tous
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: filter === "tous" ? "white" : colors.textSecondary },
+                filter === "tous" && styles.filterButtonTextActive,
+              ]}
+            >
+              Tous
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "actif" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
-            { borderColor: colors.border },
-          ]}
-          onPress={() => setFilter("actif")}
-        >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.filterButtonText,
-              { color: filter === "actif" ? "white" : colors.textSecondary },
-              filter === "actif" && styles.filterButtonTextActive,
+              styles.filterButton,
+              filter === "actif" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
+              { borderColor: colors.border },
             ]}
+            onPress={() => setFilter("actif")}
           >
-            Actifs
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: filter === "actif" ? "white" : colors.textSecondary },
+                filter === "actif" && styles.filterButtonTextActive,
+              ]}
+            >
+              Actifs
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "desactive" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
-            { borderColor: colors.border },
-          ]}
-          onPress={() => setFilter("desactive")}
-        >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.filterButtonText,
-              { color: filter === "desactive" ? "white" : colors.textSecondary },
-              filter === "desactive" && styles.filterButtonTextActive,
+              styles.filterButton,
+              filter === "desactive" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
+              { borderColor: colors.border },
             ]}
+            onPress={() => setFilter("desactive")}
           >
-            Désactivés
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: filter === "desactive" ? "white" : colors.textSecondary },
+                filter === "desactive" && styles.filterButtonTextActive,
+              ]}
+            >
+              Désactivés
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filter === "favoris" && [styles.filterButtonActive, { backgroundColor: "#FFD700" }],
+              { borderColor: colors.border },
+            ]}
+            onPress={() => setFilter("favoris")}
+          >
+            <IconSymbol name="star.fill" size={16} color={filter === "favoris" ? "white" : "#FFD700"} />
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: filter === "favoris" ? "white" : colors.textSecondary },
+                filter === "favoris" && styles.filterButtonTextActive,
+              ]}
+            >
+              Favoris
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
       {loading ? (
         <View style={styles.centerContainer}>
@@ -299,7 +376,12 @@ export default function Beneficiaries() {
                       <Text style={[styles.avatarText, { color: colors.primary }]}>{beneficiary.avatar}</Text>
                     </View>
                     <View style={styles.beneficiaryInfo}>
-                      <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
+                      <View style={styles.nameRow}>
+                        <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
+                        <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starButton}>
+                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="#FFD700" />
+                        </TouchableOpacity>
+                      </View>
                       <Text style={[styles.beneficiaryDetails, { color: colors.textSecondary }]}>
                         {beneficiary.number} • {beneficiary.bank}
                       </Text>
@@ -463,20 +545,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
   },
-  filterContainer: {
-    flexDirection: "row",
+  filterScrollContainer: {
     paddingHorizontal: 20,
     paddingBottom: 16,
+  },
+  filterContainer: {
+    flexDirection: "row",
     gap: 12,
   },
   filterButton: {
-    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
     borderWidth: 1,
-    alignItems: "center",
     justifyContent: "center",
+    gap: 6,
   },
   filterButtonActive: {
     borderWidth: 0,
@@ -529,10 +614,18 @@ const styles = StyleSheet.create({
   beneficiaryInfo: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
   beneficiaryName: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 4,
+  },
+  starButton: {
+    padding: 4,
   },
   beneficiaryDetails: {
     fontSize: 14,
