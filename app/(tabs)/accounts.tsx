@@ -20,7 +20,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 interface Account {
   id: string
@@ -29,7 +28,7 @@ interface Account {
   balance: number
   type: "primary" | "savings" | "checking" | "credit"
   change: number
-  status: "active" | "inactive" | "blocked"
+  status: "active" | "inactive" | "blocked" | "pending" | "actif" | "en attente" | "attente" | "inactif" | "bloqué"
   currency: string
   lastUpdate: string
 }
@@ -171,6 +170,42 @@ export default function AccountsScreen() {
     }
   }
 
+  const getStatusColor = (status: string) => {
+    const normalizedStatus = status.toLowerCase()
+    switch (normalizedStatus) {
+      case "active":
+      case "actif":
+        return {
+          background: colors.successBackground,
+          color: colors.success,
+        }
+      case "pending":
+      case "en attente":
+      case "attente":
+        return {
+          background: "#FEF3C7", // Yellow background
+          color: "#F59E0B", // Orange color
+        }
+      case "inactive":
+      case "inactif":
+        return {
+          background: colors.borderLight,
+          color: colors.textSecondary,
+        }
+      case "blocked":
+      case "bloqué":
+        return {
+          background: colors.errorBackground,
+          color: colors.error,
+        }
+      default:
+        return {
+          background: colors.borderLight,
+          color: colors.textSecondary,
+        }
+    }
+  }
+
   const handleAccountPress = (account: Account) => {
     router.push({
       pathname: "/account-details",
@@ -240,9 +275,11 @@ export default function AccountsScreen() {
               <View style={styles.accountInfo}>
                 <View style={styles.accountNameRow}>
                   <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: colors.successBackground }]}>
-                    <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
-                    <Text style={[styles.statusText, { color: colors.success }]}>{account.status}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(account.status).background }]}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(account.status).color }]} />
+                    <Text style={[styles.statusText, { color: getStatusColor(account.status).color }]}>
+                      {account.status}
+                    </Text>
                   </View>
                 </View>
                 <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
@@ -384,6 +421,11 @@ const colors = {
   shadow: "rgba(0,0,0,0.06)",
   error: "#EF4444",
   success: "#10B981",
+  primaryBackground: "#E9D5FF",
+  successBackground: "#E1FAEE",
+  secondaryBackground: "#D1E7DD",
+  errorBackground: "#FEE2E2",
+  borderLight: "#E5E7EB",
 }
 
 const styles = StyleSheet.create({
