@@ -279,86 +279,81 @@ export default function Beneficiaries() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScrollContainer}>
-        <View style={styles.filterContainer}>
+      <View style={styles.filterSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollContent}
+        >
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              filter === "tous" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
-              { borderColor: colors.border },
+              styles.filterPill,
+              filter === "tous" && styles.filterPillActive,
+              {
+                backgroundColor: filter === "tous" ? colors.primary : colors.cardBackground,
+                borderColor: filter === "tous" ? colors.primary : colors.border,
+              },
             ]}
             onPress={() => setFilter("tous")}
           >
-            <Text
-              style={[
-                styles.filterButtonText,
-                { color: filter === "tous" ? "white" : colors.textSecondary },
-                filter === "tous" && styles.filterButtonTextActive,
-              ]}
-            >
+            <IconSymbol name="list.bullet" size={18} color={filter === "tous" ? "white" : colors.textSecondary} />
+            <Text style={[styles.filterPillText, { color: filter === "tous" ? "white" : colors.textSecondary }]}>
               Tous
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              filter === "actif" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
-              { borderColor: colors.border },
+              styles.filterPill,
+              filter === "actif" && styles.filterPillActive,
+              {
+                backgroundColor: filter === "actif" ? "#10b981" : colors.cardBackground,
+                borderColor: filter === "actif" ? "#10b981" : colors.border,
+              },
             ]}
             onPress={() => setFilter("actif")}
           >
-            <Text
-              style={[
-                styles.filterButtonText,
-                { color: filter === "actif" ? "white" : colors.textSecondary },
-                filter === "actif" && styles.filterButtonTextActive,
-              ]}
-            >
+            <IconSymbol name="checkmark.circle.fill" size={18} color={filter === "actif" ? "white" : "#10b981"} />
+            <Text style={[styles.filterPillText, { color: filter === "actif" ? "white" : colors.textSecondary }]}>
               Actifs
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              filter === "desactive" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
-              { borderColor: colors.border },
+              styles.filterPill,
+              filter === "desactive" && styles.filterPillActive,
+              {
+                backgroundColor: filter === "desactive" ? "#ef4444" : colors.cardBackground,
+                borderColor: filter === "desactive" ? "#ef4444" : colors.border,
+              },
             ]}
             onPress={() => setFilter("desactive")}
           >
-            <Text
-              style={[
-                styles.filterButtonText,
-                { color: filter === "desactive" ? "white" : colors.textSecondary },
-                filter === "desactive" && styles.filterButtonTextActive,
-              ]}
-            >
+            <IconSymbol name="xmark.circle.fill" size={18} color={filter === "desactive" ? "white" : "#ef4444"} />
+            <Text style={[styles.filterPillText, { color: filter === "desactive" ? "white" : colors.textSecondary }]}>
               Désactivés
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              filter === "favoris" && [styles.filterButtonActive, { backgroundColor: "#FFD700" }],
-              { borderColor: colors.border },
+              styles.filterPill,
+              filter === "favoris" && styles.filterPillActive,
+              {
+                backgroundColor: filter === "favoris" ? "#FFD700" : colors.cardBackground,
+                borderColor: filter === "favoris" ? "#FFD700" : colors.border,
+              },
             ]}
             onPress={() => setFilter("favoris")}
           >
-            <IconSymbol name="star.fill" size={16} color={filter === "favoris" ? "white" : "#FFD700"} />
-            <Text
-              style={[
-                styles.filterButtonText,
-                { color: filter === "favoris" ? "white" : colors.textSecondary },
-                filter === "favoris" && styles.filterButtonTextActive,
-              ]}
-            >
+            <IconSymbol name="star.fill" size={18} color={filter === "favoris" ? "white" : "#FFD700"} />
+            <Text style={[styles.filterPillText, { color: filter === "favoris" ? "white" : colors.textSecondary }]}>
               Favoris
             </Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {loading ? (
         <View style={styles.centerContainer}>
@@ -370,18 +365,17 @@ export default function Beneficiaries() {
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
+                <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
+                  <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
+                </TouchableOpacity>
+
                 <View style={styles.beneficiaryContent}>
                   <View style={styles.beneficiaryLeft}>
                     <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
                       <Text style={[styles.avatarText, { color: colors.primary }]}>{beneficiary.avatar}</Text>
                     </View>
                     <View style={styles.beneficiaryInfo}>
-                      <View style={styles.nameRow}>
-                        <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
-                        <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starButton}>
-                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="#FFD700" />
-                        </TouchableOpacity>
-                      </View>
+                      <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
                       <Text style={[styles.beneficiaryDetails, { color: colors.textSecondary }]}>
                         {beneficiary.number} • {beneficiary.bank}
                       </Text>
@@ -545,32 +539,34 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
   },
-  filterScrollContainer: {
+  filterSection: {
+    paddingVertical: 12,
+  },
+  filterScrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    gap: 10,
   },
-  filterContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  filterButton: {
+  filterPill: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    justifyContent: "center",
-    gap: 6,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  filterButtonActive: {
-    borderWidth: 0,
+  filterPillActive: {
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  filterButtonTextActive: {
+  filterPillText: {
+    fontSize: 15,
     fontWeight: "600",
   },
   content: {
@@ -588,6 +584,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    position: "relative", // Added for absolute positioning of star
+  },
+  starIconButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    padding: 8,
+    borderRadius: 20,
   },
   beneficiaryContent: {
     flexDirection: "row",
@@ -614,18 +619,10 @@ const styles = StyleSheet.create({
   beneficiaryInfo: {
     flex: 1,
   },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
   beneficiaryName: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  starButton: {
-    padding: 4,
+    marginBottom: 4,
   },
   beneficiaryDetails: {
     fontSize: 14,
