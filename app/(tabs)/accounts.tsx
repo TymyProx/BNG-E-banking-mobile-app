@@ -4,7 +4,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { router } from "expo-router"
-import React from "react"
 import { useEffect, useState } from "react"
 import {
   Animated,
@@ -192,7 +191,7 @@ export default function AccountsScreen() {
   }
 
   const handleNewAccount = () => {
-    router.push("/accounts")
+    router.push("/new-account")
   }
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
