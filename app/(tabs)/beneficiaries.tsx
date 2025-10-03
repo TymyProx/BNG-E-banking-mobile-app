@@ -211,53 +211,66 @@ export default function Beneficiaries() {
     setShowActionModal(false)
     if (!selectedBeneficiary) return
 
-    try {
-      const token = await SecureStore.getItemAsync("token")
-      if (!token) {
-        throw new Error("Token d'authentification non trouvé")
-      }
+    const newStatus = selectedBeneficiary.status === 0 ? 1 : 0
+    const actionText = newStatus === 1 ? "désactiver" : "réactiver"
+    const statusText = newStatus === 0 ? "activé" : "désactivé"
 
-      const newStatus = selectedBeneficiary.status === 0 ? 1 : 0
-      const statusText = newStatus === 0 ? "activé" : "désactivé"
+    Alert.alert("Confirmation", `Êtes-vous sûr de vouloir ${actionText} ce bénéficiaire ?`, [
+      {
+        text: "Annuler",
+        style: "cancel",
+      },
+      {
+        text: "Confirmer",
+        style: newStatus === 1 ? "destructive" : "default",
+        onPress: async () => {
+          try {
+            const token = await SecureStore.getItemAsync("token")
+            if (!token) {
+              throw new Error("Token d'authentification non trouvé")
+            }
 
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, selectedBeneficiary.id)}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            data: {
-              beneficiaryId: selectedBeneficiary.beneficiaryId,
-              customerId: selectedBeneficiary.customerId,
-              name: selectedBeneficiary.name,
-              accountNumber: selectedBeneficiary.accountNumber,
-              bankCode: selectedBeneficiary.bankCode,
-              bankName: selectedBeneficiary.bankName,
-              status: newStatus,
-              typeBeneficiary: selectedBeneficiary.typeBeneficiary,
-              favoris: selectedBeneficiary.favoris,
-            },
-          }),
+            const response = await fetch(
+              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, selectedBeneficiary.id)}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  data: {
+                    beneficiaryId: selectedBeneficiary.beneficiaryId,
+                    customerId: selectedBeneficiary.customerId,
+                    name: selectedBeneficiary.name,
+                    accountNumber: selectedBeneficiary.accountNumber,
+                    bankCode: selectedBeneficiary.bankCode,
+                    bankName: selectedBeneficiary.bankName,
+                    status: newStatus,
+                    typeBeneficiary: selectedBeneficiary.typeBeneficiary,
+                    favoris: selectedBeneficiary.favoris,
+                  },
+                }),
+              },
+            )
+
+            if (!response.ok) {
+              throw new Error("Erreur lors de la mise à jour du statut")
+            }
+
+            // Update local state
+            setBeneficiaries((prev) =>
+              prev.map((ben) => (ben.id === selectedBeneficiary.id ? { ...ben, status: newStatus } : ben)),
+            )
+
+            Alert.alert("Succès", `Le bénéficiaire a été ${statusText}`)
+          } catch (err) {
+            console.error("Error toggling status:", err)
+            Alert.alert("Erreur", "Impossible de mettre à jour le statut du bénéficiaire")
+          }
         },
-      )
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la mise à jour du statut")
-      }
-
-      // Update local state
-      setBeneficiaries((prev) =>
-        prev.map((ben) => (ben.id === selectedBeneficiary.id ? { ...ben, status: newStatus } : ben)),
-      )
-
-      Alert.alert("Succès", `Le bénéficiaire a été ${statusText}`)
-    } catch (err) {
-      console.error("Error toggling status:", err)
-      Alert.alert("Erreur", "Impossible de mettre à jour le statut du bénéficiaire")
-    }
+      },
+    ])
   }
 
   const handleViewDetails = () => {
