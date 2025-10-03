@@ -21,7 +21,7 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
+import * as SecureStore from "expo-secure-store"
 
 const { width } = Dimensions.get("window")
 
@@ -244,6 +244,13 @@ export default function NewAccountScreen() {
 
     setIsLoading(true)
     try {
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        Alert.alert("Erreur", "Session expirée. Veuillez vous reconnecter.")
+        router.replace("/(auth)/login")
+        return
+      }
+
       const selectedType = accountTypes.find((type) => type.id === formData.accountType)
       const accountNumber = `BNG${Date.now().toString().slice(-10)}`
       const accountId = `ACC${Date.now()}`
@@ -277,6 +284,7 @@ export default function NewAccountScreen() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       })
