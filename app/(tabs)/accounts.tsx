@@ -161,6 +161,17 @@ export default function AccountsScreen() {
     return new Intl.NumberFormat("fr-FR").format(Math.abs(amount))
   }
 
+  const getTotalsByCurrency = () => {
+    const totals: { [currency: string]: number } = {}
+    accounts.forEach((account) => {
+      if (!totals[account.currency]) {
+        totals[account.currency] = 0
+      }
+      totals[account.currency] += account.balance
+    })
+    return totals
+  }
+
   const getAccountIcon = (type: string) => {
     switch (type) {
       case "primary":
@@ -262,8 +273,6 @@ export default function AccountsScreen() {
     router.push("/new-account")
   }
 
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
-
   const AccountCard = ({ account }: { account: Account }) => {
     const [scaleAnim] = useState(new Animated.Value(1))
 
@@ -356,23 +365,11 @@ export default function AccountsScreen() {
             )}
           </View>
 
-          {/* Séparateur */}
-          <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
-
-          {/* Quick actions */}
-          <View style={styles.quickActions}>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primaryBackground }]}>
-              <IconSymbol name="arrow.up.circle.fill" size={20} color={colors.primary} />
-              <Text style={[styles.actionText, { color: colors.primary }]}>Envoyer</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.successBackground }]}>
-              <IconSymbol name="arrow.down.circle.fill" size={20} color={colors.success} />
-              <Text style={[styles.actionText, { color: colors.success }]}>Recevoir</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.secondaryBackground }]}>
-              <IconSymbol name="clock.fill" size={20} color={colors.secondary} />
-              <Text style={[styles.actionText, { color: colors.secondary }]}>Historique</Text>
-            </TouchableOpacity>
+          <View style={styles.footerInfo}>
+            <IconSymbol name="clock" size={14} color={colors.textTertiary} />
+            <Text style={[styles.lastUpdateText, { color: colors.textTertiary }]}>
+              Mis à jour le {account.lastUpdate}
+            </Text>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -399,7 +396,6 @@ export default function AccountsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
-        {/* Summary Card */}
         {!isLoading && accounts.length > 0 && (
           <Animated.View
             style={[
@@ -407,11 +403,13 @@ export default function AccountsScreen() {
               { backgroundColor: colors.primary, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}
           >
-            <Text style={styles.summaryLabel}>Solde total</Text>
-            <View style={styles.summaryAmountRow}>
-              <Text style={styles.summaryAmount}>{formatAmount(totalBalance)}</Text>
-              <Text style={styles.summaryCurrency}>GNF</Text>
-            </View>
+            <Text style={styles.summaryLabel}>Soldes totaux</Text>
+            {Object.entries(getTotalsByCurrency()).map(([currency, total]) => (
+              <View key={currency} style={styles.summaryAmountRow}>
+                <Text style={styles.summaryAmount}>{formatAmount(total)}</Text>
+                <Text style={styles.summaryCurrency}>{currency}</Text>
+              </View>
+            ))}
             <View style={styles.summaryFooter}>
               <Text style={styles.summarySubtext}>{accounts.length} compte(s)</Text>
             </View>
@@ -632,7 +630,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 320,
+    minHeight: 280,
   },
   cardHeader: {
     marginBottom: 24,
@@ -685,7 +683,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   balanceSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   balanceLabel: {
     fontSize: 12,
@@ -729,27 +727,6 @@ const styles = StyleSheet.create({
   changeLabel: {
     fontSize: 12,
     fontWeight: "500",
-  },
-  separator: {
-    height: 1,
-    marginBottom: 20,
-  },
-  quickActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 16,
-    gap: 6,
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: "600",
   },
   paginationContainer: {
     flexDirection: "row",
@@ -839,5 +816,15 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 40,
+  },
+  footerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 16,
+  },
+  lastUpdateText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 })
