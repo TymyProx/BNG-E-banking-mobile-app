@@ -19,7 +19,8 @@ import { router } from "expo-router"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
-import React from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 const { width } = Dimensions.get("window")
 
@@ -43,6 +44,7 @@ interface FormData {
 export default function NewAccountScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
+  const { user } = useAuth()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -215,19 +217,66 @@ export default function NewAccountScreen() {
   }
 
   const handleSubmit = async () => {
+    if (!user) {
+      Alert.alert("Erreur", "Vous devez être connecté pour créer un compte")
+      return
+    }
+
     setIsLoading(true)
     try {
-      // Simulation d'appel API
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
       const selectedType = accountTypes.find((type) => type.id === formData.accountType)
       const accountNumber = `BNG${Date.now().toString().slice(-10)}`
+      const accountId = `ACC${Date.now()}`
+
+      // Map account type to API type
+      const typeMapping: { [key: string]: string } = {
+        savings: "EPARGNE",
+        checking: "COURANT",
+        business: "PROFESSIONNEL",
+        youth: "JEUNE",
+      }
+
+      const requestBody = {
+        data: {
+          accountId: accountId,
+          customerId: user.id,
+          accountNumber: accountNumber,
+          accountName: selectedType?.name || "",
+          currency: "GNF",
+          bookBalance: formData.initialDeposit,
+          availableBalance: formData.initialDeposit,
+          status: "EN ATTENTE",
+          type: typeMapping[formData.accountType] || formData.accountType,
+          agency: "Agence Principale", // Default agency, can be made dynamic
+        },
+      }
+
+      console.log("[v0] Creating account with data:", requestBody)
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.CREATE(API_CONFIG.TENANT_ID)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      console.log("[v0] API Response status:", response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        console.log("[v0] API Error:", errorData)
+        throw new Error(errorData?.message || "Erreur lors de la création du compte")
+      }
+
+      const result = await response.json()
+      console.log("[v0] Account created successfully:", result)
 
       Alert.alert(
-        "Compte créé avec succès !",
-        `Votre ${selectedType?.name} a été ouvert.\n\nNuméro de compte: ${accountNumber}\nDépôt initial: ${formatAmount(
+        "Demande envoyée avec succès !",
+        `Votre demande d'ouverture de ${selectedType?.name} a été soumise.\n\nNuméro de compte: ${accountNumber}\nDépôt initial: ${formatAmount(
           formData.initialDeposit,
-        )} GNF\n\nVous recevrez vos documents par email sous 24h.`,
+        )} GNF\n\nVotre demande est en attente d'approbation. Vous recevrez une notification une fois le compte activé.`,
         [
           {
             text: "Continuer",
@@ -238,7 +287,11 @@ export default function NewAccountScreen() {
         ],
       )
     } catch (error) {
-      Alert.alert("Erreur", "Une erreur est survenue lors de la création du compte")
+      console.error("[v0] Error creating account:", error)
+      Alert.alert(
+        "Erreur",
+        error instanceof Error ? error.message : "Une erreur est survenue lors de la création du compte",
+      )
     } finally {
       setIsLoading(false)
     }
@@ -310,12 +363,11 @@ export default function NewAccountScreen() {
 
         <View style={[styles.selectedTypeCard, { backgroundColor: colors.cardBackground, shadowColor: colors.shadow }]}>
           <View style={[styles.selectedTypeIcon, { backgroundColor: `${selectedType?.color}20` }]}>
-          <IconSymbol
-          name={selectedType?.icon as any}
-          size={24}
-          color={selectedType?.color ?? "#000"} //  valeur par défaut
-          />
-
+            <IconSymbol
+              name={selectedType?.icon as any}
+              size={24}
+              color={selectedType?.color ?? "#000"} // valeur par défaut
+            />
           </View>
           <Text style={[styles.selectedTypeName, { color: colors.text }]}>{selectedType?.name}</Text>
         </View>

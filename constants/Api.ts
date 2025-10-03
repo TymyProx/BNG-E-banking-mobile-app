@@ -15,4 +15,11 @@ export const API_ENDPOINTS = {
     UPDATE: (tenantId: string, beneficiaryId: string) => `/tenant/${tenantId}/beneficiaire/${beneficiaryId}`,
     DELETE: (tenantId: string, beneficiaryId: string) => `/tenant/${tenantId}/beneficiaire/${beneficiaryId}`,
   },
+  ACCOUNT: {
+    CREATE: (tenantId: string) => `/tenant/${tenantId}/compte`,
+    LIST: (tenantId: string) => `/tenant/${tenantId}/compte`,
+    DETAILS: (tenantId: string, accountId: string) => `/tenant/${tenantId}/compte/${accountId}`,
+    UPDATE: (tenantId: string, accountId: string) => `/tenant/${tenantId}/compte/${accountId}`,
+    DELETE: (tenantId: string, accountId: string) => `/tenant/${tenantId}/compte/${accountId}`,
+  },
 }
