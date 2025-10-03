@@ -21,7 +21,6 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -38,6 +37,7 @@ interface AccountType {
 interface FormData {
   accountType: string
   initialDeposit: string
+  currency: string
   purpose: string
   agreeToTerms: boolean
 }
@@ -45,13 +45,14 @@ interface FormData {
 export default function NewAccountScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
-  const { user, tenantId } = useAuth()
+  const { user, tenantId, isLoading: authLoading } = useAuth()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     accountType: "",
     initialDeposit: "",
+    currency: "GNF",
     purpose: "",
     agreeToTerms: false,
   })
@@ -114,8 +115,15 @@ export default function NewAccountScreen() {
     "Autre",
   ]
 
+  const currencies = [
+    { code: "GNF", name: "Franc Guinéen", symbol: "GNF" },
+    { code: "USD", name: "Dollar Américain", symbol: "$" },
+    { code: "EUR", name: "Euro", symbol: "€" },
+  ]
+
   useEffect(() => {
-    // Entrance animation
+    console.log("[v0] Auth state - user:", user?.id, "tenantId:", tenantId, "authLoading:", authLoading)
+
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -129,13 +137,12 @@ export default function NewAccountScreen() {
       }),
     ]).start()
 
-    // Update progress
     Animated.timing(progressAnim, {
       toValue: currentStep / 4,
       duration: 300,
       useNativeDriver: false,
     }).start()
-  }, [currentStep])
+  }, [currentStep, user, tenantId, authLoading])
 
   const shakeAnimation = () => {
     Vibration.vibrate(100)
@@ -183,7 +190,7 @@ export default function NewAccountScreen() {
           "Erreur",
           `Le dépôt minimum pour ce type de compte est de ${new Intl.NumberFormat("fr-FR").format(
             selectedType?.minDeposit || 0,
-          )} GNF`,
+          )} ${formData.currency}`,
         )
         return
       }
@@ -212,18 +219,24 @@ export default function NewAccountScreen() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     } else {
-      //router.back()
       router.push("/accounts")
     }
   }
 
   const handleSubmit = async () => {
+    if (authLoading) {
+      Alert.alert("Chargement", "Veuillez patienter pendant le chargement de vos informations...")
+      return
+    }
+
     if (!user) {
+      console.log("[v0] Submit failed - no user")
       Alert.alert("Erreur", "Vous devez être connecté pour créer un compte")
       return
     }
 
     if (!tenantId) {
+      console.log("[v0] Submit failed - no tenantId")
       Alert.alert("Erreur", "Impossible de récupérer les informations du tenant. Veuillez vous reconnecter.")
       return
     }
@@ -234,7 +247,6 @@ export default function NewAccountScreen() {
       const accountNumber = `BNG${Date.now().toString().slice(-10)}`
       const accountId = `ACC${Date.now()}`
 
-      // Map account type to API type
       const typeMapping: { [key: string]: string } = {
         savings: "EPARGNE",
         checking: "COURANT",
@@ -248,7 +260,7 @@ export default function NewAccountScreen() {
           customerId: user.id,
           accountNumber: accountNumber,
           accountName: selectedType?.name || "",
-          currency: "GNF",
+          currency: formData.currency,
           bookBalance: formData.initialDeposit,
           availableBalance: formData.initialDeposit,
           status: "EN ATTENTE",
@@ -283,7 +295,7 @@ export default function NewAccountScreen() {
         "Demande envoyée avec succès !",
         `Votre demande d'ouverture de ${selectedType?.name} a été soumise.\n\nNuméro de compte: ${accountNumber}\nDépôt initial: ${formatAmount(
           formData.initialDeposit,
-        )} GNF\n\nVotre demande est en attente d'approbation. Vous recevrez une notification une fois le compte activé.`,
+        )} ${formData.currency}\n\nVotre demande est en attente d'approbation. Vous recevrez une notification une fois le compte activé.`,
         [
           {
             text: "Continuer",
@@ -370,17 +382,38 @@ export default function NewAccountScreen() {
 
         <View style={[styles.selectedTypeCard, { backgroundColor: colors.cardBackground, shadowColor: colors.shadow }]}>
           <View style={[styles.selectedTypeIcon, { backgroundColor: `${selectedType?.color}20` }]}>
-            <IconSymbol
-              name={selectedType?.icon as any}
-              size={24}
-              color={selectedType?.color ?? "#000"} // valeur par défaut
-            />
+            <IconSymbol name={selectedType?.icon as any} size={24} color={selectedType?.color ?? "#000"} />
           </View>
           <Text style={[styles.selectedTypeName, { color: colors.text }]}>{selectedType?.name}</Text>
         </View>
 
         <View style={styles.depositSection}>
-          <Text style={[styles.inputLabel, { color: colors.text }]}>Montant du dépôt *</Text>
+          <Text style={[styles.inputLabel, { color: colors.text }]}>Devise *</Text>
+          <View style={styles.currencyGrid}>
+            {currencies.map((curr) => (
+              <TouchableOpacity
+                key={curr.code}
+                style={[
+                  styles.currencyButton,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: formData.currency === curr.code ? colors.primary : colors.border,
+                    borderWidth: formData.currency === curr.code ? 2 : 1,
+                  },
+                ]}
+                onPress={() => setFormData({ ...formData, currency: curr.code })}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.currencySymbol, { color: colors.text }]}>{curr.symbol}</Text>
+                <Text style={[styles.currencyCode, { color: colors.text }]}>{curr.code}</Text>
+                {formData.currency === curr.code && (
+                  <IconSymbol name="checkmark.circle.fill" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 24 }]}>Montant du dépôt *</Text>
           <View
             style={[
               styles.inputContainer,
@@ -402,14 +435,13 @@ export default function NewAccountScreen() {
               returnKeyType="done"
               selectTextOnFocus
             />
-            <Text style={[styles.currencyText, { color: colors.textSecondary }]}>GNF</Text>
+            <Text style={[styles.currencyText, { color: colors.textSecondary }]}>{formData.currency}</Text>
             {isValidAmount && <IconSymbol name="checkmark.circle" size={20} color={colors.success} />}
           </View>
           <Text style={[styles.minDepositInfo, { color: colors.textSecondary }]}>
-            Minimum requis: {new Intl.NumberFormat("fr-FR").format(selectedType?.minDeposit || 0)} GNF
+            Minimum requis: {new Intl.NumberFormat("fr-FR").format(selectedType?.minDeposit || 0)} {formData.currency}
           </Text>
 
-          {/* Suggested amounts */}
           <View style={styles.suggestedAmounts}>
             <Text style={[styles.suggestedLabel, { color: colors.textSecondary }]}>Montants suggérés</Text>
             <View style={styles.suggestedGrid}>
@@ -488,9 +520,13 @@ export default function NewAccountScreen() {
             <Text style={[styles.summaryValue, { color: colors.text }]}>{selectedType?.name}</Text>
           </View>
           <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Devise</Text>
+            <Text style={[styles.summaryValue, { color: colors.text }]}>{formData.currency}</Text>
+          </View>
+          <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Dépôt initial</Text>
             <Text style={[styles.summaryValue, { color: colors.text }]}>
-              {formatAmount(formData.initialDeposit)} GNF
+              {formatAmount(formData.initialDeposit)} {formData.currency}
             </Text>
           </View>
           <View style={styles.summaryRow}>
@@ -523,9 +559,19 @@ export default function NewAccountScreen() {
     )
   }
 
+  if (authLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement...</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
@@ -534,7 +580,6 @@ export default function NewAccountScreen() {
         <View style={styles.placeholder} />
       </Animated.View>
 
-      {/* Progress Bar */}
       <Animated.View style={[styles.progressContainer, { opacity: fadeAnim }]}>
         <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
           <Animated.View
@@ -560,7 +605,6 @@ export default function NewAccountScreen() {
         {currentStep === 4 && renderStep4()}
       </ScrollView>
 
-      {/* Footer */}
       <Animated.View
         style={[
           styles.footer,
@@ -879,5 +923,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: 0.3,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  currencyGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 8,
+  },
+  currencyButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    gap: 4,
+  },
+  currencySymbol: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  currencyCode: {
+    fontSize: 12,
+    fontWeight: "600",
   },
 })
