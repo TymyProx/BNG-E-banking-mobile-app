@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
-  TextInput,
   ActivityIndicator,
   Animated,
   Dimensions,
@@ -30,14 +29,12 @@ interface AccountType {
   name: string
   description: string
   icon: string
-  minDeposit: number
   features: string[]
   color: string
 }
 
 interface FormData {
   accountType: string
-  initialDeposit: string
   currency: string
   purpose: string
   agreeToTerms: boolean
@@ -52,7 +49,6 @@ export default function NewAccountScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     accountType: "",
-    initialDeposit: "",
     currency: "GNF",
     purpose: "",
     agreeToTerms: false,
@@ -65,16 +61,12 @@ export default function NewAccountScreen() {
   const shakeAnim = useRef(new Animated.Value(0)).current
   const buttonScaleAnim = useRef(new Animated.Value(1)).current
 
-  // Input ref
-  const depositRef = useRef<TextInput>(null)
-
   const accountTypes: AccountType[] = [
     {
       id: "savings",
       name: "Compte Épargne",
       description: "Idéal pour économiser avec des intérêts attractifs",
       icon: "banknote",
-      minDeposit: 100000,
       features: ["Taux d'intérêt: 3.5%", "Pas de frais de tenue", "Retraits illimités"],
       color: colors.success,
     },
@@ -83,7 +75,6 @@ export default function NewAccountScreen() {
       name: "Compte Courant",
       description: "Pour vos transactions quotidiennes",
       icon: "creditcard",
-      minDeposit: 50000,
       features: ["Carte bancaire gratuite", "Virements illimités", "Découvert autorisé"],
       color: colors.primary,
     },
@@ -92,7 +83,6 @@ export default function NewAccountScreen() {
       name: "Compte Professionnel",
       description: "Conçu pour les entreprises et professionnels",
       icon: "briefcase",
-      minDeposit: 500000,
       features: ["Gestion multi-utilisateurs", "Outils comptables", "Support dédié"],
       color: colors.accent,
     },
@@ -101,7 +91,6 @@ export default function NewAccountScreen() {
       name: "Compte Jeune",
       description: "Pour les moins de 25 ans",
       icon: "graduationcap",
-      minDeposit: 25000,
       features: ["Frais réduits", "Carte gratuite", "Application mobile"],
       color: colors.secondary,
     },
@@ -123,8 +112,6 @@ export default function NewAccountScreen() {
   ]
 
   useEffect(() => {
-    console.log("[v0] Auth state - user:", user?.id, "tenantId:", tenantId, "authLoading:", authLoading)
-
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -139,7 +126,7 @@ export default function NewAccountScreen() {
     ]).start()
 
     Animated.timing(progressAnim, {
-      toValue: currentStep / 4,
+      toValue: currentStep / 3,
       duration: 300,
       useNativeDriver: false,
     }).start()
@@ -162,18 +149,8 @@ export default function NewAccountScreen() {
     ]).start()
   }
 
-  const formatAmount = (amount: string) => {
-    const num = Number.parseInt(amount.replace(/\D/g, ""))
-    return isNaN(num) ? "" : new Intl.NumberFormat("fr-FR").format(num)
-  }
-
   const handleAccountTypeSelect = (typeId: string) => {
     setFormData({ ...formData, accountType: typeId })
-  }
-
-  const handleDepositChange = (value: string) => {
-    const numericValue = value.replace(/\D/g, "")
-    setFormData({ ...formData, initialDeposit: numericValue })
   }
 
   const handleNext = () => {
@@ -182,26 +159,12 @@ export default function NewAccountScreen() {
       Alert.alert("Erreur", "Veuillez sélectionner un type de compte")
       return
     }
-    if (currentStep === 2) {
-      const selectedType = accountTypes.find((type) => type.id === formData.accountType)
-      const deposit = Number.parseInt(formData.initialDeposit)
-      if (!formData.initialDeposit || deposit < (selectedType?.minDeposit || 0)) {
-        shakeAnimation()
-        Alert.alert(
-          "Erreur",
-          `Le dépôt minimum pour ce type de compte est de ${new Intl.NumberFormat("fr-FR").format(
-            selectedType?.minDeposit || 0,
-          )} ${formData.currency}`,
-        )
-        return
-      }
-    }
-    if (currentStep === 3 && !formData.purpose) {
+    if (currentStep === 2 && !formData.purpose) {
       shakeAnimation()
       Alert.alert("Erreur", "Veuillez sélectionner l'objectif du compte")
       return
     }
-    if (currentStep === 4 && !formData.agreeToTerms) {
+    if (currentStep === 3 && !formData.agreeToTerms) {
       shakeAnimation()
       Alert.alert("Erreur", "Veuillez accepter les conditions générales")
       return
@@ -209,7 +172,7 @@ export default function NewAccountScreen() {
 
     buttonPressAnimation()
 
-    if (currentStep < 4) {
+    if (currentStep < 3) {
       setCurrentStep(currentStep + 1)
     } else {
       handleSubmit()
@@ -231,13 +194,11 @@ export default function NewAccountScreen() {
     }
 
     if (!user) {
-      console.log("[v0] Submit failed - no user")
       Alert.alert("Erreur", "Vous devez être connecté pour créer un compte")
       return
     }
 
     if (!tenantId) {
-      console.log("[v0] Submit failed - no tenantId")
       Alert.alert("Erreur", "Impossible de récupérer les informations du tenant. Veuillez vous reconnecter.")
       return
     }
@@ -252,7 +213,6 @@ export default function NewAccountScreen() {
       }
 
       const selectedType = accountTypes.find((type) => type.id === formData.accountType)
-      const accountNumber = `BNG${Date.now().toString().slice(-10)}`
       const accountId = `ACC${Date.now()}`
 
       const typeMapping: { [key: string]: string } = {
@@ -266,19 +226,13 @@ export default function NewAccountScreen() {
         data: {
           accountId: accountId,
           customerId: user.id,
-          accountNumber: accountNumber,
           accountName: selectedType?.name || "",
           currency: formData.currency,
-          bookBalance: formData.initialDeposit,
-          availableBalance: formData.initialDeposit,
           status: "EN ATTENTE",
           type: typeMapping[formData.accountType] || formData.accountType,
           agency: "Agence Principale",
         },
       }
-
-      console.log("[v0] Creating account with data:", requestBody)
-      console.log("[v0] Using tenantId:", tenantId)
 
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.CREATE(tenantId)}`, {
         method: "POST",
@@ -289,22 +243,16 @@ export default function NewAccountScreen() {
         body: JSON.stringify(requestBody),
       })
 
-      console.log("[v0] API Response status:", response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => null)
-        console.log("[v0] API Error:", errorData)
         throw new Error(errorData?.message || "Erreur lors de la création du compte")
       }
 
       const result = await response.json()
-      console.log("[v0] Account created successfully:", result)
 
       Alert.alert(
         "Demande envoyée avec succès !",
-        `Votre demande d'ouverture de ${selectedType?.name} a été soumise.\n\nNuméro de compte: ${accountNumber}\nDépôt initial: ${formatAmount(
-          formData.initialDeposit,
-        )} ${formData.currency}\n\nVotre demande est en attente d'approbation. Vous recevrez une notification une fois le compte activé.`,
+        `Votre demande d'ouverture de ${selectedType?.name} a été soumise.\n\nVotre demande est en attente d'approbation par le back-office. Vous recevrez une notification une fois le compte validé et le numéro de compte attribué.`,
         [
           {
             text: "Continuer",
@@ -361,9 +309,6 @@ export default function NewAccountScreen() {
               )}
             </View>
             <View style={styles.accountTypeFeatures}>
-              <Text style={[styles.minDepositText, { color: colors.textSecondary }]}>
-                Dépôt minimum: {new Intl.NumberFormat("fr-FR").format(type.minDeposit)} GNF
-              </Text>
               {type.features.map((feature, index) => (
                 <View key={index} style={styles.featureItem}>
                   <IconSymbol name="checkmark" size={14} color={type.color} />
@@ -379,14 +324,12 @@ export default function NewAccountScreen() {
 
   const renderStep2 = () => {
     const selectedType = accountTypes.find((type) => type.id === formData.accountType)
-    const isValidAmount =
-      formData.initialDeposit && Number.parseInt(formData.initialDeposit) >= (selectedType?.minDeposit || 0)
 
     return (
       <Animated.View style={[styles.stepContent, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <Text style={[styles.stepTitle, { color: colors.text }]}>Dépôt initial</Text>
+        <Text style={[styles.stepTitle, { color: colors.text }]}>Devise et objectif</Text>
         <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
-          Montant que vous souhaitez déposer à l'ouverture
+          Choisissez la devise et précisez l'usage du compte
         </Text>
 
         <View style={[styles.selectedTypeCard, { backgroundColor: colors.cardBackground, shadowColor: colors.shadow }]}>
@@ -396,7 +339,7 @@ export default function NewAccountScreen() {
           <Text style={[styles.selectedTypeName, { color: colors.text }]}>{selectedType?.name}</Text>
         </View>
 
-        <View style={styles.depositSection}>
+        <View style={styles.formSection}>
           <Text style={[styles.inputLabel, { color: colors.text }]}>Devise *</Text>
           <View style={styles.currencyGrid}>
             {currencies.map((curr) => (
@@ -422,99 +365,36 @@ export default function NewAccountScreen() {
             ))}
           </View>
 
-          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 24 }]}>Montant du dépôt *</Text>
-          <View
-            style={[
-              styles.inputContainer,
-              {
-                backgroundColor: colors.inputBackground,
-                borderColor: isValidAmount ? colors.success : formData.initialDeposit ? colors.error : colors.border,
-                borderWidth: formData.initialDeposit ? 2 : 1,
-              },
-            ]}
-          >
-            <TextInput
-              ref={depositRef}
-              style={[styles.amountInput, { color: colors.text }]}
-              value={formatAmount(formData.initialDeposit)}
-              onChangeText={handleDepositChange}
-              placeholder="0"
-              placeholderTextColor={colors.icon}
-              keyboardType="numeric"
-              returnKeyType="done"
-              selectTextOnFocus
-            />
-            <Text style={[styles.currencyText, { color: colors.textSecondary }]}>{formData.currency}</Text>
-            {isValidAmount && <IconSymbol name="checkmark.circle" size={20} color={colors.success} />}
-          </View>
-          <Text style={[styles.minDepositInfo, { color: colors.textSecondary }]}>
-            Minimum requis: {new Intl.NumberFormat("fr-FR").format(selectedType?.minDeposit || 0)} {formData.currency}
-          </Text>
-
-          <View style={styles.suggestedAmounts}>
-            <Text style={[styles.suggestedLabel, { color: colors.textSecondary }]}>Montants suggérés</Text>
-            <View style={styles.suggestedGrid}>
-              {[
-                selectedType?.minDeposit,
-                selectedType?.minDeposit! * 2,
-                selectedType?.minDeposit! * 5,
-                selectedType?.minDeposit! * 10,
-              ].map((amount, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.suggestedButton,
-                    { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                  ]}
-                  onPress={() => setFormData({ ...formData, initialDeposit: amount!.toString() })}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.suggestedText, { color: colors.text }]}>
-                    {new Intl.NumberFormat("fr-FR").format(amount!)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 32 }]}>Objectif du compte *</Text>
+          <View style={styles.purposesList}>
+            {purposes.map((purpose, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.purposeItem,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: formData.purpose === purpose ? colors.primary : colors.border,
+                    borderWidth: formData.purpose === purpose ? 2 : 1,
+                    shadowColor: colors.shadow,
+                  },
+                ]}
+                onPress={() => setFormData({ ...formData, purpose })}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.purposeText, { color: colors.text }]}>{purpose}</Text>
+                {formData.purpose === purpose && (
+                  <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </Animated.View>
     )
   }
 
-  const renderStep3 = () => (
-    <Animated.View style={[styles.stepContent, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <Text style={[styles.stepTitle, { color: colors.text }]}>Objectif du compte</Text>
-      <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
-        Aidez-nous à mieux vous servir en précisant l'usage principal
-      </Text>
-
-      <View style={styles.purposesList}>
-        {purposes.map((purpose, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.purposeItem,
-              {
-                backgroundColor: colors.cardBackground,
-                borderColor: formData.purpose === purpose ? colors.primary : colors.border,
-                borderWidth: formData.purpose === purpose ? 2 : 1,
-                shadowColor: colors.shadow,
-              },
-            ]}
-            onPress={() => setFormData({ ...formData, purpose })}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.purposeText, { color: colors.text }]}>{purpose}</Text>
-            {formData.purpose === purpose && (
-              <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-    </Animated.View>
-  )
-
-  const renderStep4 = () => {
+  const renderStep3 = () => {
     const selectedType = accountTypes.find((type) => type.id === formData.accountType)
     return (
       <Animated.View style={[styles.stepContent, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -533,15 +413,21 @@ export default function NewAccountScreen() {
             <Text style={[styles.summaryValue, { color: colors.text }]}>{formData.currency}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Dépôt initial</Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              {formatAmount(formData.initialDeposit)} {formData.currency}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Objectif</Text>
             <Text style={[styles.summaryValue, { color: colors.text }]}>{formData.purpose}</Text>
           </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Statut</Text>
+            <Text style={[styles.summaryValue, { color: colors.warning }]}>En attente d'approbation</Text>
+          </View>
+        </View>
+
+        <View style={[styles.infoBox, { backgroundColor: `${colors.primary}15`, borderColor: colors.primary }]}>
+          <IconSymbol name="info.circle" size={20} color={colors.primary} />
+          <Text style={[styles.infoText, { color: colors.text }]}>
+            Le numéro de compte et les soldes seront attribués par le back-office lors de la validation de votre
+            demande.
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -604,14 +490,13 @@ export default function NewAccountScreen() {
             ]}
           />
         </View>
-        <Text style={[styles.progressText, { color: colors.textSecondary }]}>Étape {currentStep} sur 4</Text>
+        <Text style={[styles.progressText, { color: colors.textSecondary }]}>Étape {currentStep} sur 3</Text>
       </Animated.View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {currentStep === 1 && renderStep1()}
         {currentStep === 2 && renderStep2()}
         {currentStep === 3 && renderStep3()}
-        {currentStep === 4 && renderStep4()}
       </ScrollView>
 
       <Animated.View
@@ -641,7 +526,7 @@ export default function NewAccountScreen() {
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <>
-                <Text style={styles.nextButtonText}>{currentStep === 4 ? "Créer le compte" : "Continuer"}</Text>
+                <Text style={styles.nextButtonText}>{currentStep === 3 ? "Soumettre la demande" : "Continuer"}</Text>
                 <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
               </>
             )}
@@ -754,11 +639,6 @@ const styles = StyleSheet.create({
   accountTypeFeatures: {
     gap: 8,
   },
-  minDepositText: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -791,7 +671,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: -0.2,
   },
-  depositSection: {
+  formSection: {
     gap: 16,
   },
   inputLabel: {
@@ -799,53 +679,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: -0.2,
   },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 24,
-    fontWeight: "700",
-    letterSpacing: -0.5,
-  },
-  currencyText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 12,
-  },
-  minDepositInfo: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  suggestedAmounts: {
-    marginTop: 16,
-  },
-  suggestedLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 12,
-  },
-  suggestedGrid: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  suggestedButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  suggestedText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
   purposesList: {
-    gap: 16,
+    gap: 12,
+    marginTop: 12,
   },
   purposeItem: {
     flexDirection: "row",
@@ -867,7 +703,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     padding: 24,
     borderRadius: 20,
-    marginBottom: 32,
+    marginBottom: 24,
     gap: 20,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -887,6 +723,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: -0.2,
+  },
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 24,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "500",
   },
   termsContainer: {
     flexDirection: "row",
@@ -946,7 +797,7 @@ const styles = StyleSheet.create({
   currencyGrid: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 8,
+    marginTop: 12,
   },
   currencyButton: {
     flex: 1,
