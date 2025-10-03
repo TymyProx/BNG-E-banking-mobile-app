@@ -184,6 +184,73 @@ export default function BeneficiaryDetails() {
     ])
   }
 
+  const handleReactivate = async () => {
+    if (!beneficiary) return
+
+    Alert.alert("Réactiver le bénéficiaire", `Êtes-vous sûr de vouloir réactiver ${beneficiary.name} ?`, [
+      {
+        text: "Annuler",
+        style: "cancel",
+      },
+      {
+        text: "Réactiver",
+        onPress: async () => {
+          try {
+            setUpdating(true)
+
+            const token = await SecureStore.getItemAsync("token")
+            if (!token) {
+              throw new Error("Token d'authentification non trouvé")
+            }
+
+            const response = await fetch(
+              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiary.id)}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  data: {
+                    beneficiaryId: beneficiary.beneficiaryId,
+                    customerId: beneficiary.customerId,
+                    name: beneficiary.name,
+                    accountNumber: beneficiary.accountNumber,
+                    bankCode: beneficiary.bankCode,
+                    bankName: beneficiary.bankName,
+                    status: 0, // Set status to 0 for active
+                    typeBeneficiary: beneficiary.typeBeneficiary,
+                    favoris: beneficiary.favoris,
+                  },
+                }),
+              },
+            )
+
+            if (!response.ok) {
+              throw new Error("Erreur lors de la réactivation")
+            }
+
+            Alert.alert("Succès", "Le bénéficiaire a été réactivé avec succès", [
+              {
+                text: "OK",
+                onPress: () => {
+                  // Refresh the beneficiary details
+                  fetchBeneficiaryDetails()
+                },
+              },
+            ])
+          } catch (err) {
+            console.error("Error reactivating beneficiary:", err)
+            Alert.alert("Erreur", "Impossible de réactiver le bénéficiaire")
+          } finally {
+            setUpdating(false)
+          }
+        },
+      },
+    ])
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -345,7 +412,7 @@ export default function BeneficiaryDetails() {
             <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Modifier</Text>
           </TouchableOpacity>
 
-          {beneficiary.status === 0 && (
+          {beneficiary.status === 0 ? (
             <TouchableOpacity
               style={[
                 styles.actionButton,
@@ -362,6 +429,26 @@ export default function BeneficiaryDetails() {
                 <>
                   <IconSymbol name="xmark.circle" size={20} color="#ef4444" />
                   <Text style={[styles.dangerButtonText, { color: "#ef4444" }]}>Désactiver</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.successButton,
+                { borderColor: "#22c55e" },
+                updating && styles.disabledButton,
+              ]}
+              onPress={handleReactivate}
+              disabled={updating}
+            >
+              {updating ? (
+                <ActivityIndicator size="small" color="#22c55e" />
+              ) : (
+                <>
+                  <IconSymbol name="checkmark.circle" size={20} color="#22c55e" />
+                  <Text style={[styles.successButtonText, { color: "#22c55e" }]}>Réactiver</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -558,6 +645,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   dangerButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  successButton: {
+    borderWidth: 2,
+  },
+  successButtonText: {
     fontSize: 16,
     fontWeight: "600",
   },
