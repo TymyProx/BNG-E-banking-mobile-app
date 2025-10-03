@@ -11,12 +11,14 @@ import {
   TextInput,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter } from "expo-router"
-import React from "react"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import * as SecureStore from "expo-secure-store"
 
 interface Beneficiary {
   id: string
@@ -28,75 +30,80 @@ interface Beneficiary {
   fullName: string
   phoneNumber: string
   email?: string
+  accountNumber: string
+  bankCode: string
+  bankName: string
+  favoris?: boolean
 }
 
 export default function Beneficiaries() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | null>(null)
   const [showActionModal, setShowActionModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
 
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
+
+  const fetchBeneficiaries = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Get authentication token
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        throw new Error("Token d'authentification non trouvé")
+      }
+
+      // Make API request
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.LIST(API_CONFIG.TENANT_ID)}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des bénéficiaires")
+      }
+
+      const data = await response.json()
+
+      // Map API response to UI format
+      const mappedBeneficiaries: Beneficiary[] = data.rows.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        fullName: item.name,
+        number: `•••• ${item.accountNumber.slice(-4)}`, // Mask account number
+        accountNumber: item.accountNumber,
+        bank: item.bankName,
+        bankCode: item.bankCode,
+        bankName: item.bankName,
+        lastTransfer: "Récent", // API doesn't provide this, using default
+        avatar: item.name.charAt(0).toUpperCase(),
+        phoneNumber: item.customerId || "N/A", // Using customerId as placeholder
+        favoris: item.favoris,
+      }))
+
+      setBeneficiaries(mappedBeneficiaries)
+    } catch (err) {
+      console.error("Error fetching beneficiaries:", err)
+      setError(err instanceof Error ? err.message : "Une erreur est survenue")
+      Alert.alert("Erreur", "Impossible de charger les bénéficiaires")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     console.log("Beneficiaries page mounted")
+    fetchBeneficiaries()
   }, [])
-
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
-    {
-      id: "1",
-      name: "Marie Diallo",
-      fullName: "Marie Diallo",
-      number: "•••• 1234",
-      bank: "BNG",
-      lastTransfer: "Il y a 2 jours",
-      avatar: "M",
-      phoneNumber: "+224 123 456 789",
-      email: "marie.diallo@email.com",
-    },
-    {
-      id: "2",
-      name: "Ibrahima Sy",
-      fullName: "Ibrahima Sy",
-      number: "•••• 5678",
-      bank: "SGBG",
-      lastTransfer: "Il y a 1 semaine",
-      avatar: "I",
-      phoneNumber: "+224 987 654 321",
-    },
-    {
-      id: "3",
-      name: "Fatou Camara",
-      fullName: "Fatou Camara",
-      number: "•••• 9012",
-      bank: "BNG",
-      lastTransfer: "Il y a 3 jours",
-      avatar: "F",
-      phoneNumber: "+224 555 123 456",
-      email: "fatou.camara@email.com",
-    },
-    {
-      id: "4",
-      name: "Amadou Barry",
-      fullName: "Amadou Barry",
-      number: "•••• 3456",
-      bank: "UBA",
-      lastTransfer: "Il y a 1 mois",
-      avatar: "A",
-      phoneNumber: "+224 777 888 999",
-    },
-    {
-      id: "5",
-      name: "Aissatou Bah",
-      fullName: "Aissatou Bah",
-      number: "•••• 7890",
-      bank: "BNG",
-      lastTransfer: "Il y a 5 jours",
-      avatar: "A",
-      phoneNumber: "+224 666 777 888",
-      email: "aissatou.bah@email.com",
-    },
-  ])
 
   const filteredBeneficiaries = beneficiaries.filter(
     (ben) =>
@@ -208,65 +215,72 @@ export default function Beneficiaries() {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Beneficiaries List */}
-        <View style={styles.beneficiariesContainer}>
-          {filteredBeneficiaries.map((beneficiary) => (
-            <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
-              <View style={styles.beneficiaryContent}>
-                <View style={styles.beneficiaryLeft}>
-                  <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-                    <Text style={[styles.avatarText, { color: colors.primary }]}>{beneficiary.avatar}</Text>
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement des bénéficiaires...</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Beneficiaries List */}
+          <View style={styles.beneficiariesContainer}>
+            {filteredBeneficiaries.map((beneficiary) => (
+              <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
+                <View style={styles.beneficiaryContent}>
+                  <View style={styles.beneficiaryLeft}>
+                    <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
+                      <Text style={[styles.avatarText, { color: colors.primary }]}>{beneficiary.avatar}</Text>
+                    </View>
+                    <View style={styles.beneficiaryInfo}>
+                      <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
+                      <Text style={[styles.beneficiaryDetails, { color: colors.textSecondary }]}>
+                        {beneficiary.number} • {beneficiary.bank}
+                      </Text>
+                      <Text style={[styles.lastTransfer, { color: colors.textSecondary }]}>
+                        Dernier virement: {beneficiary.lastTransfer}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.beneficiaryInfo}>
-                    <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
-                    <Text style={[styles.beneficiaryDetails, { color: colors.textSecondary }]}>
-                      {beneficiary.number} • {beneficiary.bank}
-                    </Text>
-                    <Text style={[styles.lastTransfer, { color: colors.textSecondary }]}>
-                      Dernier virement: {beneficiary.lastTransfer}
-                    </Text>
+                  <View style={styles.beneficiaryActions}>
+                    <TouchableOpacity
+                      style={[styles.transferButton, { backgroundColor: colors.primary }]}
+                      onPress={() => handleTransferTo(beneficiary.id)}
+                    >
+                      <Text style={styles.transferButtonText}>Virer</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.moreButton, { backgroundColor: colors.textSecondary + "20" }]}
+                      onPress={() => handleBeneficiaryActions(beneficiary)}
+                    >
+                      <IconSymbol name="ellipsis" size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
-                </View>
-                <View style={styles.beneficiaryActions}>
-                  <TouchableOpacity
-                    style={[styles.transferButton, { backgroundColor: colors.primary }]}
-                    onPress={() => handleTransferTo(beneficiary.id)}
-                  >
-                    <Text style={styles.transferButtonText}>Virer</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.moreButton, { backgroundColor: colors.textSecondary + "20" }]}
-                    onPress={() => handleBeneficiaryActions(beneficiary)}
-                  >
-                    <IconSymbol name="ellipsis" size={16} color={colors.textSecondary} />
-                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
-          ))}
-        </View>
-
-        {/* Empty State */}
-        {filteredBeneficiaries.length === 0 && (
-          <View style={styles.emptyState}>
-            <View style={[styles.emptyIcon, { backgroundColor: colors.textSecondary + "20" }]}>
-              <IconSymbol name="person.2" size={48} color={colors.textSecondary} />
-            </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun bénéficiaire trouvé</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              {searchTerm ? "Aucun résultat pour votre recherche" : "Vous n'avez pas encore ajouté de bénéficiaires"}
-            </Text>
-            <TouchableOpacity
-              style={[styles.addBeneficiaryButton, { backgroundColor: colors.primary }]}
-              onPress={handleAddBeneficiary}
-            >
-              <IconSymbol name="plus" size={16} color="white" />
-              <Text style={styles.addBeneficiaryText}>Ajouter un bénéficiaire</Text>
-            </TouchableOpacity>
+            ))}
           </View>
-        )}
-      </ScrollView>
+
+          {/* Empty State */}
+          {filteredBeneficiaries.length === 0 && !loading && (
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIcon, { backgroundColor: colors.textSecondary + "20" }]}>
+                <IconSymbol name="person.2" size={48} color={colors.textSecondary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun bénéficiaire trouvé</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                {searchTerm ? "Aucun résultat pour votre recherche" : "Vous n'avez pas encore ajouté de bénéficiaires"}
+              </Text>
+              <TouchableOpacity
+                style={[styles.addBeneficiaryButton, { backgroundColor: colors.primary }]}
+                onPress={handleAddBeneficiary}
+              >
+                <IconSymbol name="plus" size={16} color="white" />
+                <Text style={styles.addBeneficiaryText}>Ajouter un bénéficiaire</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      )}
 
       {/* Action Modal */}
       <Modal
@@ -326,6 +340,15 @@ export default function Beneficiaries() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
   },
   header: {
     flexDirection: "row",
