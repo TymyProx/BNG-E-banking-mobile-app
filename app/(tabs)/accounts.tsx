@@ -242,7 +242,7 @@ export default function AccountsScreen() {
                   <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: colors.successBackground }]}>
                     <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
-                    <Text style={[styles.statusText, { color: colors.success }]}>Actif</Text>
+                    <Text style={[styles.statusText, { color: colors.success }]}>{account.status}</Text>
                   </View>
                 </View>
                 <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
