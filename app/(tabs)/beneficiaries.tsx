@@ -34,7 +34,10 @@ interface Beneficiary {
   bankCode: string
   bankName: string
   favoris?: boolean
+  status: number // 0 = Actif, 1 = Désactivé
 }
+
+type FilterType = "tous" | "actif" | "desactive"
 
 export default function Beneficiaries() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -42,6 +45,7 @@ export default function Beneficiaries() {
   const [showActionModal, setShowActionModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<FilterType>("actif")
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
@@ -53,13 +57,11 @@ export default function Beneficiaries() {
       setLoading(true)
       setError(null)
 
-      // Get authentication token
       const token = await SecureStore.getItemAsync("token")
       if (!token) {
         throw new Error("Token d'authentification non trouvé")
       }
 
-      // Make API request
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.LIST(API_CONFIG.TENANT_ID)}`, {
         method: "GET",
         headers: {
@@ -74,20 +76,20 @@ export default function Beneficiaries() {
 
       const data = await response.json()
 
-      // Map API response to UI format
       const mappedBeneficiaries: Beneficiary[] = data.rows.map((item: any) => ({
         id: item.id,
         name: item.name,
         fullName: item.name,
-        number: `•••• ${item.accountNumber.slice(-4)}`, // Mask account number
+        number: `•••• ${item.accountNumber.slice(-4)}`,
         accountNumber: item.accountNumber,
         bank: item.bankName,
         bankCode: item.bankCode,
         bankName: item.bankName,
-        lastTransfer: "Récent", // API doesn't provide this, using default
+        lastTransfer: "Récent",
         avatar: item.name.charAt(0).toUpperCase(),
-        phoneNumber: item.customerId || "N/A", // Using customerId as placeholder
+        phoneNumber: item.customerId || "N/A",
         favoris: item.favoris,
+        status: item.status,
       }))
 
       setBeneficiaries(mappedBeneficiaries)
@@ -105,11 +107,20 @@ export default function Beneficiaries() {
     fetchBeneficiaries()
   }, [])
 
-  const filteredBeneficiaries = beneficiaries.filter(
-    (ben) =>
+  const filteredBeneficiaries = beneficiaries.filter((ben) => {
+    const matchesSearch =
       ben.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ben.bank.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      ben.bank.toLowerCase().includes(searchTerm.toLowerCase())
+
+    let matchesStatus = true
+    if (filter === "actif") {
+      matchesStatus = ben.status === 0
+    } else if (filter === "desactive") {
+      matchesStatus = ben.status === 1
+    }
+
+    return matchesSearch && matchesStatus
+  })
 
   const handleTransferTo = (beneficiaryId: string) => {
     console.log(`Initiating transfer to beneficiary: ${beneficiaryId}`)
@@ -175,7 +186,6 @@ export default function Beneficiaries() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity
           onPress={() => {
@@ -198,7 +208,6 @@ export default function Beneficiaries() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={[styles.searchBar, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
           <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} />
@@ -215,6 +224,65 @@ export default function Beneficiaries() {
         </View>
       </View>
 
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            filter === "tous" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
+            { borderColor: colors.border },
+          ]}
+          onPress={() => setFilter("tous")}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              { color: filter === "tous" ? "white" : colors.textSecondary },
+              filter === "tous" && styles.filterButtonTextActive,
+            ]}
+          >
+            Tous
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            filter === "actif" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
+            { borderColor: colors.border },
+          ]}
+          onPress={() => setFilter("actif")}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              { color: filter === "actif" ? "white" : colors.textSecondary },
+              filter === "actif" && styles.filterButtonTextActive,
+            ]}
+          >
+            Actifs
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            filter === "desactive" && [styles.filterButtonActive, { backgroundColor: colors.primary }],
+            { borderColor: colors.border },
+          ]}
+          onPress={() => setFilter("desactive")}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              { color: filter === "desactive" ? "white" : colors.textSecondary },
+              filter === "desactive" && styles.filterButtonTextActive,
+            ]}
+          >
+            Désactivés
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {loading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -222,7 +290,6 @@ export default function Beneficiaries() {
         </View>
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Beneficiaries List */}
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
@@ -260,7 +327,6 @@ export default function Beneficiaries() {
             ))}
           </View>
 
-          {/* Empty State */}
           {filteredBeneficiaries.length === 0 && !loading && (
             <View style={styles.emptyState}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.textSecondary + "20" }]}>
@@ -282,7 +348,6 @@ export default function Beneficiaries() {
         </ScrollView>
       )}
 
-      {/* Action Modal */}
       <Modal
         visible={showActionModal}
         transparent={true}
@@ -397,6 +462,31 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterButtonActive: {
+    borderWidth: 0,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  filterButtonTextActive: {
+    fontWeight: "600",
   },
   content: {
     flex: 1,
