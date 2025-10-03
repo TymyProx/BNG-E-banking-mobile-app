@@ -335,15 +335,15 @@ export default function AccountsScreen() {
     const getGradientColors = (type: string) => {
       switch (type) {
         case "primary":
-          return colors.gradient.primary
+          return ["rgba(16, 185, 129, 0.6)", "rgba(16, 185, 129, 0.4)"] // Soft green
         case "savings":
-          return [colors.success, colors.successDark]
+          return ["rgba(16, 185, 129, 0.5)", "rgba(5, 150, 105, 0.4)"] // Soft green to darker green
         case "checking":
-          return colors.gradient.secondary
+          return ["rgba(148, 163, 184, 0.5)", "rgba(100, 116, 139, 0.4)"] // Soft gray
         case "credit":
-          return [colors.error, colors.errorDark]
+          return ["rgba(239, 68, 68, 0.5)", "rgba(220, 38, 38, 0.4)"] // Soft red
         default:
-          return colors.gradient.primary
+          return ["rgba(16, 185, 129, 0.6)", "rgba(16, 185, 129, 0.4)"]
       }
     }
 
@@ -382,7 +382,7 @@ export default function AccountsScreen() {
                     <Text style={styles.accountNumber}>•••• {account.number.slice(-4)}</Text>
                   </View>
                 </View>
-                <View style={[styles.statusBadgeGlass, { backgroundColor: "rgba(255,255,255,0.25)" }]}>
+                <View style={[styles.statusBadgeGlass, { backgroundColor: "rgba(255,255,255,0.3)" }]}>
                   <Text style={styles.statusTextGlass}>{account.status}</Text>
                 </View>
               </View>
@@ -425,8 +425,8 @@ export default function AccountsScreen() {
       <ExpoLinearGradient
         colors={
           colorScheme === "dark"
-            ? [colors.background, colors.backgroundSecondary]
-            : [colors.surface, colors.backgroundSecondary]
+            ? ["rgba(15, 23, 42, 0.95)", "rgba(30, 41, 59, 0.9)"] // Softer dark gradients
+            : ["rgba(250, 250, 250, 0.98)", "rgba(241, 245, 249, 0.95)"] // Softer light gradients
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -461,10 +461,10 @@ export default function AccountsScreen() {
           <View style={styles.currencyCardsContainer}>
             {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => {
               const gradients = [
-                colors.gradient.primary,
-                colors.gradient.accent,
-                colors.gradient.secondary,
-                [colors.success, colors.successDark],
+                ["rgba(16, 185, 129, 0.5)", "rgba(5, 150, 105, 0.4)"], // Soft green
+                ["rgba(255, 215, 0, 0.5)", "rgba(234, 179, 8, 0.4)"], // Soft gold
+                ["rgba(148, 163, 184, 0.5)", "rgba(100, 116, 139, 0.4)"], // Soft gray
+                ["rgba(16, 185, 129, 0.4)", "rgba(5, 150, 105, 0.3)"], // Very soft green
               ]
               return (
                 <Animated.View
@@ -552,7 +552,7 @@ export default function AccountsScreen() {
             </Text>
             <TouchableOpacity style={styles.createAccountButtonGlass} onPress={handleNewAccount}>
               <ExpoLinearGradient
-                colors={colors.gradient.primary}
+                colors={["rgba(16, 185, 129, 0.7)", "rgba(5, 150, 105, 0.6)"]} // Softer gradient
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.createAccountGradient}
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
   },
   glassOverlay: {
     flex: 1,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.2)", // Increased from 0.15 to 0.2 for softer look
     padding: 24,
     backdropFilter: "blur(10px)",
   },
@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   skeletonCard: {
-    width: "100",
+    width: "100%",
     height: 240,
     borderRadius: 24,
     overflow: "hidden",
