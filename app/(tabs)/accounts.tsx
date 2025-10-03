@@ -20,7 +20,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient"
 
 interface Account {
   id: string
@@ -332,18 +331,18 @@ export default function AccountsScreen() {
       }).start()
     }
 
-    const getGradientColors = (type: string) => {
+    const getAccountColor = (type: string) => {
       switch (type) {
         case "primary":
-          return ["rgba(52, 211, 153, 0.75)", "rgba(34, 197, 94, 0.7)"] // Soft emerald to green
+          return colors.primary
         case "savings":
-          return ["rgba(251, 191, 36, 0.75)", "rgba(245, 158, 11, 0.7)"] // Soft yellow to amber
+          return colors.success
         case "checking":
-          return ["rgba(134, 239, 172, 0.75)", "rgba(52, 211, 153, 0.7)"] // Light green to emerald
+          return colors.secondary
         case "credit":
-          return ["rgba(253, 224, 71, 0.75)", "rgba(251, 191, 36, 0.7)"] // Bright yellow to amber
+          return colors.error
         default:
-          return ["rgba(52, 211, 153, 0.75)", "rgba(34, 197, 94, 0.7)"]
+          return colors.primary
       }
     }
 
@@ -363,58 +362,76 @@ export default function AccountsScreen() {
           onPressOut={handlePressOut}
           activeOpacity={1}
         >
-          <ExpoLinearGradient
-            colors={getGradientColors(account.type)}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.accountCard}
-          >
-            {/* Glass morphism overlay */}
-            <View style={styles.glassOverlay}>
-              {/* Header */}
-              <View style={styles.cardHeader}>
-                <View style={styles.accountLeft}>
-                  <View style={styles.accountIconGlass}>
-                    <IconSymbol name={getAccountIcon(account.type) as any} size={28} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.accountInfo}>
-                    <Text style={styles.accountName}>{account.name}</Text>
-                    <Text style={styles.accountNumber}>•••• {account.number.slice(-4)}</Text>
-                  </View>
+          <View style={[styles.accountCard, { backgroundColor: colors.cardBackground }]}>
+            {/* Header */}
+            <View style={styles.cardHeader}>
+              <View style={styles.accountLeft}>
+                <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
+                  <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
                 </View>
-                <View style={[styles.statusBadgeGlass, { backgroundColor: "rgba(255,255,255,0.3)" }]}>
-                  <Text style={styles.statusTextGlass}>{account.status}</Text>
+                <View style={styles.accountInfo}>
+                  <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
+                  <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
+                    •••• {account.number.slice(-4)}
+                  </Text>
                 </View>
               </View>
-
-              {/* Balance Section */}
-              <View style={styles.balanceSection}>
-                <Text style={styles.balanceLabel}>Solde disponible</Text>
-                <View style={styles.balanceAmountRow}>
-                  <Text style={styles.accountBalance}>{formatAmount(account.balance)}</Text>
-                  <Text style={styles.currencyGlass}>{account.currency}</Text>
-                </View>
-                {account.change !== 0 && (
-                  <View style={styles.changeContainer}>
-                    <View style={styles.changeBadgeGlass}>
-                      <IconSymbol name={account.change > 0 ? "arrow.up" : "arrow.down"} size={12} color="#FFFFFF" />
-                      <Text style={styles.accountChangeTextGlass}>
-                        {account.change > 0 ? "+" : ""}
-                        {account.change}%
-                      </Text>
-                    </View>
-                    <Text style={styles.changeLabelGlass}>Ce mois</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footerInfo}>
-                <IconSymbol name="clock" size={12} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.lastUpdateTextGlass}>Mis à jour le {account.lastUpdate}</Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {
+                    backgroundColor: getStatusColor(account.status).background,
+                  },
+                ]}
+              >
+                <Text style={[styles.statusText, { color: getStatusColor(account.status).color }]}>
+                  {account.status}
+                </Text>
               </View>
             </View>
-          </ExpoLinearGradient>
+
+            {/* Balance Section */}
+            <View style={styles.balanceSection}>
+              <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
+              <View style={styles.balanceAmountRow}>
+                <Text style={[styles.accountBalance, { color: colors.text }]}>{formatAmount(account.balance)}</Text>
+                <Text style={[styles.currency, { color: colors.textSecondary }]}>{account.currency}</Text>
+              </View>
+              {account.change !== 0 && (
+                <View style={styles.changeContainer}>
+                  <View
+                    style={[
+                      styles.changeBadge,
+                      {
+                        backgroundColor: account.change > 0 ? colors.successBackground : colors.errorBackground,
+                      },
+                    ]}
+                  >
+                    <IconSymbol
+                      name={account.change > 0 ? "arrow.up" : "arrow.down"}
+                      size={10}
+                      color={account.change > 0 ? colors.success : colors.error}
+                    />
+                    <Text
+                      style={[styles.accountChangeText, { color: account.change > 0 ? colors.success : colors.error }]}
+                    >
+                      {account.change > 0 ? "+" : ""}
+                      {account.change}%
+                    </Text>
+                  </View>
+                  <Text style={[styles.changeLabel, { color: colors.textSecondary }]}>Ce mois</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footerInfo}>
+              <IconSymbol name="clock" size={12} color={colors.textSecondary} />
+              <Text style={[styles.lastUpdateText, { color: colors.textSecondary }]}>
+                Mis à jour le {account.lastUpdate}
+              </Text>
+            </View>
+          </View>
         </TouchableOpacity>
       </Animated.View>
     )
@@ -422,16 +439,7 @@ export default function AccountsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ExpoLinearGradient
-        colors={
-          colorScheme === "dark"
-            ? ["rgba(30, 41, 59, 0.98)", "rgba(51, 65, 85, 0.95)"]
-            : ["rgba(248, 250, 252, 0.98)", "rgba(241, 245, 249, 0.95)"]
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.headerGradient}
-      >
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={[styles.backButton, { backgroundColor: colors.primaryBackground }]}
@@ -443,14 +451,11 @@ export default function AccountsScreen() {
             <Text style={[styles.headerTitle, { color: colors.text }]}>Mes Comptes</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos finances</Text>
           </View>
-          <TouchableOpacity
-            style={[styles.addButtonGlass, { backgroundColor: colors.primaryBackground, borderColor: colors.primary }]}
-            onPress={handleNewAccount}
-          >
-            <IconSymbol name="plus" size={22} color={colors.primary} />
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={handleNewAccount}>
+            <IconSymbol name="plus" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      </ExpoLinearGradient>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -459,38 +464,24 @@ export default function AccountsScreen() {
       >
         {!isLoading && accounts.length > 0 && (
           <View style={styles.currencyCardsContainer}>
-            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => {
-              const gradients = [
-                ["rgba(52, 211, 153, 0.8)", "rgba(34, 197, 94, 0.75)"], // Soft emerald to green
-                ["rgba(251, 191, 36, 0.8)", "rgba(245, 158, 11, 0.75)"], // Soft yellow to amber
-                ["rgba(134, 239, 172, 0.8)", "rgba(52, 211, 153, 0.75)"], // Light green to emerald
-                ["rgba(253, 224, 71, 0.8)", "rgba(251, 191, 36, 0.75)"], // Bright yellow to amber
-              ]
-
-              return (
-                <Animated.View
-                  key={currency}
-                  style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-                >
-                  <ExpoLinearGradient
-                    colors={gradients[index % gradients.length]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.currencyCard}
-                  >
-                    <Text style={styles.currencyLabel}>{currency}</Text>
-                    <Text style={styles.currencyAmount}>{formatAmount(total)}</Text>
-                  </ExpoLinearGradient>
-                </Animated.View>
-              )
-            })}
+            {Object.entries(getTotalsByCurrency()).map(([currency, total]) => (
+              <Animated.View
+                key={currency}
+                style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+              >
+                <View style={[styles.currencyCard, { backgroundColor: colors.cardBackground }]}>
+                  <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>{currency}</Text>
+                  <Text style={[styles.currencyAmount, { color: colors.text }]}>{formatAmount(total)}</Text>
+                </View>
+              </Animated.View>
+            ))}
           </View>
         )}
 
         {/* Accounts Carousel */}
         {!isLoading && accounts.length > 0 && (
           <View style={styles.carouselContainer}>
-            <Text style={styles.sectionTitleMain}>Vos Comptes</Text>
+            <Text style={[styles.sectionTitleMain, { color: colors.text }]}>Vos Comptes</Text>
             <ScrollView
               ref={scrollViewRef}
               horizontal
@@ -539,28 +530,19 @@ export default function AccountsScreen() {
         {/* Empty State */}
         {!isLoading && accounts.length === 0 && (
           <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View
-              style={[
-                styles.emptyIconGlass,
-                { backgroundColor: colors.primaryBackground, borderColor: colors.primary },
-              ]}
-            >
+            <View style={[styles.emptyIcon, { backgroundColor: colors.primaryBackground }]}>
               <IconSymbol name="creditcard.fill" size={56} color={colors.primary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun compte trouvé</Text>
             <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
               Ouvrez votre premier compte pour commencer à gérer vos finances
             </Text>
-            <TouchableOpacity style={styles.createAccountButtonGlass} onPress={handleNewAccount}>
-              <ExpoLinearGradient
-                colors={["rgba(52, 211, 153, 0.85)", "rgba(251, 191, 36, 0.8)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.createAccountGradient}
-              >
-                <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
-                <Text style={styles.createAccountText}>Ouvrir un compte</Text>
-              </ExpoLinearGradient>
+            <TouchableOpacity
+              style={[styles.createAccountButton, { backgroundColor: colors.primary }]}
+              onPress={handleNewAccount}
+            >
+              <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
+              <Text style={styles.createAccountText}>Ouvrir un compte</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -589,13 +571,8 @@ export default function AccountsScreen() {
                 {/* Compte Courant */}
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
-                    <View
-                      style={[
-                        styles.accountTypeCardGlass,
-                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                      ]}
-                    >
-                      <View style={[styles.accountTypeIconGlass, { backgroundColor: colors.primaryBackground }]}>
+                    <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
+                      <View style={[styles.accountTypeIcon, { backgroundColor: colors.primaryBackground }]}>
                         <IconSymbol name="creditcard.fill" size={32} color={colors.primary} />
                       </View>
                       <View style={styles.accountTypeContent}>
@@ -624,12 +601,7 @@ export default function AccountsScreen() {
                           </View>
                         </View>
                       </View>
-                      <View
-                        style={[
-                          styles.popularBadge,
-                          { backgroundColor: colors.primaryBackground, borderColor: colors.primary },
-                        ]}
-                      >
+                      <View style={[styles.popularBadge, { backgroundColor: colors.primaryBackground }]}>
                         <Text style={[styles.popularBadgeText, { color: colors.primary }]}>POPULAIRE</Text>
                       </View>
                     </View>
@@ -639,13 +611,8 @@ export default function AccountsScreen() {
                 {/* Compte Épargne */}
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
-                    <View
-                      style={[
-                        styles.accountTypeCardGlass,
-                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                      ]}
-                    >
-                      <View style={[styles.accountTypeIconGlass, { backgroundColor: colors.successBackground }]}>
+                    <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
+                      <View style={[styles.accountTypeIcon, { backgroundColor: colors.successBackground }]}>
                         <IconSymbol name="banknote.fill" size={32} color={colors.success} />
                       </View>
                       <View style={styles.accountTypeContent}>
@@ -681,13 +648,8 @@ export default function AccountsScreen() {
                 {/* Compte Professionnel */}
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
-                    <View
-                      style={[
-                        styles.accountTypeCardGlass,
-                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                      ]}
-                    >
-                      <View style={[styles.accountTypeIconGlass, { backgroundColor: colors.warningBackground }]}>
+                    <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
+                      <View style={[styles.accountTypeIcon, { backgroundColor: colors.warningBackground }]}>
                         <IconSymbol name="briefcase.fill" size={32} color={colors.warning} />
                       </View>
                       <View style={styles.accountTypeContent}>
@@ -721,13 +683,8 @@ export default function AccountsScreen() {
                 {/* Compte Premium */}
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
-                    <View
-                      style={[
-                        styles.accountTypeCardGlass,
-                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                      ]}
-                    >
-                      <View style={[styles.accountTypeIconGlass, { backgroundColor: `${colors.accent}20` }]}>
+                    <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
+                      <View style={[styles.accountTypeIcon, { backgroundColor: `${colors.accent}20` }]}>
                         <IconSymbol name="star.fill" size={32} color={colors.accent} />
                       </View>
                       <View style={styles.accountTypeContent}>
@@ -752,12 +709,7 @@ export default function AccountsScreen() {
                           </View>
                         </View>
                       </View>
-                      <View
-                        style={[
-                          styles.exclusiveBadge,
-                          { backgroundColor: `${colors.accent}30`, borderColor: colors.accent },
-                        ]}
-                      >
+                      <View style={[styles.exclusiveBadge, { backgroundColor: `${colors.accent}30` }]}>
                         <Text style={[styles.exclusiveBadgeText, { color: colors.accent }]}>EXCLUSIF</Text>
                       </View>
                     </View>
@@ -797,7 +749,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  headerGradient: {
+  header: {
     paddingTop: 16,
     paddingBottom: 24,
   },
@@ -813,7 +765,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
   },
   headerTitleContainer: {
     flex: 1,
@@ -823,23 +774,18 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
     letterSpacing: -0.5,
-    color: "#FFFFFF",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
     fontWeight: "500",
-    color: "rgba(255,255,255,0.6)",
   },
-  addButtonGlass: {
+  addButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(102, 126, 234, 0.3)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
   },
   currencyCardsContainer: {
     flexDirection: "row",
@@ -858,11 +804,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     minHeight: 100,
     justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   currencyLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "rgba(255,255,255,0.8)",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 8,
@@ -871,12 +821,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
     letterSpacing: -0.5,
-    color: "#FFFFFF",
   },
   sectionTitleMain: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#FFFFFF",
     marginBottom: 16,
     marginLeft: 24,
   },
@@ -891,61 +839,60 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
   },
   accountCard: {
-    borderRadius: 24,
-    overflow: "hidden",
-    minHeight: 240,
-  },
-  glassOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(255,255,255,0.2)", // Increased from 0.15 to 0.2 for softer look
-    padding: 24,
-    backdropFilter: "blur(10px)",
+    borderRadius: 20,
+    padding: 18,
+    minHeight: 220,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardHeader: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   accountLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
     marginBottom: 12,
   },
-  accountIconGlass: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  accountIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.25)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   accountInfo: {
     flex: 1,
   },
   accountName: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 16,
+    fontWeight: "600",
     marginBottom: 4,
-    color: "#FFFFFF",
   },
   accountNumber: {
-    fontSize: 14,
-    fontWeight: "600",
-    letterSpacing: 2,
-    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    fontWeight: "500",
+    letterSpacing: 1,
   },
-  statusBadgeGlass: {
+  statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     alignSelf: "flex-start",
   },
-  statusTextGlass: {
+  statusText: {
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "#FFFFFF",
   },
   balanceSection: {
     marginBottom: 16,
@@ -956,7 +903,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "rgba(255,255,255,0.7)",
   },
   balanceAmountRow: {
     flexDirection: "row",
@@ -965,49 +911,43 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   accountBalance: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "800",
     letterSpacing: -1,
-    color: "#FFFFFF",
   },
-  currencyGlass: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.9)",
+  currency: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   changeContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  changeBadgeGlass: {
+  changeBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
-    backgroundColor: "rgba(255,255,255,0.2)",
   },
-  accountChangeTextGlass: {
+  accountChangeText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontWeight: "600",
   },
-  changeLabelGlass: {
+  changeLabel: {
     fontSize: 11,
     fontWeight: "500",
-    color: "rgba(255,255,255,0.7)",
   },
   footerInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  lastUpdateTextGlass: {
+  lastUpdateText: {
     fontSize: 11,
     fontWeight: "500",
-    color: "rgba(255,255,255,0.7)",
   },
   paginationContainer: {
     flexDirection: "row",
@@ -1019,6 +959,7 @@ const styles = StyleSheet.create({
   paginationDot: {
     height: 8,
     borderRadius: 4,
+    transition: "all 0.3s ease",
   },
   loadingContainer: {
     paddingHorizontal: 24,
@@ -1026,8 +967,8 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     width: "100%",
-    height: 240,
-    borderRadius: 24,
+    height: 220,
+    borderRadius: 20,
     overflow: "hidden",
   },
   skeletonShimmer: {
@@ -1038,14 +979,13 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
     paddingHorizontal: 40,
   },
-  emptyIconGlass: {
+  emptyIcon: {
     width: 120,
     height: 120,
     borderRadius: 60,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
-    borderWidth: 2,
   },
   emptyTitle: {
     fontSize: 26,
@@ -1061,15 +1001,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 22,
   },
-  createAccountButtonGlass: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  createAccountGradient: {
+  createAccountButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 32,
     paddingVertical: 16,
+    borderRadius: 16,
     gap: 10,
   },
   createAccountText: {
@@ -1090,13 +1027,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: -0.5,
     marginBottom: 8,
-    color: "#FFFFFF",
   },
   sectionSubtitle: {
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,
-    color: "rgba(255,255,255,0.6)",
   },
   typesCarouselContainer: {
     marginBottom: 20,
@@ -1108,14 +1043,18 @@ const styles = StyleSheet.create({
   typeCarouselCard: {
     width: CARD_WIDTH,
   },
-  accountTypeCardGlass: {
+  accountTypeCard: {
     padding: 24,
-    borderRadius: 24,
-    borderWidth: 1,
+    borderRadius: 20,
     minHeight: 280,
     position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  accountTypeIconGlass: {
+  accountTypeIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
@@ -1163,7 +1102,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    borderWidth: 1,
   },
   popularBadgeText: {
     fontSize: 10,
@@ -1178,7 +1116,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    borderWidth: 1,
   },
   exclusiveBadgeText: {
     fontSize: 10,
