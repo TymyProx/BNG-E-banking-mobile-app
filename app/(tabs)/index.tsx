@@ -189,7 +189,7 @@ export default function Dashboard() {
       route: "cards",
     },
     {
-      icon: "line.3.horizontal",
+      icon: "grid-outline",
       label: "Menu",
       route: "menu",
     },
