@@ -203,6 +203,14 @@ export default function AccountDetailsScreen() {
   const handleStatementRequest = () => {
     if (!account) return
 
+    if (!account.accountNumber) {
+      Alert.alert(
+        "Compte en attente",
+        "Le numéro de compte n'est pas encore attribué. Veuillez attendre la validation de votre compte.",
+      )
+      return
+    }
+
     router.push({
       pathname: "/(tabs)/statements",
       params: {
@@ -326,12 +334,29 @@ export default function AccountDetailsScreen() {
             <TouchableOpacity
               style={[
                 styles.actionButton,
-                { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+                {
+                  backgroundColor: account.accountNumber ? colors.background : colors.border,
+                  borderWidth: 1,
+                  borderColor: account.accountNumber ? colors.border : colors.border,
+                  opacity: account.accountNumber ? 1 : 0.5,
+                },
               ]}
               onPress={handleStatementRequest}
+              disabled={!account.accountNumber}
             >
-              <IconSymbol name="doc.text" size={16} color={colors.primary} />
-              <Text style={[styles.actionButtonText, { color: colors.primary }]}>Demander Relevé</Text>
+              <IconSymbol
+                name="doc.text"
+                size={16}
+                color={account.accountNumber ? colors.primary : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  { color: account.accountNumber ? colors.primary : colors.textSecondary },
+                ]}
+              >
+                Demander Relevé
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -358,16 +383,8 @@ export default function AccountDetailsScreen() {
           <Text style={[styles.infoTitle, { color: colors.text }]}>Informations du compte</Text>
           <View style={styles.infoList}>
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>ID Compte</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{account.accountId}</Text>
-            </View>
-            <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
               <Text style={[styles.infoValue, { color: colors.text }]}>{account.accountNumber || "Non attribué"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>ID Client</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{account.customerId}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Agence</Text>
