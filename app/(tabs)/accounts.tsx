@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient"
 
 interface Account {
   id: string
@@ -318,7 +319,7 @@ export default function AccountsScreen() {
 
     const handlePressIn = () => {
       Animated.spring(scaleAnim, {
-        toValue: 0.98,
+        toValue: 0.97,
         useNativeDriver: true,
       }).start()
     }
@@ -326,8 +327,24 @@ export default function AccountsScreen() {
     const handlePressOut = () => {
       Animated.spring(scaleAnim, {
         toValue: 1,
+        friction: 3,
         useNativeDriver: true,
       }).start()
+    }
+
+    const getGradientColors = (type: string) => {
+      switch (type) {
+        case "primary":
+          return ["#667eea", "#764ba2"]
+        case "savings":
+          return ["#11998e", "#38ef7d"]
+        case "checking":
+          return ["#4facfe", "#00f2fe"]
+        case "credit":
+          return ["#fa709a", "#fee140"]
+        default:
+          return ["#667eea", "#764ba2"]
+      }
     }
 
     return (
@@ -341,122 +358,128 @@ export default function AccountsScreen() {
         ]}
       >
         <TouchableOpacity
-          style={[styles.accountCard, { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow }]}
           onPress={() => handleAccountPress(account)}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={1}
         >
-          {/* Header avec icône et badge de statut */}
-          <View style={styles.cardHeader}>
-            <View style={styles.accountLeft}>
-              <View style={[styles.accountIcon, { backgroundColor: getAccountBackground(account.type) }]}>
-                <IconSymbol
-                  name={getAccountIcon(account.type) as any}
-                  size={32}
-                  color={getAccountColor(account.type)}
-                />
-              </View>
-              <View style={styles.accountInfo}>
-                <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
-                <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
-                  •••• •••• •••• {account.number.slice(-4)}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(account.status).background }]}>
-              <View style={[styles.statusDot, { backgroundColor: getStatusColor(account.status).color }]} />
-              <Text style={[styles.statusText, { color: getStatusColor(account.status).color }]}>{account.status}</Text>
-            </View>
-          </View>
-
-          {/* Solde principal - plus grand pour le carousel */}
-          <View style={styles.balanceSection}>
-            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
-            <View style={styles.balanceAmountRow}>
-              <Text style={[styles.accountBalance, { color: account.balance >= 0 ? colors.text : colors.error }]}>
-                {account.balance >= 0 ? "" : "-"}
-                {formatAmount(account.balance)}
-              </Text>
-              <Text style={[styles.currency, { color: colors.textSecondary }]}>{account.currency}</Text>
-            </View>
-            {account.change !== 0 && (
-              <View style={styles.changeContainer}>
-                <View
-                  style={[
-                    styles.changeBadge,
-                    { backgroundColor: account.change > 0 ? colors.successBackground : colors.errorBackground },
-                  ]}
-                >
-                  <IconSymbol
-                    name={account.change > 0 ? "arrow.up" : "arrow.down"}
-                    size={14}
-                    color={account.change > 0 ? colors.success : colors.error}
-                  />
-                  <Text
-                    style={[styles.accountChangeText, { color: account.change > 0 ? colors.success : colors.error }]}
-                  >
-                    {account.change > 0 ? "+" : ""}
-                    {account.change}%
-                  </Text>
+          <ExpoLinearGradient
+            colors={getGradientColors(account.type)}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.accountCard}
+          >
+            {/* Glass morphism overlay */}
+            <View style={styles.glassOverlay}>
+              {/* Header */}
+              <View style={styles.cardHeader}>
+                <View style={styles.accountLeft}>
+                  <View style={styles.accountIconGlass}>
+                    <IconSymbol name={getAccountIcon(account.type) as any} size={28} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.accountInfo}>
+                    <Text style={styles.accountName}>{account.name}</Text>
+                    <Text style={styles.accountNumber}>•••• {account.number.slice(-4)}</Text>
+                  </View>
                 </View>
-                <Text style={[styles.changeLabel, { color: colors.textTertiary }]}>Ce mois</Text>
+                <View style={[styles.statusBadgeGlass, { backgroundColor: "rgba(255,255,255,0.25)" }]}>
+                  <Text style={styles.statusTextGlass}>{account.status}</Text>
+                </View>
               </View>
-            )}
-          </View>
 
-          <View style={styles.footerInfo}>
-            <IconSymbol name="clock" size={14} color={colors.textTertiary} />
-            <Text style={[styles.lastUpdateText, { color: colors.textTertiary }]}>
-              Mis à jour le {account.lastUpdate}
-            </Text>
-          </View>
+              {/* Balance Section */}
+              <View style={styles.balanceSection}>
+                <Text style={styles.balanceLabel}>Solde disponible</Text>
+                <View style={styles.balanceAmountRow}>
+                  <Text style={styles.accountBalance}>{formatAmount(account.balance)}</Text>
+                  <Text style={styles.currencyGlass}>{account.currency}</Text>
+                </View>
+                {account.change !== 0 && (
+                  <View style={styles.changeContainer}>
+                    <View style={styles.changeBadgeGlass}>
+                      <IconSymbol name={account.change > 0 ? "arrow.up" : "arrow.down"} size={12} color="#FFFFFF" />
+                      <Text style={styles.accountChangeTextGlass}>
+                        {account.change > 0 ? "+" : ""}
+                        {account.change}%
+                      </Text>
+                    </View>
+                    <Text style={styles.changeLabelGlass}>Ce mois</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Footer */}
+              <View style={styles.footerInfo}>
+                <IconSymbol name="clock" size={12} color="rgba(255,255,255,0.7)" />
+                <Text style={styles.lastUpdateTextGlass}>Mis à jour le {account.lastUpdate}</Text>
+              </View>
+            </View>
+          </ExpoLinearGradient>
         </TouchableOpacity>
       </Animated.View>
     )
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header avec titre et bouton retour */}
-      <View style={styles.headerContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Mes Comptes</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: "#0A0A0F" }]}>
+      <ExpoLinearGradient
+        colors={["#0A0A0F", "#1A1A2E"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
+            <IconSymbol name="chevron.left" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Mes Comptes</Text>
+            <Text style={styles.headerSubtitle}>Gérez vos finances</Text>
+          </View>
+          <TouchableOpacity style={styles.addButtonGlass} onPress={handleNewAccount}>
+            <IconSymbol name="plus" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={handleNewAccount}>
-          <IconSymbol name="plus.circle.fill" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+      </ExpoLinearGradient>
 
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#667eea" />}
       >
         {!isLoading && accounts.length > 0 && (
           <View style={styles.currencyCardsContainer}>
-            {Object.entries(getTotalsByCurrency()).map(([currency, total]) => (
-              <Animated.View
-                key={currency}
-                style={[
-                  styles.currencyCard,
-                  { backgroundColor: colors.primary, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-                ]}
-              >
-                <Text style={styles.currencyLabel}>{currency}</Text>
-                <View style={styles.currencyAmountRow}>
-                  <Text style={styles.currencyAmount}>{formatAmount(total)}</Text>
-                </View>
-              </Animated.View>
-            ))}
+            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => {
+              const gradients = [
+                ["#667eea", "#764ba2"],
+                ["#f093fb", "#f5576c"],
+                ["#4facfe", "#00f2fe"],
+                ["#43e97b", "#38f9d7"],
+              ]
+              return (
+                <Animated.View
+                  key={currency}
+                  style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+                >
+                  <ExpoLinearGradient
+                    colors={gradients[index % gradients.length]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.currencyCard}
+                  >
+                    <Text style={styles.currencyLabel}>{currency}</Text>
+                    <Text style={styles.currencyAmount}>{formatAmount(total)}</Text>
+                  </ExpoLinearGradient>
+                </Animated.View>
+              )
+            })}
           </View>
         )}
 
+        {/* Accounts Carousel */}
         {!isLoading && accounts.length > 0 && (
           <View style={styles.carouselContainer}>
+            <Text style={styles.sectionTitleMain}>Vos Comptes</Text>
             <ScrollView
               ref={scrollViewRef}
               horizontal
@@ -482,8 +505,8 @@ export default function AccountsScreen() {
                     style={[
                       styles.paginationDot,
                       {
-                        backgroundColor: index === activeIndex ? colors.primary : colors.borderLight,
-                        width: index === activeIndex ? 24 : 8,
+                        backgroundColor: index === activeIndex ? "#667eea" : "rgba(255,255,255,0.3)",
+                        width: index === activeIndex ? 32 : 8,
                       },
                     ]}
                   />
@@ -495,51 +518,40 @@ export default function AccountsScreen() {
 
         {/* Loading skeleton */}
         {isLoading && (
-          <View style={styles.carouselContainer}>
-            <View style={[styles.carouselCard, { backgroundColor: colors.cardBackground }]}>
-              <View style={styles.skeletonHeader}>
-                <View style={[styles.skeletonIcon, { backgroundColor: colors.borderLight }]} />
-                <View style={styles.skeletonContent}>
-                  <View style={[styles.skeletonLine, { backgroundColor: colors.borderLight, width: "70%" }]} />
-                  <View style={[styles.skeletonLineSmall, { backgroundColor: colors.borderLight, width: "50%" }]} />
-                </View>
-              </View>
-              <View style={styles.skeletonBalance}>
-                <View style={[styles.skeletonLine, { backgroundColor: colors.borderLight, width: "40%" }]} />
-                <View style={[styles.skeletonLineSmall, { backgroundColor: colors.borderLight, width: "30%" }]} />
-              </View>
-            </View>
+          <View style={styles.loadingContainer}>
+            <Animated.View style={[styles.skeletonCard, { opacity: fadeAnim }]}>
+              <View style={styles.skeletonShimmer} />
+            </Animated.View>
           </View>
         )}
 
         {/* Empty State */}
         {!isLoading && accounts.length === 0 && (
           <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View style={[styles.emptyIcon, { backgroundColor: colors.primaryBackground }]}>
-              <IconSymbol name="creditcard.fill" size={48} color={colors.primary} />
+            <View style={styles.emptyIconGlass}>
+              <IconSymbol name="creditcard.fill" size={56} color="#667eea" />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun compte trouvé</Text>
-            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-              Ouvrez votre premier compte pour commencer à gérer vos finances
-            </Text>
-            <TouchableOpacity
-              style={[styles.createAccountButton, { backgroundColor: colors.primary }]}
-              onPress={handleNewAccount}
-            >
-              <IconSymbol name="plus.circle.fill" size={22} color="#FFFFFF" />
-              <Text style={styles.createAccountText}>Ouvrir un compte</Text>
+            <Text style={styles.emptyTitle}>Aucun compte trouvé</Text>
+            <Text style={styles.emptyMessage}>Ouvrez votre premier compte pour commencer à gérer vos finances</Text>
+            <TouchableOpacity style={styles.createAccountButtonGlass} onPress={handleNewAccount}>
+              <ExpoLinearGradient
+                colors={["#667eea", "#764ba2"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.createAccountGradient}
+              >
+                <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
+                <Text style={styles.createAccountText}>Ouvrir un compte</Text>
+              </ExpoLinearGradient>
             </TouchableOpacity>
           </Animated.View>
         )}
 
-        {/* Account Types Showcase Section */}
         {!isLoading && (
           <Animated.View style={[styles.accountTypesSection, { opacity: fadeAnim }]}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Types de comptes disponibles</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Choisissez le compte qui correspond à vos besoins
-              </Text>
+              <Text style={styles.sectionTitle}>Types de comptes</Text>
+              <Text style={styles.sectionSubtitle}>Choisissez le compte adapté à vos besoins</Text>
             </View>
 
             <View style={styles.typesCarouselContainer}>
@@ -556,71 +568,59 @@ export default function AccountsScreen() {
               >
                 {/* Compte Courant */}
                 <View style={styles.typeCarouselCard}>
-                  <TouchableOpacity
-                    style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
-                    onPress={handleNewAccount}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.accountTypeIconContainer, { backgroundColor: "#EEF2FF" }]}>
-                      <IconSymbol name="creditcard.fill" size={32} color="#6366F1" />
-                    </View>
-                    <View style={styles.accountTypeContent}>
-                      <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Courant</Text>
-                      <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
-                        Pour vos transactions quotidiennes
-                      </Text>
-                      <View style={styles.accountTypeFeatures}>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#6366F1" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-                            Carte bancaire gratuite
-                          </Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#6366F1" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Virements illimités</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#6366F1" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Découvert autorisé</Text>
+                  <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
+                    <View style={styles.accountTypeCardGlass}>
+                      <View style={[styles.accountTypeIconGlass, { backgroundColor: "rgba(102, 126, 234, 0.2)" }]}>
+                        <IconSymbol name="creditcard.fill" size={32} color="#667eea" />
+                      </View>
+                      <View style={styles.accountTypeContent}>
+                        <Text style={styles.accountTypeTitle}>Compte Courant</Text>
+                        <Text style={styles.accountTypeDescription}>Pour vos transactions quotidiennes</Text>
+                        <View style={styles.accountTypeFeatures}>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#667eea" }]} />
+                            <Text style={styles.featureText}>Carte bancaire gratuite</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#667eea" }]} />
+                            <Text style={styles.featureText}>Virements illimités</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#667eea" }]} />
+                            <Text style={styles.featureText}>Découvert autorisé</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    <View style={[styles.accountTypeBadge, { backgroundColor: "#EEF2FF" }]}>
-                      <Text style={[styles.accountTypeBadgeText, { color: "#6366F1" }]}>Populaire</Text>
+                      <View style={styles.popularBadge}>
+                        <Text style={styles.popularBadgeText}>POPULAIRE</Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 </View>
 
                 {/* Compte Épargne */}
                 <View style={styles.typeCarouselCard}>
-                  <TouchableOpacity
-                    style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
-                    onPress={handleNewAccount}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.accountTypeIconContainer, { backgroundColor: "#ECFDF5" }]}>
-                      <IconSymbol name="banknote.fill" size={32} color="#10B981" />
-                    </View>
-                    <View style={styles.accountTypeContent}>
-                      <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Épargne</Text>
-                      <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
-                        Faites fructifier votre argent
-                      </Text>
-                      <View style={styles.accountTypeFeatures}>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#10B981" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Taux d'intérêt 3.5%</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#10B981" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-                            Pas de frais de gestion
-                          </Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#10B981" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Retraits flexibles</Text>
+                  <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
+                    <View style={styles.accountTypeCardGlass}>
+                      <View style={[styles.accountTypeIconGlass, { backgroundColor: "rgba(17, 153, 142, 0.2)" }]}>
+                        <IconSymbol name="banknote.fill" size={32} color="#11998e" />
+                      </View>
+                      <View style={styles.accountTypeContent}>
+                        <Text style={styles.accountTypeTitle}>Compte Épargne</Text>
+                        <Text style={styles.accountTypeDescription}>Faites fructifier votre argent</Text>
+                        <View style={styles.accountTypeFeatures}>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#11998e" }]} />
+                            <Text style={styles.featureText}>Taux d'intérêt 3.5%</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#11998e" }]} />
+                            <Text style={styles.featureText}>Pas de frais de gestion</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#11998e" }]} />
+                            <Text style={styles.featureText}>Retraits flexibles</Text>
+                          </View>
                         </View>
                       </View>
                     </View>
@@ -629,76 +629,61 @@ export default function AccountsScreen() {
 
                 {/* Compte Professionnel */}
                 <View style={styles.typeCarouselCard}>
-                  <TouchableOpacity
-                    style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
-                    onPress={handleNewAccount}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.accountTypeIconContainer, { backgroundColor: "#FEF3C7" }]}>
-                      <IconSymbol name="briefcase.fill" size={32} color="#F59E0B" />
-                    </View>
-                    <View style={styles.accountTypeContent}>
-                      <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Professionnel</Text>
-                      <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
-                        Pour votre activité professionnelle
-                      </Text>
-                      <View style={styles.accountTypeFeatures}>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-                            Gestion multi-devises
-                          </Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Outils comptables</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-                            Terminal de paiement
-                          </Text>
+                  <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
+                    <View style={styles.accountTypeCardGlass}>
+                      <View style={[styles.accountTypeIconGlass, { backgroundColor: "rgba(245, 158, 11, 0.2)" }]}>
+                        <IconSymbol name="briefcase.fill" size={32} color="#F59E0B" />
+                      </View>
+                      <View style={styles.accountTypeContent}>
+                        <Text style={styles.accountTypeTitle}>Compte Professionnel</Text>
+                        <Text style={styles.accountTypeDescription}>Pour votre activité professionnelle</Text>
+                        <View style={styles.accountTypeFeatures}>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
+                            <Text style={styles.featureText}>Gestion multi-devises</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
+                            <Text style={styles.featureText}>Outils comptables</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#F59E0B" }]} />
+                            <Text style={styles.featureText}>Terminal de paiement</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    <View style={[styles.accountTypeBadge, { backgroundColor: "#FEF3C7" }]}>
-                      <Text style={[styles.accountTypeBadgeText, { color: "#F59E0B" }]}>Exclusif</Text>
                     </View>
                   </TouchableOpacity>
                 </View>
 
                 {/* Compte Premium */}
                 <View style={styles.typeCarouselCard}>
-                  <TouchableOpacity
-                    style={[styles.accountTypeCard, { backgroundColor: colors.surface }]}
-                    onPress={handleNewAccount}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.accountTypeIconContainer, { backgroundColor: "#F3E8FF" }]}>
-                      <IconSymbol name="star.fill" size={32} color="#A855F7" />
-                    </View>
-                    <View style={styles.accountTypeContent}>
-                      <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Premium</Text>
-                      <Text style={[styles.accountTypeDescription, { color: colors.textSecondary }]}>
-                        Services exclusifs et privilèges
-                      </Text>
-                      <View style={styles.accountTypeFeatures}>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Conseiller dédié</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Assurances incluses</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                          <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
-                          <Text style={[styles.featureText, { color: colors.textSecondary }]}>Cashback 2%</Text>
+                  <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
+                    <View style={styles.accountTypeCardGlass}>
+                      <View style={[styles.accountTypeIconGlass, { backgroundColor: "rgba(168, 85, 247, 0.2)" }]}>
+                        <IconSymbol name="star.fill" size={32} color="#A855F7" />
+                      </View>
+                      <View style={styles.accountTypeContent}>
+                        <Text style={styles.accountTypeTitle}>Compte Premium</Text>
+                        <Text style={styles.accountTypeDescription}>Services exclusifs et privilèges</Text>
+                        <View style={styles.accountTypeFeatures}>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
+                            <Text style={styles.featureText}>Conseiller dédié</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
+                            <Text style={styles.featureText}>Assurances incluses</Text>
+                          </View>
+                          <View style={styles.featureItem}>
+                            <View style={[styles.featureDot, { backgroundColor: "#A855F7" }]} />
+                            <Text style={styles.featureText}>Cashback 2%</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    <View style={[styles.accountTypeBadge, { backgroundColor: "#F3E8FF" }]}>
-                      <Text style={[styles.accountTypeBadgeText, { color: "#A855F7" }]}>Exclusif</Text>
+                      <View style={styles.exclusiveBadge}>
+                        <Text style={styles.exclusiveBadgeText}>EXCLUSIF</Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -712,8 +697,8 @@ export default function AccountsScreen() {
                     style={[
                       styles.paginationDot,
                       {
-                        backgroundColor: index === activeTypeIndex ? colors.primary : colors.borderLight,
-                        width: index === activeTypeIndex ? 24 : 8,
+                        backgroundColor: index === activeTypeIndex ? "#667eea" : "rgba(255,255,255,0.3)",
+                        width: index === activeTypeIndex ? 32 : 8,
                       },
                     ]}
                   />
@@ -729,113 +714,99 @@ export default function AccountsScreen() {
   )
 }
 
-const colors = {
-  background: "#F9FAFB",
-  surface: "#FFFFFF",
-  surfaceSecondary: "#F1F3F6",
-  primary: "#6C4AB6",
-  primaryLight: "#A88BEB",
-  onPrimary: "#FFFFFF",
-  text: "#1F2937",
-  textSecondary: "#6B7280",
-  border: "#E5E7EB",
-  shadow: "rgba(0,0,0,0.06)",
-  error: "#EF4444",
-  success: "#10B981",
-  primaryBackground: "#E9D5FF",
-  successBackground: "#E1FAEE",
-  secondaryBackground: "#D1E7DD",
-  errorBackground: "#FEE2E2",
-  borderLight: "#E5E7EB",
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#0A0A0F",
   },
   scrollView: {
     flex: 1,
+  },
+  headerGradient: {
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
+    paddingHorizontal: 24,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   headerTitleContainer: {
     flex: 1,
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    letterSpacing: -0.3,
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    color: "#FFFFFF",
+    marginBottom: 4,
   },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.6)",
+  },
+  addButtonGlass: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.primary,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: "rgba(102, 126, 234, 0.3)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   currencyCardsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
     marginHorizontal: 24,
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: 8,
+    marginBottom: 32,
   },
-  currencyCard: {
+  currencyCardWrapper: {
     flex: 1,
     minWidth: "45%",
+  },
+  currencyCard: {
     padding: 20,
     borderRadius: 20,
-    backgroundColor: colors.primary,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 6,
+    minHeight: 100,
+    justifyContent: "space-between",
   },
   currencyLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
-    marginBottom: 8,
     color: "rgba(255,255,255,0.8)",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  currencyAmountRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
+    letterSpacing: 1,
+    marginBottom: 8,
   },
   currencyAmount: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "800",
-    letterSpacing: -1,
+    letterSpacing: -0.5,
     color: "#FFFFFF",
   },
-
+  sectionTitleMain: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 16,
+    marginLeft: 24,
+  },
   carouselContainer: {
-    marginBottom: 32,
+    marginBottom: 40,
   },
   carouselContent: {
     paddingHorizontal: 24,
@@ -845,113 +816,123 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
   },
   accountCard: {
-    padding: 28,
-    borderRadius: 28,
-    backgroundColor: colors.surface,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 20,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 280,
+    borderRadius: 24,
+    overflow: "hidden",
+    minHeight: 240,
+  },
+  glassOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    padding: 24,
+    backdropFilter: "blur(10px)",
   },
   cardHeader: {
     marginBottom: 24,
   },
   accountLeft: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 16,
+    alignItems: "center",
+    gap: 14,
     marginBottom: 12,
   },
-  accountIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  accountIconGlass: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.25)",
   },
   accountInfo: {
     flex: 1,
   },
   accountName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    letterSpacing: -0.5,
-    marginBottom: 6,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+    color: "#FFFFFF",
   },
   accountNumber: {
-    fontSize: 16,
-    fontWeight: "500",
-    letterSpacing: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 2,
+    color: "rgba(255,255,255,0.8)",
   },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+  statusBadgeGlass: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
+    borderRadius: 12,
     alignSelf: "flex-start",
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
+  statusTextGlass: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    color: "#FFFFFF",
   },
   balanceSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   balanceLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    color: "rgba(255,255,255,0.7)",
   },
   balanceAmountRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 10,
+    gap: 8,
     marginBottom: 12,
   },
   accountBalance: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "800",
-    letterSpacing: -1.5,
+    letterSpacing: -1,
+    color: "#FFFFFF",
   },
-  currency: {
-    fontSize: 18,
-    fontWeight: "600",
+  currencyGlass: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.9)",
   },
   changeContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  changeBadge: {
+  changeBadgeGlass: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: 12,
     gap: 4,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
-  accountChangeText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  changeLabel: {
+  accountChangeTextGlass: {
     fontSize: 12,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  changeLabelGlass: {
+    fontSize: 11,
     fontWeight: "500",
+    color: "rgba(255,255,255,0.7)",
+  },
+  footerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  lastUpdateTextGlass: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.7)",
   },
   paginationContainer: {
     flexDirection: "row",
@@ -963,143 +944,114 @@ const styles = StyleSheet.create({
   paginationDot: {
     height: 8,
     borderRadius: 4,
-    transition: "all 0.3s ease",
   },
-  // Skeleton styles
-  skeletonHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
+  loadingContainer: {
+    paddingHorizontal: 24,
+    marginTop: 20,
   },
-  skeletonIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    marginRight: 16,
+  skeletonCard: {
+    width: "100%",
+    height: 240,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    overflow: "hidden",
   },
-  skeletonContent: {
+  skeletonShimmer: {
     flex: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
-  skeletonLine: {
-    height: 20,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  skeletonLineSmall: {
-    height: 16,
-    borderRadius: 8,
-  },
-  skeletonBalance: {
-    marginBottom: 20,
-  },
-  // Empty state
   emptyState: {
     alignItems: "center",
     paddingVertical: 80,
     paddingHorizontal: 40,
   },
-  emptyIcon: {
+  emptyIconGlass: {
     width: 120,
     height: 120,
     borderRadius: 60,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
+    backgroundColor: "rgba(102, 126, 234, 0.15)",
+    borderWidth: 2,
+    borderColor: "rgba(102, 126, 234, 0.3)",
   },
   emptyTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "800",
     marginBottom: 12,
     textAlign: "center",
     letterSpacing: -0.5,
+    color: "#FFFFFF",
   },
   emptyMessage: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
     marginBottom: 32,
     fontWeight: "500",
-    lineHeight: 24,
+    lineHeight: 22,
+    color: "rgba(255,255,255,0.6)",
   },
-  createAccountButton: {
+  createAccountButtonGlass: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  createAccountGradient: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 32,
-    paddingVertical: 18,
-    borderRadius: 16,
-    gap: 12,
-    backgroundColor: colors.primary,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingVertical: 16,
+    gap: 10,
   },
   createAccountText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
   },
-  bottomSpacing: {
-    height: 40,
-  },
-  footerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 16,
-  },
-  lastUpdateText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  // Account Types Showcase Section
   accountTypesSection: {
-    marginTop: 40,
-    marginHorizontal: 24,
+    marginTop: 20,
     marginBottom: 20,
   },
   sectionHeader: {
     marginBottom: 24,
+    paddingHorizontal: 24,
   },
   sectionTitle: {
     fontSize: 24,
     fontWeight: "800",
     letterSpacing: -0.5,
     marginBottom: 8,
+    color: "#FFFFFF",
   },
   sectionSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "500",
-    lineHeight: 22,
+    lineHeight: 20,
+    color: "rgba(255,255,255,0.6)",
   },
   typesCarouselContainer: {
     marginBottom: 20,
   },
   typesCarouselContent: {
-    paddingHorizontal: 0,
+    paddingHorizontal: 24,
     gap: CARD_SPACING,
   },
   typeCarouselCard: {
     width: CARD_WIDTH,
   },
-  accountTypeCard: {
+  accountTypeCardGlass: {
     padding: 24,
     borderRadius: 24,
-    backgroundColor: colors.surface,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 6,
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
-    borderColor: colors.border,
-    position: "relative",
+    borderColor: "rgba(255,255,255,0.1)",
     minHeight: 280,
+    position: "relative",
   },
-  accountTypeIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+  accountTypeIconGlass: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
@@ -1111,16 +1063,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     letterSpacing: -0.3,
-    marginBottom: 6,
+    marginBottom: 8,
+    color: "#FFFFFF",
   },
   accountTypeDescription: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
     marginBottom: 20,
-    lineHeight: 20,
+    lineHeight: 18,
+    color: "rgba(255,255,255,0.7)",
   },
   accountTypeFeatures: {
-    gap: 12,
+    gap: 14,
   },
   featureItem: {
     flexDirection: "row",
@@ -1133,22 +1087,48 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   featureText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
     flex: 1,
+    color: "rgba(255,255,255,0.8)",
   },
-  accountTypeBadge: {
+  popularBadge: {
     position: "absolute",
     top: 20,
     right: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    backgroundColor: "rgba(102, 126, 234, 0.3)",
+    borderWidth: 1,
+    borderColor: "rgba(102, 126, 234, 0.5)",
   },
-  accountTypeBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
+  popularBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    color: "#667eea",
+  },
+  exclusiveBadge: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(168, 85, 247, 0.3)",
+    borderWidth: 1,
+    borderColor: "rgba(168, 85, 247, 0.5)",
+  },
+  exclusiveBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    color: "#A855F7",
+  },
+  bottomSpacing: {
+    height: 60,
   },
 })
