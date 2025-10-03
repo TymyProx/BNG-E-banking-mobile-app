@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
-import AsyncStorage from "@react-native-async-storage/async-storage"
+import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 interface Tenant {
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem("authToken")
+      const token = await SecureStore.getItemAsync("authToken")
       if (token) {
         const userData = await fetchUserData(token)
         if (userData) {
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = await AsyncStorage.getItem("authToken")
+        const token = await SecureStore.getItemAsync("authToken")
         if (token) {
           setIsLoading(true)
           const userData = await fetchUserData(token)
@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userData)
           } else {
             // Token is invalid, clear it
-            await AsyncStorage.removeItem("authToken")
+            await SecureStore.deleteItemAsync("authToken")
           }
           setIsLoading(false)
         }
@@ -184,10 +184,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      // Store token
-      await AsyncStorage.setItem("authToken", token)
+      await SecureStore.setItemAsync("authToken", token)
 
-      // Fetch user data
       const userData = await fetchUserData(token)
       if (userData) {
         setUser(userData)
@@ -207,10 +205,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (userData: RegisterData): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // Mock registration
       const newUser: User = {
         id: Date.now().toString(),
         fullName: userData.name,
@@ -240,10 +236,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyOTP = async (otp: string): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate OTP verification
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Mock OTP validation (accept "123456")
       if (otp === "123456") {
         if (user) {
           setUser({ ...user, isVerified: true })
@@ -263,7 +257,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const sendOTP = async (): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate sending OTP
       await new Promise((resolve) => setTimeout(resolve, 1000))
       Alert.alert("OTP Envoyé", "Un code de vérification a été envoyé à votre téléphone")
       return true
@@ -278,7 +271,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       if (user) {
@@ -297,7 +289,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate password reset
       await new Promise((resolve) => setTimeout(resolve, 1500))
       Alert.alert("Email Envoyé", "Un lien de réinitialisation a été envoyé à votre email")
       return true
@@ -311,7 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem("authToken")
+      await SecureStore.deleteItemAsync("authToken")
       setUser(null)
       setTenantId(null)
       setPendingOTPVerification(false)
