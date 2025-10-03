@@ -44,7 +44,7 @@ interface FormData {
 export default function NewAccountScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
-  const { user } = useAuth()
+  const { user, tenantId } = useAuth()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -222,6 +222,11 @@ export default function NewAccountScreen() {
       return
     }
 
+    if (!tenantId) {
+      Alert.alert("Erreur", "Impossible de récupérer les informations du tenant. Veuillez vous reconnecter.")
+      return
+    }
+
     setIsLoading(true)
     try {
       const selectedType = accountTypes.find((type) => type.id === formData.accountType)
@@ -247,13 +252,14 @@ export default function NewAccountScreen() {
           availableBalance: formData.initialDeposit,
           status: "EN ATTENTE",
           type: typeMapping[formData.accountType] || formData.accountType,
-          agency: "Agence Principale", // Default agency, can be made dynamic
+          agency: "Agence Principale",
         },
       }
 
       console.log("[v0] Creating account with data:", requestBody)
+      console.log("[v0] Using tenantId:", tenantId)
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.CREATE(API_CONFIG.TENANT_ID)}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.CREATE(tenantId)}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

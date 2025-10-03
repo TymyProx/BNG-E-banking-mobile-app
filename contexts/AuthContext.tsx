@@ -1,13 +1,41 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+
+interface Tenant {
+  id: string
+  userId: string
+  roles: string[]
+  status: string
+  tenantId: string
+  tenant: {
+    id: string
+    name: string
+    plan: string
+    planStatus: string
+  }
+}
 
 interface User {
   id: string
-  name: string
+  fullName: string
+  firstName: string
+  lastName: string
   email: string
+  phoneNumber: string
+  emailVerified: boolean
+  tenants: Tenant[]
+  avatars?: Array<{
+    id: string
+    publicUrl: string
+    downloadUrl: string
+  }>
+  // Legacy fields for backward compatibility
+  name: string
   phone: string
   accountNumber: string
   isVerified: boolean
@@ -26,6 +54,8 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<boolean>
   pendingOTPVerification: boolean
   setPendingOTPVerification: (pending: boolean) => void
+  tenantId: string | null
+  refreshUserData: () => Promise<void>
 }
 
 interface RegisterData {
@@ -42,32 +72,132 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [pendingOTPVerification, setPendingOTPVerification] = useState(false)
+  const [tenantId, setTenantId] = useState<string | null>(null)
 
   const isAuthenticated = !!user && user.isVerified
+
+  const fetchUserData = async (token: string): Promise<User | null> => {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.ME}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch user data")
+      }
+
+      const userData = await response.json()
+
+      // Map API response to User interface
+      const mappedUser: User = {
+        id: userData.id,
+        fullName: userData.fullName,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber,
+        emailVerified: userData.emailVerified,
+        tenants: userData.tenants || [],
+        avatars: userData.avatars || [],
+        // Legacy fields for backward compatibility
+        name: userData.fullName,
+        phone: userData.phoneNumber,
+        accountNumber: "", // Will be populated from accounts
+        isVerified: userData.emailVerified,
+      }
+
+      // Set tenantId from first tenant
+      if (mappedUser.tenants.length > 0) {
+        setTenantId(mappedUser.tenants[0].tenantId)
+      }
+
+      return mappedUser
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+      return null
+    }
+  }
+
+  const refreshUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken")
+      if (token) {
+        const userData = await fetchUserData(token)
+        if (userData) {
+          setUser(userData)
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing user data:", error)
+    }
+  }
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("authToken")
+        if (token) {
+          setIsLoading(true)
+          const userData = await fetchUserData(token)
+          if (userData) {
+            setUser(userData)
+          } else {
+            // Token is invalid, clear it
+            await AsyncStorage.removeItem("authToken")
+          }
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error)
+        setIsLoading(false)
+      }
+    }
+
+    checkAuthStatus()
+  }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.SIGN_IN}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-      // Mock validation
-      if (email === "test@bng.gn" && password === "123456") {
-        const mockUser: User = {
-          id: "1",
-          name: "Mamadou Diallo",
-          email: email,
-          phone: "+224 622 123 456",
-          accountNumber: "BNG001234567890",
-          isVerified: false,
-        }
-        setUser(mockUser)
-        setPendingOTPVerification(true)
+      if (!response.ok) {
+        Alert.alert("Erreur", "Email ou mot de passe incorrect")
+        return false
+      }
+
+      const data = await response.json()
+      const token = data.token || data.accessToken
+
+      if (!token) {
+        Alert.alert("Erreur", "Aucun token reçu du serveur")
+        return false
+      }
+
+      // Store token
+      await AsyncStorage.setItem("authToken", token)
+
+      // Fetch user data
+      const userData = await fetchUserData(token)
+      if (userData) {
+        setUser(userData)
         return true
       }
+
       return false
     } catch (error) {
       console.error("Login error:", error)
+      Alert.alert("Erreur", "Une erreur est survenue lors de la connexion")
       return false
     } finally {
       setIsLoading(false)
@@ -83,8 +213,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Mock registration
       const newUser: User = {
         id: Date.now().toString(),
-        name: userData.name,
+        fullName: userData.name,
+        firstName: userData.name.split(" ")[0],
+        lastName: userData.name.split(" ").slice(1).join(" "),
         email: userData.email,
+        phoneNumber: userData.phone,
+        emailVerified: false,
+        tenants: [],
+        name: userData.name,
         phone: userData.phone,
         accountNumber: userData.accountNumber,
         isVerified: false,
@@ -173,9 +309,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    setPendingOTPVerification(false)
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem("authToken")
+      setUser(null)
+      setTenantId(null)
+      setPendingOTPVerification(false)
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
   }
 
   return (
@@ -193,6 +335,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         pendingOTPVerification,
         setPendingOTPVerification,
+        tenantId,
+        refreshUserData,
       }}
     >
       {children}
