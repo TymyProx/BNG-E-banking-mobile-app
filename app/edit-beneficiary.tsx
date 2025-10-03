@@ -20,8 +20,7 @@ import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 interface FormData {
-  firstName: string
-  lastName: string
+  fullName: string
   beneficiaryType: string
   // Même banque
   agencyCode: string
@@ -40,8 +39,7 @@ interface FormData {
 }
 
 interface FormErrors {
-  firstName?: string
-  lastName?: string
+  fullName?: string
   beneficiaryType?: string
   agencyCode?: string
   accountNumber?: string
@@ -68,8 +66,7 @@ export default function EditBeneficiary() {
   const { beneficiaryId } = useLocalSearchParams()
 
   const [formData, setFormData] = useState<FormData>({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     beneficiaryType: "",
     agencyCode: "",
     accountNumber: "",
@@ -198,11 +195,6 @@ export default function EditBeneficiary() {
 
         const data = await response.json()
 
-        // Map API data to form fields
-        const nameParts = data.name.split(" ")
-        const firstName = nameParts[0] || ""
-        const lastName = nameParts.slice(1).join(" ") || ""
-
         // Determine beneficiary type based on available data
         let beneficiaryType = "same_zone"
         if (data.iban) {
@@ -212,8 +204,7 @@ export default function EditBeneficiary() {
         }
 
         setFormData({
-          firstName,
-          lastName,
+          fullName: data.name || "",
           beneficiaryType,
           agencyCode: data.agencyCode || "",
           accountNumber: data.accountNumber || "",
@@ -245,12 +236,8 @@ export default function EditBeneficiary() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "Le prénom est requis"
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Le nom est requis"
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Le nom et prénom sont requis"
     }
 
     if (!formData.beneficiaryType) {
@@ -324,7 +311,7 @@ export default function EditBeneficiary() {
           },
           body: JSON.stringify({
             data: {
-              name: `${formData.firstName} ${formData.lastName}`,
+              name: formData.fullName,
               accountNumber: formData.accountNumber,
               bankCode: formData.bankCode,
               bankName: formData.bank,
@@ -344,16 +331,12 @@ export default function EditBeneficiary() {
         throw new Error("Erreur lors de la modification")
       }
 
-      Alert.alert(
-        "Succès",
-        `Les informations de ${formData.firstName} ${formData.lastName} ont été mises à jour avec succès.`,
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ],
-      )
+      Alert.alert("Succès", `Les informations de ${formData.fullName} ont été mises à jour avec succès.`, [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ])
     } catch (error) {
       console.error("Error updating beneficiary:", error)
       Alert.alert("Erreur", "Une erreur est survenue lors de la modification du bénéficiaire.")
@@ -692,48 +675,25 @@ export default function EditBeneficiary() {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
-                Prénom <Text style={styles.required}>*</Text>
+                Nom et Prénoms <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={[
                   styles.input,
                   {
                     backgroundColor: colors.cardBackground,
-                    borderColor: errors.firstName ? "#ef4444" : colors.border,
+                    borderColor: errors.fullName ? "#ef4444" : colors.border,
                     color: colors.text,
                   },
                 ]}
-                placeholder="Entrez le prénom"
+                placeholder="Entrez le nom et prénoms"
                 placeholderTextColor={colors.textSecondary}
-                value={formData.firstName}
-                onChangeText={(text) => updateFormData("firstName", text)}
+                value={formData.fullName}
+                onChangeText={(text) => updateFormData("fullName", text)}
                 autoCapitalize="words"
                 editable={!isLoading}
               />
-              {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Nom <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.cardBackground,
-                    borderColor: errors.lastName ? "#ef4444" : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Entrez le nom"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.lastName}
-                onChangeText={(text) => updateFormData("lastName", text)}
-                autoCapitalize="words"
-                editable={!isLoading}
-              />
-              {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
             </View>
           </View>
 
