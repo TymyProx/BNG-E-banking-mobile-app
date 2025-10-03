@@ -4,7 +4,7 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
-import * as SecureStore from 'expo-secure-store'
+import * as SecureStore from "expo-secure-store"
 import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
@@ -24,7 +24,6 @@ import {
 } from "react-native"
 
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
@@ -54,7 +53,7 @@ export default function LoginScreen() {
   useEffect(() => {
     const checkToken = async () => {
       try {
-        const token = await SecureStore.getItemAsync("token")
+        const token = await SecureStore.getItemAsync("authToken")
         if (token) {
           router.replace("/(tabs)")
         }
@@ -168,7 +167,7 @@ export default function LoginScreen() {
           email: email,
           password: password,
           invitationToken: "",
-          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2"//"afa25e29-08dd-46b6-8ea2-d778cb2d6694",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2", //"afa25e29-08dd-46b6-8ea2-d778cb2d6694",
         }),
       })
 
@@ -178,12 +177,24 @@ export default function LoginScreen() {
         throw new Error(token || "Erreur de connexion")
       }
 
-      // ✅ Stockage du token dans SecureStore
-      await SecureStore.setItemAsync("token", token)
+      console.log("[v0] Login successful, storing token")
+      await SecureStore.setItemAsync("authToken", token)
+
+      const userResponse = await fetch("http://192.168.1.200:8080/api/auth/me", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        console.log("[v0] User data fetched:", userData)
+      }
 
       // ✅ Redirection
       router.replace("/(tabs)")
-
     } catch (err: any) {
       shakeAnimation()
       Alert.alert("Erreur", err.message || "Une erreur s'est produite")
@@ -266,14 +277,10 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                 />
-                {email && !errors.email && (
-                  <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-                )}
+                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color={colors.success} />}
               </View>
               {errors.email && (
-                <Animated.Text style={[styles.modernErrorText, { color: colors.error }]}>
-                  {errors.email}
-                </Animated.Text>
+                <Animated.Text style={[styles.modernErrorText, { color: colors.error }]}>{errors.email}</Animated.Text>
               )}
             </View>
 
