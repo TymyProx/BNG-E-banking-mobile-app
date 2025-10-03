@@ -15,7 +15,11 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native"
+import { useAuth } from "@/contexts/AuthContext"
+import * as SecureStore from "expo-secure-store"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 interface Account {
   id: string
@@ -39,61 +43,51 @@ export default function AccountsScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [fadeAnim] = useState(new Animated.Value(0))
   const [slideAnim] = useState(new Animated.Value(50))
-
-  // Simulation des données de comptes
-  const mockAccounts: Account[] = [
-    {
-      id: "1",
-      name: "Compte Principal",
-      number: "BNG001234567890",
-      balance: 2400000,
-      type: "primary",
-      change: +2.4,
-      status: "active",
-      currency: "GNF",
-      lastUpdate: "Aujourd'hui, 14:30",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "BNG001234567891",
-      balance: 5600000,
-      type: "savings",
-      change: +1.8,
-      status: "active",
-      currency: "GNF",
-      lastUpdate: "Aujourd'hui, 14:30",
-    },
-    {
-      id: "3",
-      name: "Compte Courant",
-      number: "BNG001234567892",
-      balance: 1250000,
-      type: "checking",
-      change: -0.5,
-      status: "active",
-      currency: "GNF",
-      lastUpdate: "Aujourd'hui, 14:30",
-    },
-    {
-      id: "4",
-      name: "Compte Crédit",
-      number: "BNG001234567893",
-      balance: -850000,
-      type: "credit",
-      change: -2.1,
-      status: "active",
-      currency: "GNF",
-      lastUpdate: "Aujourd'hui, 14:30",
-    },
-  ]
+  const { tenantId } = useAuth()
 
   const loadAccounts = async () => {
     setIsLoading(true)
     try {
-      // Simulation d'appel API
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      setAccounts(mockAccounts)
+      // Get token from SecureStore
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available")
+        setAccounts([])
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch accounts from API
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("[v0] Accounts fetched:", data)
+
+      // Map API response to Account interface
+      const mappedAccounts: Account[] = data.rows.map((account: any) => ({
+        id: account.id,
+        name: account.accountName || "Compte sans nom",
+        number: account.accountNumber || "N/A",
+        balance: Number.parseFloat(account.availableBalance || "0"),
+        type: account.type?.toLowerCase() || "checking",
+        change: 0, // Change percentage not provided by API
+        status: account.status?.toLowerCase() || "active",
+        currency: account.currency || "GNF",
+        lastUpdate: account.updatedAt ? new Date(account.updatedAt).toLocaleDateString("fr-FR") : "N/A",
+      }))
+
+      setAccounts(mappedAccounts)
 
       // Animation d'entrée
       Animated.parallel([
@@ -109,7 +103,9 @@ export default function AccountsScreen() {
         }),
       ]).start()
     } catch (error) {
-      console.error("Erreur lors du chargement des comptes:", error)
+      console.error("[v0] Erreur lors du chargement des comptes:", error)
+      Alert.alert("Erreur", "Impossible de charger les comptes. Veuillez réessayer.")
+      setAccounts([])
     } finally {
       setIsLoading(false)
     }
