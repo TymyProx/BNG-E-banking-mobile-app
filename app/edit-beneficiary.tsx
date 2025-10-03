@@ -18,7 +18,7 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter, useLocalSearchParams } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface FormData {
   fullName: string
@@ -65,6 +65,7 @@ export default function EditBeneficiary() {
   const colors = Colors[colorScheme]
   const router = useRouter()
   const { beneficiaryId } = useLocalSearchParams()
+  const { user } = useAuth()
 
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -160,7 +161,6 @@ export default function EditBeneficiary() {
     },
   ]
 
-  // Récupérer les agences de la BNG pour "même banque"
   const bngAgencies = banks.find((bank) => bank.name === "Banque Nationale de Guinée")?.agencies || []
 
   useEffect(() => {
@@ -196,7 +196,6 @@ export default function EditBeneficiary() {
 
         const data = await response.json()
 
-        // Determine beneficiary type based on available data
         let beneficiaryType = "same_zone"
         if (data.iban) {
           beneficiaryType = "international"
@@ -245,7 +244,6 @@ export default function EditBeneficiary() {
       newErrors.beneficiaryType = "Le type de bénéficiaire est requis"
     }
 
-    // Validation selon le type de bénéficiaire
     if (formData.beneficiaryType === "same_bank") {
       if (!formData.agencyCode.trim()) {
         newErrors.agencyCode = "Le code agence est requis"
@@ -312,6 +310,7 @@ export default function EditBeneficiary() {
           },
           body: JSON.stringify({
             data: {
+              customerId: user?.id || "", // Automatically set from logged-in user
               name: formData.fullName,
               accountNumber: formData.accountNumber,
               bankCode: formData.bankCode,
@@ -355,7 +354,6 @@ export default function EditBeneficiary() {
 
   const handleBeneficiaryTypeSelect = (type: string) => {
     updateFormData("beneficiaryType", type)
-    // Reset account fields when changing type
     setFormData((prev) => ({
       ...prev,
       beneficiaryType: type,
@@ -376,7 +374,7 @@ export default function EditBeneficiary() {
       ...prev,
       bank: bank.name,
       bankCode: bank.code,
-      selectedAgencyCode: "", // Reset agency when bank changes
+      selectedAgencyCode: "",
     }))
     setShowBankModal(false)
   }
@@ -657,7 +655,6 @@ export default function EditBeneficiary() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
@@ -670,7 +667,6 @@ export default function EditBeneficiary() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
-          {/* Informations personnelles */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations personnelles</Text>
 
@@ -698,7 +694,6 @@ export default function EditBeneficiary() {
             </View>
           </View>
 
-          {/* Type de bénéficiaire */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Type de bénéficiaire</Text>
 
@@ -734,7 +729,6 @@ export default function EditBeneficiary() {
             </View>
           </View>
 
-          {/* Informations du compte */}
           {formData.beneficiaryType && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations du compte</Text>
@@ -742,7 +736,6 @@ export default function EditBeneficiary() {
             </View>
           )}
 
-          {/* Informations de contact */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations de contact</Text>
 
@@ -794,7 +787,6 @@ export default function EditBeneficiary() {
         </View>
       </ScrollView>
 
-      {/* Footer avec boutons */}
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <TouchableOpacity
           style={[styles.cancelButton, { borderColor: colors.border }]}
@@ -820,7 +812,6 @@ export default function EditBeneficiary() {
         </TouchableOpacity>
       </View>
 
-      {/* Modal de sélection du type de bénéficiaire */}
       <Modal
         visible={showBeneficiaryTypeModal}
         transparent={true}
@@ -869,7 +860,6 @@ export default function EditBeneficiary() {
         </View>
       </Modal>
 
-      {/* Modal de sélection d'agence BNG pour "même banque" */}
       <Modal
         visible={showBNGAgencyModal}
         transparent={true}
@@ -926,7 +916,6 @@ export default function EditBeneficiary() {
         </View>
       </Modal>
 
-      {/* Modal de sélection de banque */}
       <Modal
         visible={showBankModal}
         transparent={true}
@@ -980,7 +969,6 @@ export default function EditBeneficiary() {
         </View>
       </Modal>
 
-      {/* Modal de sélection d'agence */}
       <Modal
         visible={showAgencyModal}
         transparent={true}
