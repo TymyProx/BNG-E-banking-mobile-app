@@ -39,8 +39,8 @@ interface AccountDetails {
   accountNumber: string
   accountName: string
   currency: string
-  bookBalance: string
-  availableBalance: string
+  bookBalance: string | null
+  availableBalance: string | null
   status: string
   type: string
   agency: string
@@ -167,7 +167,10 @@ export default function AccountDetailsScreen() {
     loadAccountDetails()
   }, [])
 
-  const formatAmount = (amount: number | string) => {
+  const formatAmount = (amount: number | string | null) => {
+    if (amount === null || amount === undefined) {
+      return "En attente"
+    }
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
     return new Intl.NumberFormat("fr-FR").format(Math.abs(numAmount))
   }
@@ -218,6 +221,14 @@ export default function AccountDetailsScreen() {
 
   const handleRIBRequest = () => {
     if (!account) return
+
+    if (!account.accountNumber) {
+      Alert.alert(
+        "Compte en attente",
+        "Le numéro de compte n'est pas encore attribué. Veuillez attendre la validation de votre compte.",
+      )
+      return
+    }
 
     router.push({
       pathname: "/rib-request",
@@ -275,7 +286,9 @@ export default function AccountDetailsScreen() {
             <View style={styles.accountInfo}>
               <Text style={[styles.accountName, { color: colors.text }]}>{account.accountName}</Text>
               <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
-                {account.accountNumber.slice(-4).padStart(account.accountNumber.length, "•")}
+                {account.accountNumber
+                  ? account.accountNumber.slice(-4).padStart(account.accountNumber.length, "•")
+                  : "Numéro non attribué"}
               </Text>
             </View>
             <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
@@ -288,11 +301,20 @@ export default function AccountDetailsScreen() {
             <Text
               style={[
                 styles.balanceAmount,
-                { color: Number.parseFloat(account.availableBalance) >= 0 ? "#059669" : "#DC2626" },
+                {
+                  color:
+                    account.availableBalance === null
+                      ? colors.textSecondary
+                      : Number.parseFloat(account.availableBalance) >= 0
+                        ? "#059669"
+                        : "#DC2626",
+                },
               ]}
             >
               {showBalance
-                ? `${Number.parseFloat(account.availableBalance) >= 0 ? "" : "-"}${formatAmount(account.availableBalance)} ${account.currency}`
+                ? account.availableBalance === null
+                  ? "En attente"
+                  : `${Number.parseFloat(account.availableBalance) >= 0 ? "" : "-"}${formatAmount(account.availableBalance)} ${account.currency}`
                 : "••••••"}
             </Text>
             <Text style={[styles.lastUpdate, { color: colors.textSecondary }]}>
@@ -315,9 +337,15 @@ export default function AccountDetailsScreen() {
             <TouchableOpacity
               style={[
                 styles.actionButton,
-                { backgroundColor: colors.primary, borderWidth: 1, borderColor: colors.primary },
+                {
+                  backgroundColor: account.accountNumber ? colors.primary : colors.border,
+                  borderWidth: 1,
+                  borderColor: account.accountNumber ? colors.primary : colors.border,
+                  opacity: account.accountNumber ? 1 : 0.5,
+                },
               ]}
               onPress={handleRIBRequest}
+              disabled={!account.accountNumber}
             >
               <IconSymbol name="creditcard" size={16} color="#FFFFFF" />
               <Text style={[styles.actionButtonText, { color: "#FFFFFF" }]}>Demander RIB</Text>
@@ -335,7 +363,7 @@ export default function AccountDetailsScreen() {
             </View>
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{account.accountNumber}</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{account.accountNumber || "Non attribué"}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>ID Client</Text>
@@ -356,13 +384,17 @@ export default function AccountDetailsScreen() {
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Solde comptable</Text>
               <Text style={[styles.infoValue, { color: colors.text }]}>
-                {formatAmount(account.bookBalance)} {account.currency}
+                {account.bookBalance === null
+                  ? "En attente"
+                  : `${formatAmount(account.bookBalance)} ${account.currency}`}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
               <Text style={[styles.infoValue, { color: colors.text }]}>
-                {formatAmount(account.availableBalance)} {account.currency}
+                {account.availableBalance === null
+                  ? "En attente"
+                  : `${formatAmount(account.availableBalance)} ${account.currency}`}
               </Text>
             </View>
             <View style={styles.infoRow}>
@@ -380,7 +412,9 @@ export default function AccountDetailsScreen() {
                     backgroundColor:
                       account.status.toLowerCase() === "active" || account.status.toLowerCase() === "actif"
                         ? "#059669"
-                        : "#DC2626",
+                        : account.status.toLowerCase() === "en attente"
+                          ? "#F59E0B"
+                          : "#DC2626",
                   },
                 ]}
               >
