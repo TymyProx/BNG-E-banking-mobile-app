@@ -335,15 +335,15 @@ export default function AccountsScreen() {
     const getGradientColors = (type: string) => {
       switch (type) {
         case "primary":
-          return ["rgba(20, 184, 166, 0.75)", "rgba(14, 165, 233, 0.7)"]
+          return ["rgba(52, 211, 153, 0.75)", "rgba(34, 197, 94, 0.7)"] // Soft emerald to green
         case "savings":
-          return ["rgba(34, 197, 94, 0.75)", "rgba(22, 163, 74, 0.7)"]
+          return ["rgba(251, 191, 36, 0.75)", "rgba(245, 158, 11, 0.7)"] // Soft yellow to amber
         case "checking":
-          return ["rgba(139, 92, 246, 0.75)", "rgba(124, 58, 237, 0.7)"]
+          return ["rgba(134, 239, 172, 0.75)", "rgba(52, 211, 153, 0.7)"] // Light green to emerald
         case "credit":
-          return ["rgba(236, 72, 153, 0.75)", "rgba(219, 39, 119, 0.7)"]
+          return ["rgba(253, 224, 71, 0.75)", "rgba(251, 191, 36, 0.7)"] // Bright yellow to amber
         default:
-          return ["rgba(20, 184, 166, 0.75)", "rgba(14, 165, 233, 0.7)"]
+          return ["rgba(52, 211, 153, 0.75)", "rgba(34, 197, 94, 0.7)"]
       }
     }
 
@@ -461,10 +461,10 @@ export default function AccountsScreen() {
           <View style={styles.currencyCardsContainer}>
             {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => {
               const gradients = [
-                ["rgba(20, 184, 166, 0.8)", "rgba(14, 165, 233, 0.75)"], // Soft teal to blue
-                ["rgba(251, 191, 36, 0.8)", "rgba(245, 158, 11, 0.75)"], // Soft amber/gold
-                ["rgba(139, 92, 246, 0.8)", "rgba(124, 58, 237, 0.75)"], // Soft purple
-                ["rgba(34, 197, 94, 0.8)", "rgba(22, 163, 74, 0.75)"], // Soft green
+                ["rgba(52, 211, 153, 0.8)", "rgba(34, 197, 94, 0.75)"], // Soft emerald to green
+                ["rgba(251, 191, 36, 0.8)", "rgba(245, 158, 11, 0.75)"], // Soft yellow to amber
+                ["rgba(134, 239, 172, 0.8)", "rgba(52, 211, 153, 0.75)"], // Light green to emerald
+                ["rgba(253, 224, 71, 0.8)", "rgba(251, 191, 36, 0.75)"], // Bright yellow to amber
               ]
 
               return (
@@ -553,7 +553,7 @@ export default function AccountsScreen() {
             </Text>
             <TouchableOpacity style={styles.createAccountButtonGlass} onPress={handleNewAccount}>
               <ExpoLinearGradient
-                colors={["rgba(20, 184, 166, 0.85)", "rgba(14, 165, 233, 0.8)"]}
+                colors={["rgba(52, 211, 153, 0.85)", "rgba(251, 191, 36, 0.8)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.createAccountGradient}
