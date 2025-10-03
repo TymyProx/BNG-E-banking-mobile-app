@@ -10,12 +10,15 @@ import {
   SafeAreaView,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
-import React from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import * as SecureStore from "expo-secure-store"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 interface Transaction {
   id: string
@@ -31,16 +34,20 @@ interface Transaction {
 
 interface AccountDetails {
   id: string
-  name: string
-  number: string
-  balance: number
-  type: string
+  accountId: string
+  customerId: string
+  accountNumber: string
+  accountName: string
   currency: string
+  bookBalance: string
+  availableBalance: string
   status: string
-  lastUpdate: string
-  iban: string
-  bic: string
-  openingDate: string
+  type: string
+  agency: string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
+  tenantId: string
 }
 
 export default function AccountDetailsScreen() {
@@ -52,8 +59,8 @@ export default function AccountDetailsScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
+  const { tenantId } = useAuth()
 
-  // Simulation des données de transactions
   const mockTransactions: Transaction[] = [
     {
       id: "1",
@@ -115,27 +122,36 @@ export default function AccountDetailsScreen() {
   const loadAccountDetails = async () => {
     setIsLoading(true)
     try {
-      // Simulation d'appel API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const token = await SecureStore.getItemAsync("token")
+      const accountId = params.id as string
 
-      const accountDetails: AccountDetails = {
-        id: params.id as string,
-        name: params.name as string,
-        number: params.number as string,
-        balance: Number.parseInt(params.balance as string),
-        type: params.type as string,
-        currency: params.currency as string,
-        status: params.status as string,
-        lastUpdate: params.lastUpdate as string,
-        iban: `GN82 BNG0 ${(params.number as string).slice(-10)}`,
-        bic: "BNGNGN33",
-        openingDate: "15 Mars 2023",
+      if (!token || !tenantId || !accountId) {
+        console.log("[v0] Missing token, tenantId, or accountId")
+        Alert.alert("Erreur", "Informations d'authentification manquantes")
+        setIsLoading(false)
+        return
       }
 
-      setAccount(accountDetails)
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.DETAILS(tenantId, accountId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("[v0] Account details loaded:", data)
+
+      setAccount(data)
       setTransactions(mockTransactions)
     } catch (error) {
-      console.error("Erreur lors du chargement des détails:", error)
+      console.error("[v0] Erreur lors du chargement des détails:", error)
+      Alert.alert("Erreur", "Impossible de charger les détails du compte. Veuillez réessayer.")
     } finally {
       setIsLoading(false)
     }
@@ -151,8 +167,9 @@ export default function AccountDetailsScreen() {
     loadAccountDetails()
   }, [])
 
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("fr-FR").format(Math.abs(amount))
+  const formatAmount = (amount: number | string) => {
+    const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
+    return new Intl.NumberFormat("fr-FR").format(Math.abs(numAmount))
   }
 
   const formatDate = (dateString: string) => {
@@ -188,10 +205,10 @@ export default function AccountDetailsScreen() {
       params: {
         preselectedAccount: JSON.stringify({
           id: account.id,
-          name: account.name,
-          number: account.number,
+          name: account.accountName,
+          number: account.accountNumber,
           type: account.type,
-          balance: account.balance,
+          balance: account.availableBalance,
           currency: account.currency,
         }),
         fromAccountDetails: "true",
@@ -206,8 +223,8 @@ export default function AccountDetailsScreen() {
       pathname: "/rib-request",
       params: {
         accountId: account.id,
-        accountName: account.name,
-        accountNumber: account.number,
+        accountName: account.accountName,
+        accountNumber: account.accountNumber,
       },
     })
   }
@@ -256,9 +273,9 @@ export default function AccountDetailsScreen() {
         <View style={[styles.accountCard, { backgroundColor: colors.cardBackground }]}>
           <View style={styles.accountHeader}>
             <View style={styles.accountInfo}>
-              <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
+              <Text style={[styles.accountName, { color: colors.text }]}>{account.accountName}</Text>
               <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>
-                {account.number.slice(-4).padStart(account.number.length, "•")}
+                {account.accountNumber.slice(-4).padStart(account.accountNumber.length, "•")}
               </Text>
             </View>
             <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
@@ -268,13 +285,18 @@ export default function AccountDetailsScreen() {
 
           <View style={styles.balanceSection}>
             <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
-            <Text style={[styles.balanceAmount, { color: account.balance >= 0 ? "#059669" : "#DC2626" }]}>
+            <Text
+              style={[
+                styles.balanceAmount,
+                { color: Number.parseFloat(account.availableBalance) >= 0 ? "#059669" : "#DC2626" },
+              ]}
+            >
               {showBalance
-                ? `${account.balance >= 0 ? "" : "-"}${formatAmount(account.balance)} ${account.currency}`
+                ? `${Number.parseFloat(account.availableBalance) >= 0 ? "" : "-"}${formatAmount(account.availableBalance)} ${account.currency}`
                 : "••••••"}
             </Text>
             <Text style={[styles.lastUpdate, { color: colors.textSecondary }]}>
-              Dernière mise à jour: {account.lastUpdate}
+              Dernière mise à jour: {new Date(account.updatedAt).toLocaleDateString("fr-FR")}
             </Text>
           </View>
 
@@ -308,25 +330,61 @@ export default function AccountDetailsScreen() {
           <Text style={[styles.infoTitle, { color: colors.text }]}>Informations du compte</Text>
           <View style={styles.infoList}>
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>IBAN</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{account.iban}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>ID Compte</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{account.accountId}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>BIC</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{account.bic}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{account.accountNumber}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>ID Client</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{account.customerId}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Agence</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{account.agency || "N/A"}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Type</Text>
               <Text style={[styles.infoValue, { color: colors.text }]}>{account.type}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Ouvert le</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{account.openingDate}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Devise</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{account.currency}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Solde comptable</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {formatAmount(account.bookBalance)} {account.currency}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Solde disponible</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {formatAmount(account.availableBalance)} {account.currency}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Créé le</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {new Date(account.createdAt).toLocaleDateString("fr-FR")}
+              </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Statut</Text>
-              <View style={[styles.statusBadge, { backgroundColor: "#059669" }]}>
-                <Text style={styles.statusText}>Actif</Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {
+                    backgroundColor:
+                      account.status.toLowerCase() === "active" || account.status.toLowerCase() === "actif"
+                        ? "#059669"
+                        : "#DC2626",
+                  },
+                ]}
+              >
+                <Text style={styles.statusText}>{account.status}</Text>
               </View>
             </View>
           </View>
