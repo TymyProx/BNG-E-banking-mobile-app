@@ -397,23 +397,22 @@ export default function AccountsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         {!isLoading && accounts.length > 0 && (
-          <Animated.View
-            style={[
-              styles.summaryCard,
-              { backgroundColor: colors.primary, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.summaryLabel}>Soldes totaux</Text>
+          <View style={styles.currencyCardsContainer}>
             {Object.entries(getTotalsByCurrency()).map(([currency, total]) => (
-              <View key={currency} style={styles.summaryAmountRow}>
-                <Text style={styles.summaryAmount}>{formatAmount(total)}</Text>
-                <Text style={styles.summaryCurrency}>{currency}</Text>
-              </View>
+              <Animated.View
+                key={currency}
+                style={[
+                  styles.currencyCard,
+                  { backgroundColor: colors.primary, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+                ]}
+              >
+                <Text style={styles.currencyLabel}>{currency}</Text>
+                <View style={styles.currencyAmountRow}>
+                  <Text style={styles.currencyAmount}>{formatAmount(total)}</Text>
+                </View>
+              </Animated.View>
             ))}
-            <View style={styles.summaryFooter}>
-              <Text style={styles.summarySubtext}>{accounts.length} compte(s)</Text>
-            </View>
-          </Animated.View>
+          </View>
         )}
 
         {!isLoading && accounts.length > 0 && (
@@ -565,50 +564,45 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  summaryCard: {
+  currencyCardsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
     marginHorizontal: 24,
     marginTop: 20,
     marginBottom: 24,
-    padding: 24,
-    borderRadius: 24,
+  },
+  currencyCard: {
+    flex: 1,
+    minWidth: "45%",
+    padding: 20,
+    borderRadius: 20,
     backgroundColor: colors.primary,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  summaryLabel: {
-    fontSize: 14,
-    fontWeight: "600",
+  currencyLabel: {
+    fontSize: 13,
+    fontWeight: "700",
     marginBottom: 8,
     color: "rgba(255,255,255,0.8)",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  summaryAmountRow: {
+  currencyAmountRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 8,
-    marginBottom: 8,
   },
-  summaryAmount: {
-    fontSize: 32,
+  currencyAmount: {
+    fontSize: 24,
     fontWeight: "800",
-    letterSpacing: -1.2,
+    letterSpacing: -1,
     color: "#FFFFFF",
   },
-  summaryCurrency: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.9)",
-  },
-  summaryFooter: {
-    marginTop: 4,
-  },
-  summarySubtext: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.7)",
-  },
+
   carouselContainer: {
     marginBottom: 32,
   },
