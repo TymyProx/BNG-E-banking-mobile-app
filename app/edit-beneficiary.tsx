@@ -90,9 +90,9 @@ export default function EditBeneficiary() {
   const [showBNGAgencyModal, setShowBNGAgencyModal] = useState(false)
 
   const beneficiaryTypes = [
-    { value: "same_bank", label: "Même banque" },
-    { value: "same_zone", label: "Même zone monétaire" },
-    { value: "international", label: "International" },
+    { value: "BNG-BNG", label: "Même banque" },
+    { value: "BNG-CONFRERE", label: "Même zone monétaire" },
+    { value: "International", label: "International" },
   ]
 
   const banks: Bank[] = [
@@ -196,11 +196,11 @@ export default function EditBeneficiary() {
 
         const data = await response.json()
 
-        let beneficiaryType = "same_zone"
+        let beneficiaryType = "BNG-CONFRERE"
         if (data.iban) {
-          beneficiaryType = "international"
+          beneficiaryType = "International"
         } else if (data.bankCode === "BNG001") {
-          beneficiaryType = "same_bank"
+          beneficiaryType = "BNG-BNG"
         }
 
         setFormData({
@@ -244,7 +244,7 @@ export default function EditBeneficiary() {
       newErrors.beneficiaryType = "Le type de bénéficiaire est requis"
     }
 
-    if (formData.beneficiaryType === "same_bank") {
+    if (formData.beneficiaryType === "BNG-BNG") {
       if (!formData.agencyCode.trim()) {
         newErrors.agencyCode = "Le code agence est requis"
       }
@@ -254,7 +254,7 @@ export default function EditBeneficiary() {
       if (!formData.ribKey.trim()) {
         newErrors.ribKey = "La clé RIB est requise"
       }
-    } else if (formData.beneficiaryType === "same_zone") {
+    } else if (formData.beneficiaryType === "BNG-CONFRERE") {
       if (!formData.bank.trim()) {
         newErrors.bank = "La banque est requise"
       }
@@ -264,7 +264,7 @@ export default function EditBeneficiary() {
       if (!formData.accountNumber.trim()) {
         newErrors.accountNumber = "Le numéro de compte est requis"
       }
-    } else if (formData.beneficiaryType === "international") {
+    } else if (formData.beneficiaryType === "International") {
       if (!formData.iban.trim()) {
         newErrors.iban = "L'IBAN est requis"
       }
@@ -308,7 +308,7 @@ export default function EditBeneficiary() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
+          body: JSON.JSONstringify({
             data: {
               customerId: user?.id || "", // Automatically set from logged-in user
               name: formData.fullName,
@@ -410,7 +410,7 @@ export default function EditBeneficiary() {
 
   const renderAccountFields = () => {
     switch (formData.beneficiaryType) {
-      case "same_bank":
+      case "BNG-BNG":
         return (
           <>
             <View style={styles.inputGroup}>
@@ -499,7 +499,7 @@ export default function EditBeneficiary() {
           </>
         )
 
-      case "same_zone":
+      case "BNG-CONFRERE":
         return (
           <>
             <View style={styles.inputGroup}>
@@ -596,7 +596,7 @@ export default function EditBeneficiary() {
           </>
         )
 
-      case "international":
+      case "International":
         return (
           <>
             <View style={styles.inputGroup}>
