@@ -335,15 +335,15 @@ export default function AccountsScreen() {
     const getGradientColors = (type: string) => {
       switch (type) {
         case "primary":
-          return ["rgba(16, 185, 129, 0.6)", "rgba(16, 185, 129, 0.4)"] // Soft green
+          return ["rgba(20, 184, 166, 0.75)", "rgba(14, 165, 233, 0.7)"]
         case "savings":
-          return ["rgba(16, 185, 129, 0.5)", "rgba(5, 150, 105, 0.4)"] // Soft green to darker green
+          return ["rgba(34, 197, 94, 0.75)", "rgba(22, 163, 74, 0.7)"]
         case "checking":
-          return ["rgba(148, 163, 184, 0.5)", "rgba(100, 116, 139, 0.4)"] // Soft gray
+          return ["rgba(139, 92, 246, 0.75)", "rgba(124, 58, 237, 0.7)"]
         case "credit":
-          return ["rgba(239, 68, 68, 0.5)", "rgba(220, 38, 38, 0.4)"] // Soft red
+          return ["rgba(236, 72, 153, 0.75)", "rgba(219, 39, 119, 0.7)"]
         default:
-          return ["rgba(16, 185, 129, 0.6)", "rgba(16, 185, 129, 0.4)"]
+          return ["rgba(20, 184, 166, 0.75)", "rgba(14, 165, 233, 0.7)"]
       }
     }
 
@@ -425,8 +425,8 @@ export default function AccountsScreen() {
       <ExpoLinearGradient
         colors={
           colorScheme === "dark"
-            ? ["rgba(15, 23, 42, 0.95)", "rgba(30, 41, 59, 0.9)"] // Softer dark gradients
-            : ["rgba(250, 250, 250, 0.98)", "rgba(241, 245, 249, 0.95)"] // Softer light gradients
+            ? ["rgba(30, 41, 59, 0.98)", "rgba(51, 65, 85, 0.95)"]
+            : ["rgba(248, 250, 252, 0.98)", "rgba(241, 245, 249, 0.95)"]
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -461,11 +461,12 @@ export default function AccountsScreen() {
           <View style={styles.currencyCardsContainer}>
             {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => {
               const gradients = [
-                ["rgba(16, 185, 129, 0.5)", "rgba(5, 150, 105, 0.4)"], // Soft green
-                ["rgba(255, 215, 0, 0.5)", "rgba(234, 179, 8, 0.4)"], // Soft gold
-                ["rgba(148, 163, 184, 0.5)", "rgba(100, 116, 139, 0.4)"], // Soft gray
-                ["rgba(16, 185, 129, 0.4)", "rgba(5, 150, 105, 0.3)"], // Very soft green
+                ["rgba(20, 184, 166, 0.8)", "rgba(14, 165, 233, 0.75)"], // Soft teal to blue
+                ["rgba(251, 191, 36, 0.8)", "rgba(245, 158, 11, 0.75)"], // Soft amber/gold
+                ["rgba(139, 92, 246, 0.8)", "rgba(124, 58, 237, 0.75)"], // Soft purple
+                ["rgba(34, 197, 94, 0.8)", "rgba(22, 163, 74, 0.75)"], // Soft green
               ]
+
               return (
                 <Animated.View
                   key={currency}
@@ -552,7 +553,7 @@ export default function AccountsScreen() {
             </Text>
             <TouchableOpacity style={styles.createAccountButtonGlass} onPress={handleNewAccount}>
               <ExpoLinearGradient
-                colors={["rgba(16, 185, 129, 0.7)", "rgba(5, 150, 105, 0.6)"]} // Softer gradient
+                colors={["rgba(20, 184, 166, 0.85)", "rgba(14, 165, 233, 0.8)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.createAccountGradient}
