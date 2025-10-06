@@ -16,6 +16,7 @@ import {
   Animated,
   Vibration,
   Dimensions,
+  ActivityIndicator,
 } from "react-native"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
@@ -71,6 +72,11 @@ export default function TransferScreen() {
     accountNumber: "",
   })
 
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
+  const [isLoadingBeneficiaries, setIsLoadingBeneficiaries] = useState(true)
+
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const shakeAnim = useRef(new Animated.Value(0)).current
@@ -81,56 +87,96 @@ export default function TransferScreen() {
   const motifRef = useRef<TextInput>(null)
   const otpRef = useRef<TextInput>(null)
 
-  const accounts: Account[] = [
-    {
-      id: "1",
-      name: "Compte Courant Principal",
-      number: "BNG001234567890",
-      balance: 2400000,
-      type: "courant",
-      currency: "GNF",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "BNG009876543210",
-      balance: 1800000,
-      type: "epargne",
-      currency: "GNF",
-    },
-    {
-      id: "3",
-      name: "Compte à Terme",
-      number: "BNG005555666777",
-      balance: 5000000,
-      type: "terme",
-      currency: "GNF",
-    },
-  ]
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("token")
+        if (!token || !tenantId) {
+          console.log("[v0] No token or tenantId available")
+          setIsLoadingAccounts(false)
+          return
+        }
 
-  const beneficiaries: Beneficiary[] = [
-    {
-      id: "1",
-      name: "Alice Johnson",
-      bank: "BNG Bank",
-      rib: "GN033BNG123456789012345678901234",
-      accountNumber: "123456789012",
-    },
-    {
-      id: "2",
-      name: "Bob Smith",
-      bank: "BICIGUI",
-      rib: "GN033BIC987654321098765432109876",
-      accountNumber: "987654321098",
-    },
-    {
-      id: "3",
-      name: "Carol Davis",
-      bank: "Société Générale Guinée",
-      rib: "GN033SGG555666777888999000111222",
-      accountNumber: "555666777888",
-    },
-  ]
+        console.log("[v0] Fetching accounts...")
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch accounts: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("[v0] Accounts fetched:", data)
+
+        // Map API response to Account interface
+        const mappedAccounts: Account[] = (data.rows || [])
+          .filter((acc: any) => acc.status === "ACTIF") // Only show active accounts
+          .map((acc: any) => ({
+            id: acc.id,
+            name: acc.accountName || "Compte sans nom",
+            number: acc.accountNumber || "Non attribué",
+            balance: Number.parseFloat(acc.availableBalance || "0"),
+            type: acc.type?.toLowerCase() || "courant",
+            currency: acc.currency || "GNF",
+          }))
+
+        setAccounts(mappedAccounts)
+      } catch (error) {
+        console.error("[v0] Error fetching accounts:", error)
+      } finally {
+        setIsLoadingAccounts(false)
+      }
+    }
+
+    fetchAccounts()
+  }, [tenantId])
+
+  useEffect(() => {
+    const fetchBeneficiaries = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("token")
+        if (!token || !tenantId) {
+          console.log("[v0] No token or tenantId available")
+          setIsLoadingBeneficiaries(false)
+          return
+        }
+
+        console.log("[v0] Fetching beneficiaries...")
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.LIST(tenantId)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch beneficiaries: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("[v0] Beneficiaries fetched:", data)
+
+        // Map API response to Beneficiary interface
+        const mappedBeneficiaries: Beneficiary[] = (data.rows || []).map((ben: any) => ({
+          id: ben.id,
+          name: ben.nomBeneficiaire || "Bénéficiaire sans nom",
+          bank: ben.banque || "Banque inconnue",
+          rib: ben.rib || "",
+          accountNumber: ben.numeroCompte || "",
+        }))
+
+        setBeneficiaries(mappedBeneficiaries)
+      } catch (error) {
+        console.error("[v0] Error fetching beneficiaries:", error)
+      } finally {
+        setIsLoadingBeneficiaries(false)
+      }
+    }
+
+    fetchBeneficiaries()
+  }, [tenantId])
 
   useEffect(() => {
     Animated.parallel([
@@ -148,7 +194,7 @@ export default function TransferScreen() {
   }, [])
 
   useEffect(() => {
-    let valid = false
+    const valid = false
     let progress = 0
 
     if (transferType) progress += 0.2
@@ -160,8 +206,6 @@ export default function TransferScreen() {
       progress += 0.2
     if (amount && validateAmount()) progress += 0.2
     if (motif.trim()) progress += 0.2
-
-    valid = progress === 1
 
     setIsFormValid(valid)
 
@@ -366,6 +410,33 @@ export default function TransferScreen() {
 
   const handleAddBeneficiarySuccess = () => {
     setShowAddBeneficiaryModal(false)
+    const fetchBeneficiaries = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("token")
+        if (!token || !tenantId) return
+
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.LIST(tenantId)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const mappedBeneficiaries: Beneficiary[] = (data.rows || []).map((ben: any) => ({
+            id: ben.id,
+            name: ben.nomBeneficiaire || "Bénéficiaire sans nom",
+            bank: ben.banque || "Banque inconnue",
+            rib: ben.rib || "",
+            accountNumber: ben.numeroCompte || "",
+          }))
+          setBeneficiaries(mappedBeneficiaries)
+        }
+      } catch (error) {
+        console.error("[v0] Error refreshing beneficiaries:", error)
+      }
+    }
+    fetchBeneficiaries()
   }
 
   return (
@@ -497,38 +568,49 @@ export default function TransferScreen() {
           {transferType && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte débiteur *</Text>
-              {accounts.map((account) => (
-                <TouchableOpacity
-                  key={account.id}
-                  style={[
-                    styles.accountCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderColor: selectedAccount?.id === account.id ? colors.primary : colors.border,
-                      borderWidth: selectedAccount?.id === account.id ? 2 : 1,
-                      shadowColor: colors.shadow,
-                    },
-                  ]}
-                  onPress={() => setSelectedAccount(account)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.accountInfo}>
-                    <View style={[styles.accountIcon, { backgroundColor: `${colors.primary}20` }]}>
-                      <IconSymbol name="creditcard.fill" size={24} color={colors.primary} />
+              {isLoadingAccounts ? (
+                <View style={styles.loadingSection}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement des comptes...</Text>
+                </View>
+              ) : accounts.length === 0 ? (
+                <View style={styles.emptySection}>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun compte actif disponible</Text>
+                </View>
+              ) : (
+                accounts.map((account) => (
+                  <TouchableOpacity
+                    key={account.id}
+                    style={[
+                      styles.accountCard,
+                      {
+                        backgroundColor: colors.cardBackground,
+                        borderColor: selectedAccount?.id === account.id ? colors.primary : colors.border,
+                        borderWidth: selectedAccount?.id === account.id ? 2 : 1,
+                        shadowColor: colors.shadow,
+                      },
+                    ]}
+                    onPress={() => setSelectedAccount(account)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.accountInfo}>
+                      <View style={[styles.accountIcon, { backgroundColor: `${colors.primary}20` }]}>
+                        <IconSymbol name="creditcard.fill" size={24} color={colors.primary} />
+                      </View>
+                      <View style={styles.accountDetails}>
+                        <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
+                        <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>{account.number}</Text>
+                        <Text style={[styles.accountBalance, { color: colors.text }]}>
+                          Solde: {account.balance.toLocaleString()} {account.currency}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.accountDetails}>
-                      <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
-                      <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>{account.number}</Text>
-                      <Text style={[styles.accountBalance, { color: colors.text }]}>
-                        Solde: {account.balance.toLocaleString()} {account.currency}
-                      </Text>
-                    </View>
-                  </View>
-                  {selectedAccount?.id === account.id && (
-                    <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
+                    {selectedAccount?.id === account.id && (
+                      <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
             </Animated.View>
           )}
 
@@ -545,36 +627,51 @@ export default function TransferScreen() {
                   <Text style={styles.addBeneficiaryBtnText}>Ajouter</Text>
                 </TouchableOpacity>
               </View>
-              {beneficiaries.map((beneficiary) => (
-                <TouchableOpacity
-                  key={beneficiary.id}
-                  style={[
-                    styles.beneficiaryCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderColor: selectedBeneficiary?.id === beneficiary.id ? colors.primary : colors.border,
-                      borderWidth: selectedBeneficiary?.id === beneficiary.id ? 2 : 1,
-                      shadowColor: colors.shadow,
-                    },
-                  ]}
-                  onPress={() => setSelectedBeneficiary(beneficiary)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.beneficiaryInfo}>
-                    <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.avatarText}>{beneficiary.name.charAt(0).toUpperCase()}</Text>
+              {isLoadingBeneficiaries ? (
+                <View style={styles.loadingSection}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                    Chargement des bénéficiaires...
+                  </Text>
+                </View>
+              ) : beneficiaries.length === 0 ? (
+                <View style={styles.emptySection}>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun bénéficiaire enregistré</Text>
+                </View>
+              ) : (
+                beneficiaries.map((beneficiary) => (
+                  <TouchableOpacity
+                    key={beneficiary.id}
+                    style={[
+                      styles.beneficiaryCard,
+                      {
+                        backgroundColor: colors.cardBackground,
+                        borderColor: selectedBeneficiary?.id === beneficiary.id ? colors.primary : colors.border,
+                        borderWidth: selectedBeneficiary?.id === beneficiary.id ? 2 : 1,
+                        shadowColor: colors.shadow,
+                      },
+                    ]}
+                    onPress={() => setSelectedBeneficiary(beneficiary)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.beneficiaryInfo}>
+                      <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.avatarText}>{beneficiary.name.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <View style={styles.beneficiaryDetails}>
+                        <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
+                        <Text style={[styles.beneficiaryBank, { color: colors.textSecondary }]}>
+                          {beneficiary.bank}
+                        </Text>
+                        <Text style={[styles.beneficiaryRib, { color: colors.textSecondary }]}>{beneficiary.rib}</Text>
+                      </View>
                     </View>
-                    <View style={styles.beneficiaryDetails}>
-                      <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
-                      <Text style={[styles.beneficiaryBank, { color: colors.textSecondary }]}>{beneficiary.bank}</Text>
-                      <Text style={[styles.beneficiaryRib, { color: colors.textSecondary }]}>{beneficiary.rib}</Text>
-                    </View>
-                  </View>
-                  {selectedBeneficiary?.id === beneficiary.id && (
-                    <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
+                    {selectedBeneficiary?.id === beneficiary.id && (
+                      <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
             </Animated.View>
           )}
 
@@ -943,6 +1040,26 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 16,
     letterSpacing: -0.3,
+  },
+  loadingSection: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  emptySection: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
   },
   transferTypeCard: {
     flexDirection: "row",
