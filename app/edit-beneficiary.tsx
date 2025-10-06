@@ -19,6 +19,7 @@ import { useRouter, useLocalSearchParams } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface FormData {
   fullName: string
@@ -308,7 +309,7 @@ export default function EditBeneficiary() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.JSONstringify({
+          body: JSON.stringify({
             data: {
               customerId: user?.id || "", // Automatically set from logged-in user
               name: formData.fullName,

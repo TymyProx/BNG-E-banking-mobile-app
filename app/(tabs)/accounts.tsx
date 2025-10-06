@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import React from "react"
 
 interface Account {
   id: string
@@ -49,11 +50,11 @@ export default function AccountsScreen() {
 
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
-  const autoScrollInterval = useRef<NodeJS.Timeout | null>(null)
+  const autoScrollInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [activeTypeIndex, setActiveTypeIndex] = useState(0)
   const typeScrollViewRef = useRef<ScrollView>(null)
-  const typeAutoScrollInterval = useRef<NodeJS.Timeout | null>(null)
+  const typeAutoScrollInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadAccounts = async () => {
     setIsLoading(true)
@@ -959,7 +960,6 @@ const styles = StyleSheet.create({
   paginationDot: {
     height: 8,
     borderRadius: 4,
-    transition: "all 0.3s ease",
   },
   loadingContainer: {
     paddingHorizontal: 24,
