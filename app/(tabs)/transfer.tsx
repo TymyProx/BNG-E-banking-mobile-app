@@ -158,13 +158,12 @@ export default function TransferScreen() {
         const data = await response.json()
         console.log("[v0] Beneficiaries fetched:", data)
 
-        // Map API response to Beneficiary interface
         const mappedBeneficiaries: Beneficiary[] = (data.rows || []).map((ben: any) => ({
           id: ben.id,
-          name: ben.name || "Bénéficiaire sans nom",
-          bank: ben.bankName || "Banque inconnue",
-          rib: ben.accountNumber || "",
-          accountNumber: ben.numeroCompte || "",
+          name: ben.nomBeneficiaire || "Bénéficiaire sans nom",
+          bank: ben.banque || "Banque inconnue",
+          rib: ben.rib || "",
+          accountNumber: ben.numeroCompte || "", // This is the account number used for creditAccount
         }))
 
         setBeneficiaries(mappedBeneficiaries)
@@ -438,7 +437,7 @@ export default function TransferScreen() {
             name: ben.nomBeneficiaire || "Bénéficiaire sans nom",
             bank: ben.banque || "Banque inconnue",
             rib: ben.rib || "",
-            accountNumber: ben.numeroCompte || "",
+            accountNumber: ben.numeroCompte || "", // This is the account number used for creditAccount
           }))
           setBeneficiaries(mappedBeneficiaries)
         }
