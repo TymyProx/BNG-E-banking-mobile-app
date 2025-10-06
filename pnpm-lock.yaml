@@ -102,8 +102,8 @@ importers:
         specifier: ^0.3.1
         version: 0.3.2(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)
       '@react-native-picker/picker':
-        specifier: ^2.11.1
-        version: 2.11.1(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)
+        specifier: latest
+        version: 2.11.2(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)
       '@react-navigation/bottom-tabs':
         specifier: latest
         version: 7.4.8(@react-native-masked-view/masked-view@0.3.2(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0))(@react-navigation/native@7.1.18(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0))(react-native-safe-area-context@5.6.1(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0))(react-native-screens@4.16.0(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)
@@ -1948,8 +1948,8 @@ packages:
       react: '>=16'
       react-native: '>=0.57'
 
-  '@react-native-picker/picker@2.11.1':
-    resolution: {integrity: sha512-ThklnkK4fV3yynnIIRBkxxjxR4IFbdMNJVF6tlLdOJ/zEFUEFUEdXY0KmH0iYzMwY8W4/InWsLiA7AkpAbnexA==}
+  '@react-native-picker/picker@2.11.2':
+    resolution: {integrity: sha512-2zyFdW4jgHjF+NeuDZ4nl3hJ+8suey69bI3yljqhNyowfklW2NwNrdDUaJ2iwtPCpk2pt7834aPF8TI6iyZRhA==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -7747,7 +7747,7 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0)
 
-  '@react-native-picker/picker@2.11.1(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)':
+  '@react-native-picker/picker@2.11.2(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)':
     dependencies:
       react: 19.1.0
       react-native: 0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0)
