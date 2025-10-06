@@ -94,7 +94,7 @@ export default function CardsScreen() {
 
     setIsLoadingAccounts(true)
     try {
-      const token = await SecureStore.getItemAsync("authToken")
+      const token = await SecureStore.getItemAsync("token")
       if (!token) {
         Alert.alert("Erreur", "Vous devez être connecté pour continuer")
         return
@@ -151,7 +151,7 @@ export default function CardsScreen() {
     setIsSubmitting(true)
 
     try {
-      const token = await SecureStore.getItemAsync("authToken")
+      const token = await SecureStore.getItemAsync("token")
       if (!token) {
         Alert.alert("Erreur", "Vous devez être connecté pour continuer")
         return
