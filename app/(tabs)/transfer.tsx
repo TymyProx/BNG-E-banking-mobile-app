@@ -26,7 +26,6 @@ import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -195,7 +194,7 @@ export default function TransferScreen() {
   }, [])
 
   useEffect(() => {
-    const valid = false
+    let valid = false
     let progress = 0
 
     if (transferType) progress += 0.2
@@ -207,6 +206,16 @@ export default function TransferScreen() {
       progress += 0.2
     if (amount && validateAmount()) progress += 0.2
     if (motif.trim()) progress += 0.2
+
+    // Calculate if form is valid
+    valid =
+      transferType !== null &&
+      selectedAccount !== null &&
+      ((transferType === "account" && selectedDestinationAccount !== null) ||
+        (transferType === "beneficiary" && selectedBeneficiary !== null)) &&
+      amount.trim() !== "" &&
+      validateAmount() &&
+      motif.trim() !== ""
 
     setIsFormValid(valid)
 
