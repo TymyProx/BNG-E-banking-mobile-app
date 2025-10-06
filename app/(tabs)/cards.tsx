@@ -18,10 +18,10 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { LinearGradient } from "expo-linear-gradient"
-import { useAuth } from "@/contexts/AuthContext"
-import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import * as SecureStore from "expo-secure-store"
 import { Picker } from "@react-native-picker/picker"
+import { useAuth } from "@/contexts/AuthContext"
+import * as SecureStore from "expo-secure-store"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 48
@@ -43,7 +43,7 @@ interface Account {
   accountNumber: string
   accountName: string
   currency: string
-  type: string
+  status: string
 }
 
 const CARD_TYPES = [
@@ -62,12 +62,12 @@ export default function CardsScreen() {
 
   const [showRequestModal, setShowRequestModal] = useState(false)
   const [selectedCardType, setSelectedCardType] = useState("")
-  const [selectedAccount, setSelectedAccount] = useState("")
+  const [selectedAccountId, setSelectedAccountId] = useState("")
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [loadingAccounts, setLoadingAccounts] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { user, tenantId, isLoading: authLoading } = useAuth()
+  const { user, tenantId } = useAuth()
 
   const [cards] = useState<Card[]>([
     {
@@ -84,15 +84,15 @@ export default function CardsScreen() {
   ])
 
   useEffect(() => {
-    if (showRequestModal) {
+    if (showRequestModal && tenantId) {
       fetchAccounts()
     }
-  }, [showRequestModal])
+  }, [showRequestModal, tenantId])
 
   const fetchAccounts = async () => {
     if (!tenantId) return
 
-    setLoadingAccounts(true)
+    setIsLoadingAccounts(true)
     try {
       const token = await SecureStore.getItemAsync("authToken")
       if (!token) {
@@ -103,8 +103,8 @@ export default function CardsScreen() {
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
         method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       })
 
@@ -117,10 +117,10 @@ export default function CardsScreen() {
         .filter((acc: any) => acc.status === "ACTIF")
         .map((acc: any) => ({
           id: acc.id,
-          accountNumber: acc.accountNumber,
-          accountName: acc.accountName,
-          currency: acc.currency,
-          type: acc.type,
+          accountNumber: acc.accountNumber || "N/A",
+          accountName: acc.accountName || "Compte",
+          currency: acc.currency || "",
+          status: acc.status,
         }))
 
       setAccounts(activeAccounts)
@@ -128,48 +128,37 @@ export default function CardsScreen() {
       console.error("Error fetching accounts:", error)
       Alert.alert("Erreur", "Impossible de récupérer vos comptes")
     } finally {
-      setLoadingAccounts(false)
+      setIsLoadingAccounts(false)
     }
   }
 
   const handleSubmitCardRequest = async () => {
-    console.log("[v0] Card request - Auth loading:", authLoading)
-    console.log("[v0] Card request - User:", user)
-    console.log("[v0] Card request - TenantId:", tenantId)
-
     if (!selectedCardType) {
       Alert.alert("Erreur", "Veuillez sélectionner un type de carte")
       return
     }
 
-    if (!selectedAccount) {
+    if (!selectedAccountId) {
       Alert.alert("Erreur", "Veuillez sélectionner un compte")
       return
     }
 
-    if (authLoading) {
-      Alert.alert("Chargement", "Veuillez patienter pendant le chargement de vos informations...")
-      return
-    }
-
     if (!user?.id || !tenantId) {
-      console.log("[v0] Card request - Missing user data. User ID:", user?.id, "Tenant ID:", tenantId)
-      Alert.alert("Erreur", "Vous devez être connecté pour continuer")
+      Alert.alert("Erreur", "Informations utilisateur manquantes")
       return
     }
 
-    setSubmitting(true)
+    setIsSubmitting(true)
+
     try {
       const token = await SecureStore.getItemAsync("authToken")
-      console.log("[v0] Card request - Token exists:", !!token)
-
       if (!token) {
         Alert.alert("Erreur", "Vous devez être connecté pour continuer")
         return
       }
 
-      const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-      if (!selectedAccountData) {
+      const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId)
+      if (!selectedAccount) {
         Alert.alert("Erreur", "Compte sélectionné introuvable")
         return
       }
@@ -184,51 +173,39 @@ export default function CardsScreen() {
           dateEmission: currentDate,
           dateExpiration: "N/A",
           idClient: user.id,
-          accountNumber: selectedAccountData.accountNumber,
+          accountNumber: selectedAccount.accountNumber,
         },
       }
-
-      console.log("[v0] Card request - Request body:", requestBody)
 
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.CREATE(tenantId)}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
       })
 
-      console.log("[v0] Card request - Response status:", response.status)
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.log("[v0] Card request - Error response:", errorData)
-        throw new Error("Erreur lors de la demande de carte")
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Erreur lors de la demande de carte")
       }
 
-      const responseData = await response.json()
-      console.log("[v0] Card request - Success response:", responseData)
-
-      Alert.alert(
-        "Succès",
-        "Votre demande de carte a été enregistrée avec succès. Elle sera traitée dans les plus brefs délais.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              setShowRequestModal(false)
-              setSelectedCardType("")
-              setSelectedAccount("")
-            },
+      Alert.alert("Succès", "Votre demande de carte a été enregistrée avec succès", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowRequestModal(false)
+            setSelectedCardType("")
+            setSelectedAccountId("")
           },
-        ],
-      )
-    } catch (error) {
-      console.error("[v0] Card request - Error:", error)
-      Alert.alert("Erreur", "Impossible de soumettre votre demande. Veuillez réessayer.")
+        },
+      ])
+    } catch (error: any) {
+      console.error("Error submitting card request:", error)
+      Alert.alert("Erreur", error.message || "Impossible de soumettre votre demande")
     } finally {
-      setSubmitting(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -408,9 +385,9 @@ export default function CardsScreen() {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {/* Card type selection */}
+              {/* Card Type Selection */}
               <View style={styles.formGroup}>
-                <Text style={[styles.label, { color: colors.text }]}>Type de carte</Text>
+                <Text style={[styles.formLabel, { color: colors.text }]}>Type de carte *</Text>
                 <View
                   style={[
                     styles.pickerContainer,
@@ -430,12 +407,12 @@ export default function CardsScreen() {
                 </View>
               </View>
 
-              {/* Account selection */}
+              {/* Account Selection */}
               <View style={styles.formGroup}>
-                <Text style={[styles.label, { color: colors.text }]}>Compte à rattacher</Text>
-                {loadingAccounts ? (
+                <Text style={[styles.formLabel, { color: colors.text }]}>Compte à rattacher *</Text>
+                {isLoadingAccounts ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={colors.primary} />
+                    <ActivityIndicator size="small" color="#10B981" />
                     <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement des comptes...</Text>
                   </View>
                 ) : accounts.length === 0 ? (
@@ -450,8 +427,8 @@ export default function CardsScreen() {
                     ]}
                   >
                     <Picker
-                      selectedValue={selectedAccount}
-                      onValueChange={(value) => setSelectedAccount(value)}
+                      selectedValue={selectedAccountId}
+                      onValueChange={(value) => setSelectedAccountId(value)}
                       style={[styles.picker, { color: colors.text }]}
                     >
                       <Picker.Item label="Sélectionnez un compte" value="" />
@@ -467,28 +444,28 @@ export default function CardsScreen() {
                 )}
               </View>
 
-              {/* Info message */}
-              <View style={[styles.infoBox, { backgroundColor: "#E5F0FF" }]}>
+              {/* Info text */}
+              <View style={[styles.infoBox, { backgroundColor: colors.cardBackground }]}>
                 <IconSymbol name="info.circle.fill" size={20} color="#0066FF" />
-                <Text style={[styles.infoBoxText, { color: "#0066FF" }]}>
-                  Votre demande sera traitée dans un délai de 3 à 5 jours ouvrables. Vous recevrez une notification une
-                  fois votre carte prête.
+                <Text style={[styles.infoBoxText, { color: colors.textSecondary }]}>
+                  Votre demande sera traitée sous 48h. Vous recevrez une notification une fois votre carte prête.
                 </Text>
               </View>
             </ScrollView>
 
-            {/* Submit button */}
+            {/* Submit Button */}
             <View style={styles.modalFooter}>
               <TouchableOpacity
                 style={[
                   styles.submitButton,
-                  { backgroundColor: "#0066FF" },
-                  (!selectedCardType || !selectedAccount || submitting) && styles.submitButtonDisabled,
+                  {
+                    backgroundColor: selectedCardType && selectedAccountId && !isSubmitting ? "#10B981" : colors.border,
+                  },
                 ]}
                 onPress={handleSubmitCardRequest}
-                disabled={!selectedCardType || !selectedAccount || submitting}
+                disabled={!selectedCardType || !selectedAccountId || isSubmitting}
               >
-                {submitting ? (
+                {isSubmitting ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
                   <Text style={styles.submitButtonText}>Soumettre la demande</Text>
@@ -791,35 +768,35 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingTop: 24,
     maxHeight: "80%",
+    paddingBottom: 40,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
-    marginBottom: 24,
+    padding: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
   },
   modalBody: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
+    padding: 24,
   },
   formGroup: {
     marginBottom: 24,
   },
-  label: {
+  formLabel: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   pickerContainer: {
-    borderRadius: 12,
     borderWidth: 1,
+    borderRadius: 12,
     overflow: "hidden",
   },
   picker: {
@@ -848,25 +825,21 @@ const styles = StyleSheet.create({
   },
   infoBoxText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   modalFooter: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    padding: 24,
+    paddingTop: 16,
   },
   submitButton: {
-    padding: 18,
+    padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
   },
   submitButtonText: {
+    color: "white",
     fontSize: 16,
     fontWeight: "700",
-    color: "white",
   },
 })
