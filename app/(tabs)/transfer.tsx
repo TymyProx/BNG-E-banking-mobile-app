@@ -407,7 +407,9 @@ export default function TransferScreen() {
   }
 
   const getAvailableDestinationAccounts = () => {
-    return accounts.filter((account) => account.id !== selectedAccount?.id)
+    return accounts.filter(
+      (account) => account.id !== selectedAccount?.id && account.currency === selectedAccount?.currency,
+    )
   }
 
   const selectTransferType = (type: TransferType) => {
@@ -687,38 +689,46 @@ export default function TransferScreen() {
           {transferType === "account" && selectedAccount && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte créditeur *</Text>
-              {getAvailableDestinationAccounts().map((account) => (
-                <TouchableOpacity
-                  key={account.id}
-                  style={[
-                    styles.accountCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderColor: selectedDestinationAccount?.id === account.id ? colors.primary : colors.border,
-                      borderWidth: selectedDestinationAccount?.id === account.id ? 2 : 1,
-                      shadowColor: colors.shadow,
-                    },
-                  ]}
-                  onPress={() => setSelectedDestinationAccount(account)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.accountInfo}>
-                    <View style={[styles.accountIcon, { backgroundColor: `${colors.secondary}20` }]}>
-                      <IconSymbol name="plus.circle.fill" size={24} color={colors.secondary} />
+              {getAvailableDestinationAccounts().length === 0 ? (
+                <View style={styles.emptySection}>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                    Aucun compte disponible avec la même devise ({selectedAccount.currency})
+                  </Text>
+                </View>
+              ) : (
+                getAvailableDestinationAccounts().map((account) => (
+                  <TouchableOpacity
+                    key={account.id}
+                    style={[
+                      styles.accountCard,
+                      {
+                        backgroundColor: colors.cardBackground,
+                        borderColor: selectedDestinationAccount?.id === account.id ? colors.primary : colors.border,
+                        borderWidth: selectedDestinationAccount?.id === account.id ? 2 : 1,
+                        shadowColor: colors.shadow,
+                      },
+                    ]}
+                    onPress={() => setSelectedDestinationAccount(account)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.accountInfo}>
+                      <View style={[styles.accountIcon, { backgroundColor: `${colors.secondary}20` }]}>
+                        <IconSymbol name="plus.circle.fill" size={24} color={colors.secondary} />
+                      </View>
+                      <View style={styles.accountDetails}>
+                        <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
+                        <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>{account.number}</Text>
+                        <Text style={[styles.accountBalance, { color: colors.text }]}>
+                          Solde: {account.balance.toLocaleString()} {account.currency}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.accountDetails}>
-                      <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
-                      <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>{account.number}</Text>
-                      <Text style={[styles.accountBalance, { color: colors.text }]}>
-                        Solde: {account.balance.toLocaleString()} {account.currency}
-                      </Text>
-                    </View>
-                  </View>
-                  {selectedDestinationAccount?.id === account.id && (
-                    <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
+                    {selectedDestinationAccount?.id === account.id && (
+                      <IconSymbol name="checkmark.circle.fill" size={24} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
             </Animated.View>
           )}
 
