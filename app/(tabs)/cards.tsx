@@ -67,7 +67,7 @@ export default function CardsScreen() {
   const [loadingAccounts, setLoadingAccounts] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  const { user, tenantId } = useAuth()
+  const { user, tenantId, isLoading: authLoading } = useAuth()
 
   const [cards] = useState<Card[]>([
     {
@@ -133,6 +133,10 @@ export default function CardsScreen() {
   }
 
   const handleSubmitCardRequest = async () => {
+    console.log("[v0] Card request - Auth loading:", authLoading)
+    console.log("[v0] Card request - User:", user)
+    console.log("[v0] Card request - TenantId:", tenantId)
+
     if (!selectedCardType) {
       Alert.alert("Erreur", "Veuillez sélectionner un type de carte")
       return
@@ -143,14 +147,22 @@ export default function CardsScreen() {
       return
     }
 
+    if (authLoading) {
+      Alert.alert("Chargement", "Veuillez patienter pendant le chargement de vos informations...")
+      return
+    }
+
     if (!user?.id || !tenantId) {
-      Alert.alert("Erreur", "Informations utilisateur manquantes")
+      console.log("[v0] Card request - Missing user data. User ID:", user?.id, "Tenant ID:", tenantId)
+      Alert.alert("Erreur", "Vous devez être connecté pour continuer")
       return
     }
 
     setSubmitting(true)
     try {
       const token = await SecureStore.getItemAsync("authToken")
+      console.log("[v0] Card request - Token exists:", !!token)
+
       if (!token) {
         Alert.alert("Erreur", "Vous devez être connecté pour continuer")
         return
@@ -176,6 +188,8 @@ export default function CardsScreen() {
         },
       }
 
+      console.log("[v0] Card request - Request body:", requestBody)
+
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.CREATE(tenantId)}`, {
         method: "POST",
         headers: {
@@ -185,9 +199,16 @@ export default function CardsScreen() {
         body: JSON.stringify(requestBody),
       })
 
+      console.log("[v0] Card request - Response status:", response.status)
+
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.log("[v0] Card request - Error response:", errorData)
         throw new Error("Erreur lors de la demande de carte")
       }
+
+      const responseData = await response.json()
+      console.log("[v0] Card request - Success response:", responseData)
 
       Alert.alert(
         "Succès",
@@ -204,7 +225,7 @@ export default function CardsScreen() {
         ],
       )
     } catch (error) {
-      console.error("Error submitting card request:", error)
+      console.error("[v0] Card request - Error:", error)
       Alert.alert("Erreur", "Impossible de soumettre votre demande. Veuillez réessayer.")
     } finally {
       setSubmitting(false)
