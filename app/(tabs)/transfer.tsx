@@ -160,10 +160,10 @@ export default function TransferScreen() {
 
         const mappedBeneficiaries: Beneficiary[] = (data.rows || []).map((ben: any) => ({
           id: ben.id,
-          name: ben.nomBeneficiaire || "Bénéficiaire sans nom",
-          bank: ben.banque || "Banque inconnue",
-          rib: ben.rib || "",
-          accountNumber: ben.numeroCompte || "", // This is the account number used for creditAccount
+          name: ben.name || "Bénéficiaire sans nom",
+          bank: ben.bankName || "Banque inconnue",
+          rib: ben.accountNumber || "",
+          accountNumber: ben.accountNumber || "", // This is the account number used for creditAccount
         }))
 
         setBeneficiaries(mappedBeneficiaries)
