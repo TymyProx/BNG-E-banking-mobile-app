@@ -95,6 +95,7 @@
     "sonner": "^1.4.41",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "latest",
     "vaul": "^1.1.2"
   },
   "devDependencies": {

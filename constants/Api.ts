@@ -22,4 +22,8 @@ export const API_ENDPOINTS = {
     UPDATE: (tenantId: string, accountId: string) => `/tenant/${tenantId}/compte/${accountId}`,
     DELETE: (tenantId: string, accountId: string) => `/tenant/${tenantId}/compte/${accountId}`,
   },
+  TRANSACTION: {
+    CREATE: (tenantId: string) => `/tenant/${tenantId}/transaction`,
+    LIST: (tenantId: string) => `/tenant/${tenantId}/transaction`,
+  },
 }

@@ -22,7 +22,9 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { router } from "expo-router"
 import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
-import React from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import * as SecureStore from "expo-secure-store"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 const { width } = Dimensions.get("window")
 
@@ -48,8 +50,8 @@ type TransferType = "beneficiary" | "account"
 export default function TransferScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
+  const { user, tenantId } = useAuth()
 
-  // États principaux
   const [transferType, setTransferType] = useState<TransferType | null>(null)
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | null>(null)
@@ -69,19 +71,16 @@ export default function TransferScreen() {
     accountNumber: "",
   })
 
-  // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const shakeAnim = useRef(new Animated.Value(0)).current
   const buttonScaleAnim = useRef(new Animated.Value(1)).current
   const progressAnim = useRef(new Animated.Value(0)).current
 
-  // Input refs
   const amountRef = useRef<TextInput>(null)
   const motifRef = useRef<TextInput>(null)
   const otpRef = useRef<TextInput>(null)
 
-  // Données simulées
   const accounts: Account[] = [
     {
       id: "1",
@@ -134,7 +133,6 @@ export default function TransferScreen() {
   ]
 
   useEffect(() => {
-    // Entrance animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -150,7 +148,6 @@ export default function TransferScreen() {
   }, [])
 
   useEffect(() => {
-    // Form validation and progress
     let valid = false
     let progress = 0
 
@@ -255,7 +252,7 @@ export default function TransferScreen() {
     }, 1500)
   }
 
-  const validateTransfer = () => {
+  const validateTransfer = async () => {
     if (otpCode !== "123456") {
       shakeAnimation()
       setFeedback({ message: "Code OTP incorrect", type: "error" })
@@ -265,20 +262,77 @@ export default function TransferScreen() {
     buttonPressAnimation()
     setIsLoading(true)
 
-    setTimeout(() => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+      if (!token || !tenantId || !selectedAccount) {
+        throw new Error("Authentication required")
+      }
+
+      const txnId = `TXN${Date.now()}`
+      const txnType = transferType === "account" ? "TRANSFERT" : "VIREMENT"
+      const creditAccount =
+        transferType === "account" ? selectedDestinationAccount?.number || "" : selectedBeneficiary?.accountNumber || ""
+
+      const transactionData = {
+        data: {
+          txnId,
+          accountId: selectedAccount.id,
+          txnType,
+          amount: amount.replace(/\s/g, ""),
+          valueDate: new Date().toISOString(),
+          status: "EN ATTENTE",
+          description: motif,
+          creditAccount,
+          commentNotes: `${transferType === "account" ? "Transfert" : "Virement"} vers ${
+            transferType === "account" ? selectedDestinationAccount?.name : selectedBeneficiary?.name
+          }`,
+        },
+      }
+
+      console.log("[v0] Creating transaction:", transactionData)
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.CREATE(tenantId)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(transactionData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Erreur ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log("[v0] Transaction created successfully:", result)
+
       setIsLoading(false)
       setShowOtpModal(false)
 
       const transferTypeText = transferType === "account" ? "Transfert" : "Virement"
       const destinationText = transferType === "account" ? selectedDestinationAccount?.name : selectedBeneficiary?.name
 
-      Alert.alert("Succès", `${transferTypeText} de ${amount} GNF vers ${destinationText} effectué avec succès.`, [
-        {
-          text: "OK",
-          onPress: () => resetForm(),
-        },
-      ])
-    }, 2000)
+      Alert.alert(
+        "Succès",
+        `${transferTypeText} de ${amount} GNF vers ${destinationText} effectué avec succès.\n\nRéférence: ${txnId}`,
+        [
+          {
+            text: "OK",
+            onPress: () => resetForm(),
+          },
+        ],
+      )
+    } catch (error) {
+      console.error("[v0] Transaction error:", error)
+      setIsLoading(false)
+      setFeedback({
+        message: error instanceof Error ? error.message : "Erreur lors de la création du virement",
+        type: "error",
+      })
+      shakeAnimation()
+    }
   }
 
   const resetForm = () => {
@@ -305,7 +359,6 @@ export default function TransferScreen() {
 
   const selectTransferType = (type: TransferType) => {
     setTransferType(type)
-    // Reset selections when changing type
     setSelectedBeneficiary(null)
     setSelectedDestinationAccount(null)
     setFeedback({ message: "", type: "" })
@@ -318,7 +371,6 @@ export default function TransferScreen() {
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header with Progress */}
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.headerContent}>
             <TouchableOpacity
@@ -353,7 +405,6 @@ export default function TransferScreen() {
           </View>
         </Animated.View>
 
-        {/* Feedback Message */}
         {feedback.message ? (
           <Animated.View
             style={[
@@ -381,7 +432,6 @@ export default function TransferScreen() {
           contentContainerStyle={{ paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Type de transfert */}
           <Animated.View style={[styles.section, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Type de transfert *</Text>
 
@@ -444,7 +494,6 @@ export default function TransferScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Compte débiteur */}
           {transferType && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte débiteur *</Text>
@@ -483,7 +532,6 @@ export default function TransferScreen() {
             </Animated.View>
           )}
 
-          {/* Bénéficiaire */}
           {transferType === "beneficiary" && selectedAccount && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
               <View style={styles.sectionHeader}>
@@ -530,7 +578,6 @@ export default function TransferScreen() {
             </Animated.View>
           )}
 
-          {/* Compte de destination (transfert entre comptes) */}
           {transferType === "account" && selectedAccount && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte créditeur *</Text>
@@ -569,13 +616,11 @@ export default function TransferScreen() {
             </Animated.View>
           )}
 
-          {/* Montant et motif */}
           {((transferType === "account" && selectedAccount && selectedDestinationAccount) ||
             (transferType === "beneficiary" && selectedAccount && selectedBeneficiary)) && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Détails du transfert</Text>
 
-              {/* Montant */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.label, { color: colors.text }]}>Montant *</Text>
                 <View
@@ -612,7 +657,6 @@ export default function TransferScreen() {
                 )}
               </View>
 
-              {/* Montants rapides */}
               <View style={styles.quickAmountsContainer}>
                 <Text style={[styles.quickAmountsLabel, { color: colors.textSecondary }]}>Montants suggérés</Text>
                 <View style={styles.quickAmountsGrid}>
@@ -637,7 +681,6 @@ export default function TransferScreen() {
                 </View>
               </View>
 
-              {/* Motif */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.label, { color: colors.text }]}>
                   Motif du {transferType === "account" ? "transfert" : "virement"} *
@@ -677,7 +720,6 @@ export default function TransferScreen() {
           )}
         </ScrollView>
 
-        {/* Bouton de validation */}
         <Animated.View
           style={[
             styles.buttonContainer,
@@ -715,7 +757,6 @@ export default function TransferScreen() {
           </Animated.View>
         </Animated.View>
 
-        {/* Modal OTP */}
         <Modal visible={showOtpModal} animationType="slide" presentationStyle="pageSheet">
           <TouchableWithoutFeedback onPress={dismissKeyboard}>
             <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
@@ -803,7 +844,6 @@ export default function TransferScreen() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Modal Ajout Bénéficiaire */}
         <Modal visible={showAddBeneficiaryModal} animationType="slide" presentationStyle="pageSheet">
           <SafeAreaView style={[styles.addBeneficiaryModal, { backgroundColor: colors.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
@@ -845,10 +885,25 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     marginBottom: 12,
   },
-  //  backButton: {
-  //   marginRight: 18,
-  //   padding: 10,
-  // },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerSpacer: {
+    width: 44,
+  },
   progressContainer: {
     marginTop: 8,
   },
@@ -1258,24 +1313,5 @@ const styles = StyleSheet.create({
   addBeneficiaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerSpacer: {
-    width: 44,
   },
 })
