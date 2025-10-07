@@ -114,6 +114,30 @@ export default function CardsScreen() {
 
   const [cardFilter, setCardFilter] = useState<"ACTIF" | "EN ATTENTE">("ACTIF")
 
+  const [flippedCardId, setFlippedCardId] = useState<string | null>(null)
+  const flipAnimations = useRef<{ [key: string]: Animated.Value }>({}).current
+
+  const getFlipAnimation = (cardId: string) => {
+    if (!flipAnimations[cardId]) {
+      flipAnimations[cardId] = new Animated.Value(0)
+    }
+    return flipAnimations[cardId]
+  }
+
+  const handleCardFlip = (cardId: string) => {
+    const flipAnim = getFlipAnimation(cardId)
+    const isFlipped = flippedCardId === cardId
+
+    Animated.spring(flipAnim, {
+      toValue: isFlipped ? 0 : 180,
+      friction: 8,
+      tension: 10,
+      useNativeDriver: true,
+    }).start()
+
+    setFlippedCardId(isFlipped ? null : cardId)
+  }
+
   useFocusEffect(
     React.useCallback(() => {
       if (tenantId) {
@@ -515,77 +539,175 @@ export default function CardsScreen() {
                 decelerationRate="fast"
                 contentContainerStyle={styles.carouselContent}
               >
-                {filteredCards.map((card, index) => (
-                  <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
-                    <LinearGradient
-                      colors={
-                        getCardColors(card.name) as [
-                          import("react-native").ColorValue,
-                          import("react-native").ColorValue,
-                        ]
-                      }
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.goldCard}
-                    >
-                      {/* Card pattern overlay */}
-                      <View style={styles.cardPattern}>
-                        <View style={[styles.patternCircle, styles.patternCircle1]} />
-                        <View style={[styles.patternCircle, styles.patternCircle2]} />
-                        <View style={[styles.patternCircle, styles.patternCircle3]} />
-                      </View>
+                {filteredCards.map((card, index) => {
+                  const flipAnim = getFlipAnimation(card.id)
+                  const isFlipped = flippedCardId === card.id
 
-                      {/* Card content */}
-                      <View style={styles.cardContent}>
-                        {/* Bank logo and card type */}
-                        <View style={styles.cardHeader}>
-                          <View style={styles.bankLogo}>
-                            <Text style={styles.bankLogoText}>BNG</Text>
-                            <Text style={styles.bankLogoSubtext}>BANK</Text>
-                          </View>
-                          <View style={styles.goldTextContainer}>
-                            {(card.status === "expired" || card.isBlocked) && (
-                              <View
-                                style={[
-                                  styles.statusBadge,
-                                  {
-                                    backgroundColor: card.isBlocked ? "#FF4444" : "#FFA500",
-                                  },
-                                ]}
-                              >
-                                <Text style={styles.statusBadgeText}>{card.isBlocked ? "BLOQUÉE" : "EN ATTENTE"}</Text>
+                  const frontInterpolate = flipAnim.interpolate({
+                    inputRange: [0, 180],
+                    outputRange: ["0deg", "180deg"],
+                  })
+
+                  const backInterpolate = flipAnim.interpolate({
+                    inputRange: [0, 180],
+                    outputRange: ["180deg", "360deg"],
+                  })
+
+                  const frontOpacity = flipAnim.interpolate({
+                    inputRange: [0, 90, 90, 180],
+                    outputRange: [1, 1, 0, 0],
+                  })
+
+                  const backOpacity = flipAnim.interpolate({
+                    inputRange: [0, 90, 90, 180],
+                    outputRange: [0, 0, 1, 1],
+                  })
+
+                  return (
+                    <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
+                      <TouchableOpacity
+                        activeOpacity={0.95}
+                        onPress={() => cardFilter === "ACTIF" && handleCardFlip(card.id)}
+                        disabled={cardFilter !== "ACTIF"}
+                      >
+                        <View style={styles.cardFlipContainer}>
+                          <Animated.View
+                            style={[
+                              styles.cardFace,
+                              {
+                                transform: [{ rotateY: frontInterpolate }],
+                                opacity: frontOpacity,
+                              },
+                            ]}
+                          >
+                            <LinearGradient
+                              colors={
+                                getCardColors(card.name) as [
+                                  import("react-native").ColorValue,
+                                  import("react-native").ColorValue,
+                                ]
+                              }
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={styles.goldCard}
+                            >
+                              {/* Card pattern overlay */}
+                              <View style={styles.cardPattern}>
+                                <View style={[styles.patternCircle, styles.patternCircle1]} />
+                                <View style={[styles.patternCircle, styles.patternCircle2]} />
+                                <View style={[styles.patternCircle, styles.patternCircle3]} />
                               </View>
-                            )}
-                            <Text style={styles.goldText}>{card.name}</Text>
-                          </View>
+
+                              {/* Card content */}
+                              <View style={styles.cardContent}>
+                                {/* Bank logo and card type */}
+                                <View style={styles.cardHeader}>
+                                  <View style={styles.bankLogo}>
+                                    <Text style={styles.bankLogoText}>BNG</Text>
+                                    <Text style={styles.bankLogoSubtext}>BANK</Text>
+                                  </View>
+                                  <View style={styles.goldTextContainer}>
+                                    {(card.status === "expired" || card.isBlocked) && (
+                                      <View
+                                        style={[
+                                          styles.statusBadge,
+                                          {
+                                            backgroundColor: card.isBlocked ? "#FF4444" : "#FFA500",
+                                          },
+                                        ]}
+                                      >
+                                        <Text style={styles.statusBadgeText}>
+                                          {card.isBlocked ? "BLOQUÉE" : "EN ATTENTE"}
+                                        </Text>
+                                      </View>
+                                    )}
+                                    <Text style={styles.goldText}>{card.name}</Text>
+                                  </View>
+                                </View>
+
+                                {/* Chip and contactless */}
+                                <View style={styles.chipContainer}>
+                                  <View style={styles.chip}>
+                                    <View style={styles.chipPattern} />
+                                  </View>
+                                  <IconSymbol name="wave.3.right" size={24} color="rgba(255,255,255,0.9)" />
+                                </View>
+
+                                {/* Card number */}
+                                <Text style={styles.cardNumber}>{card.number}</Text>
+
+                                {/* Expiry date */}
+                                <Text style={styles.expiryDate}>{card.expiry}</Text>
+
+                                {/* Cardholder name */}
+                                <View style={styles.cardFooter}>
+                                  <View>
+                                    <Text style={styles.cardholderLabel}>CARDHOLDER NAME</Text>
+                                    <Text style={styles.cardholderName}>{card.cardholderName}</Text>
+                                  </View>
+                                  <Text style={styles.visaLogo}>{card.type.toUpperCase()}</Text>
+                                </View>
+                              </View>
+                            </LinearGradient>
+                          </Animated.View>
+
+                          <Animated.View
+                            style={[
+                              styles.cardFace,
+                              styles.cardBack,
+                              {
+                                transform: [{ rotateY: backInterpolate }],
+                                opacity: backOpacity,
+                              },
+                            ]}
+                          >
+                            <LinearGradient
+                              colors={
+                                getCardColors(card.name) as [
+                                  import("react-native").ColorValue,
+                                  import("react-native").ColorValue,
+                                ]
+                              }
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={styles.goldCard}
+                            >
+                              {/* Magnetic stripe */}
+                              <View style={styles.magneticStripe} />
+
+                              {/* Card back content */}
+                              <View style={styles.cardBackContent}>
+                                {/* Signature panel */}
+                                <View style={styles.signaturePanel}>
+                                  <Text style={styles.signatureText}>Signature</Text>
+                                </View>
+
+                                {/* CVV section */}
+                                <View style={styles.cvvSection}>
+                                  <View style={styles.cvvBox}>
+                                    <Text style={styles.cvvLabel}>CVV</Text>
+                                    <Text style={styles.cvvValue}>•••</Text>
+                                  </View>
+                                </View>
+
+                                {/* Bank info */}
+                                <View style={styles.backBankInfo}>
+                                  <View style={styles.backBankLogo}>
+                                    <Text style={styles.backBankLogoText}>BNG BANK</Text>
+                                  </View>
+                                  <Text style={styles.backInfoText}>
+                                    Pour toute question, contactez le service client au +225 XX XX XX XX XX
+                                  </Text>
+                                  <Text style={styles.visaLogo}>{card.type.toUpperCase()}</Text>
+                                </View>
+                              </View>
+                            </LinearGradient>
+                          </Animated.View>
                         </View>
-
-                        {/* Chip and contactless */}
-                        <View style={styles.chipContainer}>
-                          <View style={styles.chip}>
-                            <View style={styles.chipPattern} />
-                          </View>
-                          <IconSymbol name="wave.3.right" size={24} color="rgba(255,255,255,0.9)" />
-                        </View>
-
-                        {/* Card number */}
-                        <Text style={styles.cardNumber}>{card.number}</Text>
-
-                        {/* Expiry date */}
-                        <Text style={styles.expiryDate}>{card.expiry}</Text>
-
-                        {/* Cardholder name */}
-                        <View style={styles.cardFooter}>
-                          <View>
-                            <Text style={styles.cardholderLabel}>CARDHOLDER NAME</Text>
-                            <Text style={styles.cardholderName}>{card.cardholderName}</Text>
-                          </View>
-                          <Text style={styles.visaLogo}>{card.type.toUpperCase()}</Text>
-                        </View>
-                      </View>
-                    </LinearGradient>
-                  </View>
-                ))}
+                      </TouchableOpacity>
+                    </View>
+                  )
+                })}
               </Animated.ScrollView>
 
               {/* Pagination dots */}
@@ -894,6 +1016,18 @@ export default function CardsScreen() {
 }
 
 const styles = StyleSheet.create({
+  cardFlipContainer: {
+    position: "relative",
+  },
+  cardFace: {
+    backfaceVisibility: "hidden",
+  },
+  cardBack: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
   container: {
     flex: 1,
   },
@@ -979,6 +1113,76 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 16,
     elevation: 12,
+  },
+  magneticStripe: {
+    position: "absolute",
+    top: 40,
+    left: 0,
+    right: 0,
+    height: 50,
+    backgroundColor: "#000",
+  },
+  cardBackContent: {
+    flex: 1,
+    marginTop: 60,
+    gap: 16,
+  },
+  signaturePanel: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+    height: 50,
+    borderRadius: 8,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  signatureText: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
+  },
+  cvvSection: {
+    alignItems: "flex-end",
+  },
+  cvvBox: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  cvvLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#666",
+  },
+  cvvValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000",
+    letterSpacing: 4,
+  },
+  backBankInfo: {
+    marginTop: "auto",
+    gap: 8,
+  },
+  backBankLogo: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  backBankLogoText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#666",
+    letterSpacing: 1,
+  },
+  backInfoText: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.9)",
+    lineHeight: 14,
   },
   statusBadge: {
     paddingHorizontal: 10,
