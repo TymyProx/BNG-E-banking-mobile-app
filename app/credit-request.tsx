@@ -531,7 +531,7 @@ export default function CreditRequestScreen() {
         visible={showAccountSelect}
         onClose={() => setShowAccountSelect(false)}
         options={accounts.map((acc) => ({
-          label: `${acc.accountNumber} - ${acc.accountType} (${acc.balance.toLocaleString()} ${acc.currency})`,
+          label: `${acc.accountNumber} - ${acc.accountType} (${(acc.balance ?? 0).toLocaleString()} ${acc.currency})`,
           value: acc.accountNumber,
         }))}
         selectedValue={formData.accountNumber}
