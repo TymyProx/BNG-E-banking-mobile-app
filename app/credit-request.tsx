@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Animated,
   TextInput,
+  Modal,
 } from "react-native"
 import { router } from "expo-router"
 import { IconSymbol } from "@/components/ui/IconSymbol"
@@ -42,12 +43,32 @@ interface FormData {
   accountNumber: string
 }
 
+interface Account {
+  id: string
+  accountNumber: string
+  accountType: string
+  balance: number
+  currency: string
+  status: string
+}
+
+interface SelectOption {
+  label: string
+  value: string
+}
+
 export default function CreditRequestScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const { user, tenantId, isLoading: authLoading } = useAuth()
 
   const [isLoading, setIsLoading] = useState(false)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [loadingAccounts, setLoadingAccounts] = useState(true)
+  const [showAccountSelect, setShowAccountSelect] = useState(false)
+  const [showCreditTypeSelect, setShowCreditTypeSelect] = useState(false)
+  const [showPurposeSelect, setShowPurposeSelect] = useState(false)
+
   const [formData, setFormData] = useState<FormData>({
     applicantName: "",
     creditAmount: "",
@@ -119,6 +140,34 @@ export default function CreditRequestScreen() {
     "Autre",
   ]
 
+  const fetchAccounts = async () => {
+    if (!tenantId) return
+
+    try {
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) return
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Filter only active accounts
+        const activeAccounts = (Array.isArray(data) ? data : data.rows || []).filter(
+          (account: Account) => account.status === "ACTIF",
+        )
+        setAccounts(activeAccounts)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching accounts:", error)
+    } finally {
+      setLoadingAccounts(false)
+    }
+  }
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -139,7 +188,9 @@ export default function CreditRequestScreen() {
         applicantName: user.fullName || user.name,
       }))
     }
-  }, [user])
+
+    fetchAccounts()
+  }, [user, tenantId])
 
   const handleCreditTypeSelect = (typeId: string) => {
     setFormData({ ...formData, typedemande: typeId })
@@ -178,7 +229,7 @@ export default function CreditRequestScreen() {
       return false
     }
     if (!formData.accountNumber.trim()) {
-      Alert.alert("Erreur", "Veuillez entrer votre numéro de compte")
+      Alert.alert("Erreur", "Veuillez sélectionner un compte à débiter")
       return false
     }
 
@@ -284,7 +335,83 @@ export default function CreditRequestScreen() {
     }
   }
 
-  if (authLoading) {
+  const getSelectedAccountText = () => {
+    if (!formData.accountNumber) return "Sélectionnez un compte"
+    const account = accounts.find((acc) => acc.accountNumber === formData.accountNumber)
+    return account ? `${account.accountNumber} - ${account.accountType}` : formData.accountNumber
+  }
+
+  const getSelectedCreditTypeText = () => {
+    if (!formData.typedemande) return "Sélectionnez un type"
+    const type = creditTypes.find((t) => t.id === formData.typedemande)
+    return type ? type.name : formData.typedemande
+  }
+
+  const getSelectedPurposeText = () => {
+    return formData.purpose || "Sélectionnez un objet"
+  }
+
+  const SelectModal = ({
+    visible,
+    onClose,
+    options,
+    selectedValue,
+    onSelect,
+    title,
+  }: {
+    visible: boolean
+    onClose: () => void
+    options: SelectOption[]
+    selectedValue: string
+    onSelect: (value: string) => void
+    title: string
+  }) => (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
+        <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <IconSymbol name="xmark" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+            {options.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.modalOption,
+                  {
+                    backgroundColor: selectedValue === option.value ? `${colors.primary}20` : "transparent",
+                    borderBottomColor: colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  onSelect(option.value)
+                  onClose()
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    {
+                      color: selectedValue === option.value ? colors.primary : colors.text,
+                      fontWeight: selectedValue === option.value ? "600" : "400",
+                    },
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {selectedValue === option.value && <IconSymbol name="checkmark" size={20} color={colors.primary} />}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  )
+
+  if (authLoading || loadingAccounts) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
@@ -322,49 +449,37 @@ export default function CreditRequestScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Numéro de compte *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.cardBackground, color: colors.text }]}
-                value={formData.accountNumber}
-                onChangeText={(value) => setFormData({ ...formData, accountNumber: value })}
-                placeholder="Entrez votre numéro de compte"
-                placeholderTextColor={colors.textSecondary}
-              />
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Compte à débiter *</Text>
+              <TouchableOpacity
+                style={[styles.selectButton, { backgroundColor: colors.cardBackground }]}
+                onPress={() => setShowAccountSelect(true)}
+              >
+                <Text
+                  style={[
+                    styles.selectButtonText,
+                    { color: formData.accountNumber ? colors.text : colors.textSecondary },
+                  ]}
+                >
+                  {getSelectedAccountText()}
+                </Text>
+                <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Type de crédit *</Text>
-            <View style={styles.creditTypesList}>
-              {creditTypes.map((type) => (
-                <TouchableOpacity
-                  key={type.id}
-                  style={[
-                    styles.creditTypeCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderColor: formData.typedemande === type.id ? type.color : colors.border,
-                      borderWidth: formData.typedemande === type.id ? 2 : 1,
-                    },
-                  ]}
-                  onPress={() => handleCreditTypeSelect(type.id)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.creditTypeIcon, { backgroundColor: `${type.color}20` }]}>
-                    <IconSymbol name={type.icon as any} size={24} color={type.color} />
-                  </View>
-                  <View style={styles.creditTypeInfo}>
-                    <Text style={[styles.creditTypeName, { color: colors.text }]}>{type.name}</Text>
-                    <Text style={[styles.creditTypeDescription, { color: colors.textSecondary }]}>
-                      {type.description}
-                    </Text>
-                  </View>
-                  {formData.typedemande === type.id && (
-                    <IconSymbol name="checkmark.circle.fill" size={24} color={type.color} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity
+              style={[styles.selectButton, { backgroundColor: colors.cardBackground }]}
+              onPress={() => setShowCreditTypeSelect(true)}
+            >
+              <Text
+                style={[styles.selectButtonText, { color: formData.typedemande ? colors.text : colors.textSecondary }]}
+              >
+                {getSelectedCreditTypeText()}
+              </Text>
+              <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.section}>
@@ -396,32 +511,57 @@ export default function CreditRequestScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: colors.text }]}>Objet du crédit *</Text>
-              <View style={styles.purposesList}>
-                {purposes.map((purpose, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.purposeItem,
-                      {
-                        backgroundColor: colors.cardBackground,
-                        borderColor: formData.purpose === purpose ? colors.primary : colors.border,
-                        borderWidth: formData.purpose === purpose ? 2 : 1,
-                      },
-                    ]}
-                    onPress={() => setFormData({ ...formData, purpose })}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.purposeText, { color: colors.text }]}>{purpose}</Text>
-                    {formData.purpose === purpose && (
-                      <IconSymbol name="checkmark.circle.fill" size={20} color={colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <TouchableOpacity
+                style={[styles.selectButton, { backgroundColor: colors.cardBackground }]}
+                onPress={() => setShowPurposeSelect(true)}
+              >
+                <Text
+                  style={[styles.selectButtonText, { color: formData.purpose ? colors.text : colors.textSecondary }]}
+                >
+                  {getSelectedPurposeText()}
+                </Text>
+                <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
           </View>
         </Animated.View>
       </ScrollView>
+
+      <SelectModal
+        visible={showAccountSelect}
+        onClose={() => setShowAccountSelect(false)}
+        options={accounts.map((acc) => ({
+          label: `${acc.accountNumber} - ${acc.accountType} (${acc.balance.toLocaleString()} ${acc.currency})`,
+          value: acc.accountNumber,
+        }))}
+        selectedValue={formData.accountNumber}
+        onSelect={(value) => setFormData({ ...formData, accountNumber: value })}
+        title="Sélectionnez un compte"
+      />
+
+      <SelectModal
+        visible={showCreditTypeSelect}
+        onClose={() => setShowCreditTypeSelect(false)}
+        options={creditTypes.map((type) => ({
+          label: type.name,
+          value: type.id,
+        }))}
+        selectedValue={formData.typedemande}
+        onSelect={(value) => setFormData({ ...formData, typedemande: value })}
+        title="Type de crédit"
+      />
+
+      <SelectModal
+        visible={showPurposeSelect}
+        onClose={() => setShowPurposeSelect(false)}
+        options={purposes.map((purpose) => ({
+          label: purpose,
+          value: purpose,
+        }))}
+        selectedValue={formData.purpose}
+        onSelect={(value) => setFormData({ ...formData, purpose: value })}
+        title="Objet du crédit"
+      />
 
       <View style={[styles.footer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
@@ -506,51 +646,62 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-  creditTypesList: {
-    gap: 12,
-  },
-  creditTypeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  creditTypeIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  creditTypeInfo: {
-    flex: 1,
-  },
-  creditTypeName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-    letterSpacing: -0.2,
-  },
-  creditTypeDescription: {
-    fontSize: 13,
-  },
-  purposesList: {
-    gap: 10,
-    marginTop: 8,
-  },
-  purposeItem: {
+  selectButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
   },
-  purposeText: {
-    fontSize: 15,
+  selectButtonText: {
+    fontSize: 16,
     fontWeight: "500",
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "70%",
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalList: {
+    flex: 1,
+  },
+  modalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    flex: 1,
     letterSpacing: -0.2,
   },
   footer: {
