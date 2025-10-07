@@ -21,6 +21,7 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import React from "react"
 
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 48
@@ -224,7 +225,7 @@ export default function CardsScreen() {
           typCard: selectedCardType,
           status: "EN ATTENTE",
           dateEmission: currentDate,
-          dateExpiration: "N/A",
+          dateExpiration: currentDate,//"N/A",
           idClient: user.id,
           accountNumber: selectedAccount.accountNumber,
         },
