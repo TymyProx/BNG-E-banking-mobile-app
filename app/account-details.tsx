@@ -682,16 +682,25 @@ export default function AccountDetailsScreen() {
 
       console.log("[v0] RIB généré avec succès:", fileUri)
 
-      // Ouvrir le menu de partage
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: "application/pdf",
-          dialogTitle: "Partager votre RIB",
-          UTI: "com.adobe.pdf",
-        })
-      } else {
-        Alert.alert("Succès", "Le RIB a été généré avec succès")
-      }
+      Alert.alert(
+        "RIB généré avec succès",
+        "Votre relevé d'identité bancaire a été créé. Vous pouvez maintenant le partager ou le sauvegarder.",
+        [
+          {
+            text: "OK",
+            onPress: async () => {
+              // Ouvrir le menu de partage après confirmation
+              if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri, {
+                  mimeType: "application/pdf",
+                  dialogTitle: "Partager votre RIB",
+                  UTI: "com.adobe.pdf",
+                })
+              }
+            },
+          },
+        ],
+      )
     } catch (error) {
       console.error("[v0] Erreur lors de la génération du RIB:", error)
       Alert.alert("Erreur", "Impossible de générer le RIB. Veuillez réessayer.")
@@ -807,24 +816,6 @@ export default function AccountDetailsScreen() {
               >
                 Demander Relevé
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: account.accountNumber ? colors.primary : colors.border,
-                  borderWidth: 1,
-                  borderColor: account.accountNumber ? colors.primary : colors.border,
-                  opacity: account.accountNumber ? 1 : 0.5,
-                },
-              ]}
-              // FIX: The original code called handleRIBRequest, which was undeclared. Changed to handleDownloadRIB.
-              onPress={handleDownloadRIB}
-              disabled={!account.accountNumber}
-            >
-              <IconSymbol name="creditcard" size={16} color="#FFFFFF" />
-              <Text style={[styles.actionButtonText, { color: "#FFFFFF" }]}>Demander RIB</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
