@@ -463,7 +463,7 @@ export default function CardsScreen() {
                 {cards.map((card, index) => (
                   <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
                     <LinearGradient
-                      colors={getCardColors(card.name)}
+                      colors={getCardColors(card.name) as [import("react-native").ColorValue, import("react-native").ColorValue]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.goldCard}
@@ -656,7 +656,7 @@ export default function CardsScreen() {
                     <View style={styles.cardOptionContent}>
                       {/* Card preview */}
                       <LinearGradient
-                        colors={cardType.colors}
+                        colors={cardType.colors as [import("react-native").ColorValue, import("react-native").ColorValue]}
                         style={styles.miniCard}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
@@ -883,6 +883,30 @@ const styles = StyleSheet.create({
   cardPattern: {
     position: "absolute",
     inset: 0,
+  },
+  patternCircle: {
+    position: "absolute",
+    borderRadius: 999,
+    opacity: 0.15,
+    backgroundColor: "#fff",
+  },
+  patternCircle1: {
+    width: 120,
+    height: 120,
+    top: -40,
+    left: -40,
+  },
+  patternCircle2: {
+    width: 80,
+    height: 80,
+    bottom: -20,
+    right: 20,
+  },
+  patternCircle3: {
+    width: 60,
+    height: 60,
+    bottom: 30,
+    left: 40,
   },
   cardContent: {
     flex: 1,
