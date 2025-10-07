@@ -127,6 +127,17 @@ export default function CreditRequestScreen() {
       minDuration: 12,
       maxDuration: 120,
     },
+    {
+      id: "autre",
+      name: "Autre",
+      description: "Autre type de crédit",
+      icon: "ellipsis.circle.fill",
+      color: colors.textSecondary,
+      minAmount: 500000,
+      maxAmount: 1000000000,
+      minDuration: 6,
+      maxDuration: 300,
+    },
   ]
 
   const purposes = [
