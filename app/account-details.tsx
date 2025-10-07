@@ -256,63 +256,109 @@ export default function AccountDetailsScreen() {
         return
       }
 
-      const formatMap = {
-        PDF: "pdf",
-        EXCEL: "xlsx",
-        CSV: "csv",
-      }
-
-      const { startDate, endDate } = getDateRange()
-
-      const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.STATEMENT(tenantId, account.id)}?startDate=${startDate.toISOString().split("T")[0]}&endDate=${endDate.toISOString().split("T")[0]}&format=${formatMap[selectedFormat]}`
-
-      console.log("[v0] Téléchargement du relevé...")
-      console.log("[v0] URL:", url)
-      console.log("[v0] Account ID:", account.id)
-      console.log("[v0] Tenant ID:", tenantId)
-      console.log("[v0] Date range:", {
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-      })
-      console.log("[v0] Format:", formatMap[selectedFormat])
-
-      const filename = `releve_${account.accountNumber}_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.${formatMap[selectedFormat]}`
-      const fileUri = FileSystem.documentDirectory + filename
-
-      console.log("[v0] Destination file:", fileUri)
-
-      const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
+      console.log("[v0] Récupération des transactions...")
+      const transactionsResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
+        method: "GET",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       })
 
-      console.log("[v0] Download result:", downloadResult)
-      console.log("[v0] Status:", downloadResult.status)
-
-      if (downloadResult.status === 200) {
-        Alert.alert("Succès", "Le relevé a été téléchargé avec succès", [
-          {
-            text: "Partager",
-            onPress: async () => {
-              if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(downloadResult.uri)
-              }
-            },
-          },
-          { text: "OK" },
-        ])
-        setShowStatementModal(false)
-      } else {
-        console.log("[v0] Échec du téléchargement - Status:", downloadResult.status)
-        throw new Error(`Échec du téléchargement - Status: ${downloadResult.status}`)
+      if (!transactionsResponse.ok) {
+        throw new Error(`Erreur ${transactionsResponse.status}: ${transactionsResponse.statusText}`)
       }
+
+      const allTransactions = await transactionsResponse.json()
+      console.log("[v0] Transactions récupérées:", allTransactions)
+
+      const { startDate, endDate } = getDateRange()
+      const filteredTransactions = allTransactions.filter((transaction: any) => {
+        const transactionDate = new Date(transaction.date || transaction.createdAt)
+        const matchesAccount =
+          transaction.accountId === account.id || transaction.accountNumber === account.accountNumber
+        const matchesDateRange = transactionDate >= startDate && transactionDate <= endDate
+        return matchesAccount && matchesDateRange
+      })
+
+      console.log("[v0] Transactions filtrées:", filteredTransactions.length)
+
+      if (filteredTransactions.length === 0) {
+        Alert.alert("Aucune transaction", "Aucune transaction trouvée pour la période sélectionnée.")
+        setIsDownloading(false)
+        return
+      }
+
+      let fileContent = ""
+      let fileExtension = ""
+
+      if (selectedFormat === "CSV") {
+        fileExtension = "csv"
+        fileContent = "Date,Type,Description,Montant,Devise,Solde,Référence\n"
+        filteredTransactions.forEach((transaction: any) => {
+          const date = new Date(transaction.date || transaction.createdAt).toLocaleDateString("fr-FR")
+          const type = transaction.type === "credit" ? "Crédit" : "Débit"
+          const description = transaction.description || transaction.label || "N/A"
+          const amount = transaction.amount || 0
+          const currency = transaction.currency || account.currency
+          const balance = transaction.balance || 0
+          const reference = transaction.reference || transaction.id
+
+          fileContent += `"${date}","${type}","${description}",${amount},"${currency}",${balance},"${reference}"\n`
+        })
+      } else if (selectedFormat === "PDF" || selectedFormat === "EXCEL") {
+        fileExtension = selectedFormat === "PDF" ? "txt" : "csv"
+        fileContent = `RELEVÉ DE COMPTE\n\n`
+        fileContent += `Compte: ${account.accountName}\n`
+        fileContent += `Numéro: ${account.accountNumber}\n`
+        fileContent += `Période: ${startDate.toLocaleDateString("fr-FR")} - ${endDate.toLocaleDateString("fr-FR")}\n\n`
+        fileContent += `${"=".repeat(80)}\n\n`
+
+        filteredTransactions.forEach((transaction: any) => {
+          const date = new Date(transaction.date || transaction.createdAt).toLocaleDateString("fr-FR")
+          const type = transaction.type === "credit" ? "CRÉDIT" : "DÉBIT"
+          const description = transaction.description || transaction.label || "N/A"
+          const amount = transaction.amount || 0
+          const currency = transaction.currency || account.currency
+
+          fileContent += `${date} | ${type}\n`
+          fileContent += `${description}\n`
+          fileContent += `Montant: ${amount} ${currency}\n`
+          fileContent += `${"-".repeat(80)}\n\n`
+        })
+
+        fileContent += `\nTotal des transactions: ${filteredTransactions.length}\n`
+      }
+
+      const filename = `releve_${account.accountNumber}_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.${fileExtension}`
+      const fileUri = FileSystem.documentDirectory + filename
+
+      console.log("[v0] Sauvegarde du fichier:", fileUri)
+
+      await FileSystem.writeAsStringAsync(fileUri, fileContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      })
+
+      console.log("[v0] Fichier sauvegardé avec succès")
+
+      Alert.alert("Succès", "Le relevé a été généré avec succès", [
+        {
+          text: "Partager",
+          onPress: async () => {
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(fileUri)
+            }
+          },
+        },
+        { text: "OK" },
+      ])
+      setShowStatementModal(false)
     } catch (error) {
-      console.error("[v0] Erreur lors du téléchargement du relevé:", error)
+      console.error("[v0] Erreur lors de la génération du relevé:", error)
       const errorMessage = error instanceof Error ? error.message : "Erreur inconnue"
       Alert.alert(
-        "Erreur de téléchargement",
-        `Impossible de télécharger le relevé.\n\nDétails: ${errorMessage}\n\nVérifiez que l'endpoint API existe et fonctionne correctement.`,
+        "Erreur de génération",
+        `Impossible de générer le relevé.\n\nDétails: ${errorMessage}\n\nVérifiez que vous avez des transactions pour cette période.`,
       )
     } finally {
       setIsDownloading(false)
