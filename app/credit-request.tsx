@@ -21,6 +21,7 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import React from "react"
 
 interface CreditType {
   id: string
@@ -46,7 +47,8 @@ interface FormData {
 interface Account {
   id: string
   accountNumber: string
-  accountType: string
+  accountName: string
+  type: string
   balance: number
   currency: string
   status: string
@@ -338,7 +340,7 @@ export default function CreditRequestScreen() {
   const getSelectedAccountText = () => {
     if (!formData.accountNumber) return "Sélectionnez un compte"
     const account = accounts.find((acc) => acc.accountNumber === formData.accountNumber)
-    return account ? `${account.accountNumber} - ${account.accountType}` : formData.accountNumber
+    return account ? `${account.accountNumber} - ${account.accountName}` : formData.accountNumber
   }
 
   const getSelectedCreditTypeText = () => {
@@ -539,7 +541,7 @@ export default function CreditRequestScreen() {
         visible={showAccountSelect}
         onClose={() => setShowAccountSelect(false)}
         options={accounts.map((acc) => ({
-          label: `${acc.accountNumber} - ${acc.accountType} (${(acc.balance ?? 0).toLocaleString()} ${acc.currency})`,
+          label: `${acc.accountNumber} - ${acc.accountName}`,
           value: acc.accountNumber,
         }))}
         selectedValue={formData.accountNumber}
