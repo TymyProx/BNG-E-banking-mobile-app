@@ -206,12 +206,12 @@ export default function CheckbookRequestScreen() {
     }
   }
 
-  const handleAccountSelect = (accountId: string) => {
-    const selectedAccount = accounts.find((acc) => acc.id === accountId)
+  const handleAccountSelect = (accountNumber: string) => {
+    const selectedAccount = accounts.find((acc) => acc.accountNumber === accountNumber)
     if (selectedAccount) {
       setFormData({
         ...formData,
-        numcompteId: accountId,
+        numcompteId: accountNumber,
         intitulecompte: selectedAccount.accountName,
       })
     }
@@ -219,7 +219,7 @@ export default function CheckbookRequestScreen() {
 
   const getSelectedAccountText = () => {
     if (!formData.numcompteId) return "Sélectionnez un compte"
-    const account = accounts.find((acc) => acc.id === formData.numcompteId)
+    const account = accounts.find((acc) => acc.accountNumber === formData.numcompteId)
     return account ? `${account.accountNumber} - ${account.accountName}` : "Sélectionnez un compte"
   }
 
@@ -388,7 +388,7 @@ export default function CheckbookRequestScreen() {
         onClose={() => setShowAccountSelect(false)}
         options={accounts.map((acc) => ({
           label: `${acc.accountNumber} - ${acc.accountName}`,
-          value: acc.id,
+          value: acc.accountNumber,
         }))}
         selectedValue={formData.numcompteId}
         onSelect={handleAccountSelect}
