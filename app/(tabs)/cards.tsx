@@ -430,29 +430,47 @@ export default function CardsScreen() {
 
       <View style={styles.filterContainer}>
         <TouchableOpacity
-          style={[
-            styles.filterButton,
-            cardFilter === "ACTIF" && styles.filterButtonActive,
-            { backgroundColor: cardFilter === "ACTIF" ? "#0066FF" : colors.cardBackground },
-          ]}
+          style={[styles.filterButton, cardFilter === "ACTIF" && styles.filterButtonActive]}
           onPress={() => setCardFilter("ACTIF")}
         >
-          <Text style={[styles.filterButtonText, { color: cardFilter === "ACTIF" ? "white" : colors.text }]}>
-            Mes cartes
-          </Text>
+          {cardFilter === "ACTIF" ? (
+            <LinearGradient
+              colors={["#0066FF", "#0052CC"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.filterButtonGradient}
+            >
+              <IconSymbol name="creditcard.fill" size={18} color="white" />
+              <Text style={styles.filterButtonTextActive}>Mes cartes</Text>
+            </LinearGradient>
+          ) : (
+            <View style={[styles.filterButtonInactive, { backgroundColor: colors.cardBackground }]}>
+              <IconSymbol name="creditcard" size={18} color={colors.textSecondary} />
+              <Text style={[styles.filterButtonTextInactive, { color: colors.textSecondary }]}>Mes cartes</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.filterButton,
-            cardFilter === "EN ATTENTE" && styles.filterButtonActive,
-            { backgroundColor: cardFilter === "EN ATTENTE" ? "#0066FF" : colors.cardBackground },
-          ]}
+          style={[styles.filterButton, cardFilter === "EN ATTENTE" && styles.filterButtonActive]}
           onPress={() => setCardFilter("EN ATTENTE")}
         >
-          <Text style={[styles.filterButtonText, { color: cardFilter === "EN ATTENTE" ? "white" : colors.text }]}>
-            Demandes en cours
-          </Text>
+          {cardFilter === "EN ATTENTE" ? (
+            <LinearGradient
+              colors={["#0066FF", "#0052CC"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.filterButtonGradient}
+            >
+              <IconSymbol name="clock.fill" size={18} color="white" />
+              <Text style={styles.filterButtonTextActive}>Demandes en cours</Text>
+            </LinearGradient>
+          ) : (
+            <View style={[styles.filterButtonInactive, { backgroundColor: colors.cardBackground }]}>
+              <IconSymbol name="clock" size={18} color={colors.textSecondary} />
+              <Text style={[styles.filterButtonTextInactive, { color: colors.textSecondary }]}>Demandes en cours</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -893,28 +911,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 24,
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   filterButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   filterButtonActive: {
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: "#0066FF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  filterButtonText: {
+  filterButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  filterButtonInactive: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#E5E7EB",
+  },
+  filterButtonTextActive: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "white",
+    letterSpacing: 0.3,
+  },
+  filterButtonTextInactive: {
     fontSize: 15,
     fontWeight: "600",
+    letterSpacing: 0.3,
   },
   content: {
     flex: 1,
