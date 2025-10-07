@@ -37,6 +37,7 @@ interface Card {
   balance: number
   isBlocked: boolean
   cardholderName: string
+  rawStatus: string // Added to store original API status
 }
 
 interface Account {
@@ -111,6 +112,8 @@ export default function CardsScreen() {
   const [isLoadingCards, setIsLoadingCards] = useState(true)
   const [cardsError, setCardsError] = useState<string | null>(null)
 
+  const [cardFilter, setCardFilter] = useState<"ACTIF" | "EN ATTENTE">("ACTIF")
+
   useFocusEffect(
     React.useCallback(() => {
       if (tenantId) {
@@ -146,7 +149,6 @@ export default function CardsScreen() {
       }
 
       const data = await response.json()
-      console.log("[v0] Cards data received:", data)
 
       const mappedCards: Card[] = (data.rows || []).map((card: any) => {
         // Format card number - mask if not "N/A"
@@ -193,6 +195,7 @@ export default function CardsScreen() {
           balance: 0, // Balance not provided by API
           isBlocked: card.status === "BLOQUE",
           cardholderName: user?.fullName || "Titulaire de carte",
+          rawStatus: card.status, // Store original status for filtering
         }
       })
 
@@ -416,11 +419,41 @@ export default function CardsScreen() {
     return type?.colors || ["#F4D03F", "#F9E79F"]
   }
 
+  const filteredCards = cards.filter((card) => card.rawStatus === cardFilter)
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Cartes</Text>
+      </View>
+
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            cardFilter === "ACTIF" && styles.filterButtonActive,
+            { backgroundColor: cardFilter === "ACTIF" ? "#0066FF" : colors.cardBackground },
+          ]}
+          onPress={() => setCardFilter("ACTIF")}
+        >
+          <Text style={[styles.filterButtonText, { color: cardFilter === "ACTIF" ? "white" : colors.text }]}>
+            Mes cartes
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            cardFilter === "EN ATTENTE" && styles.filterButtonActive,
+            { backgroundColor: cardFilter === "EN ATTENTE" ? "#0066FF" : colors.cardBackground },
+          ]}
+          onPress={() => setCardFilter("EN ATTENTE")}
+        >
+          <Text style={[styles.filterButtonText, { color: cardFilter === "EN ATTENTE" ? "white" : colors.text }]}>
+            Demandes en cours
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -437,12 +470,16 @@ export default function CardsScreen() {
               <Text style={styles.retryButtonText}>Réessayer</Text>
             </TouchableOpacity>
           </View>
-        ) : cards.length === 0 ? (
+        ) : filteredCards.length === 0 ? (
           <View style={styles.emptyCardsContainer}>
             <IconSymbol name="creditcard" size={64} color={colors.textSecondary} />
-            <Text style={[styles.emptyCardsText, { color: colors.text }]}>Aucune carte disponible</Text>
+            <Text style={[styles.emptyCardsText, { color: colors.text }]}>
+              {cardFilter === "ACTIF" ? "Aucune carte active" : "Aucune demande en cours"}
+            </Text>
             <Text style={[styles.emptyCardsSubtext, { color: colors.textSecondary }]}>
-              Demandez votre première carte bancaire
+              {cardFilter === "ACTIF"
+                ? "Demandez votre première carte bancaire"
+                : "Vous n'avez aucune demande de carte en attente"}
             </Text>
           </View>
         ) : (
@@ -460,10 +497,15 @@ export default function CardsScreen() {
                 decelerationRate="fast"
                 contentContainerStyle={styles.carouselContent}
               >
-                {cards.map((card, index) => (
+                {filteredCards.map((card, index) => (
                   <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
                     <LinearGradient
-                      colors={getCardColors(card.name) as [import("react-native").ColorValue, import("react-native").ColorValue]}
+                      colors={
+                        getCardColors(card.name) as [
+                          import("react-native").ColorValue,
+                          import("react-native").ColorValue,
+                        ]
+                      }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.goldCard}
@@ -529,9 +571,9 @@ export default function CardsScreen() {
               </Animated.ScrollView>
 
               {/* Pagination dots */}
-              {cards.length > 1 && (
+              {filteredCards.length > 1 && (
                 <View style={styles.pagination}>
-                  {cards.map((_, index) => (
+                  {filteredCards.map((_, index) => (
                     <View
                       key={index}
                       style={[
@@ -547,22 +589,24 @@ export default function CardsScreen() {
               )}
             </View>
 
-            {/* Action buttons */}
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
-                <View style={[styles.actionIconContainer, { backgroundColor: "#FFE5E5" }]}>
-                  <IconSymbol name="lock.fill" size={20} color="#FF4444" />
-                </View>
-                <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
-              </TouchableOpacity>
+            {/* Action buttons - Only show for active cards */}
+            {cardFilter === "ACTIF" && (
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
+                  <View style={[styles.actionIconContainer, { backgroundColor: "#FFE5E5" }]}>
+                    <IconSymbol name="lock.fill" size={20} color="#FF4444" />
+                  </View>
+                  <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
-                <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
-                  <IconSymbol name="eye.fill" size={20} color="#0066FF" />
-                </View>
-                <Text style={[styles.actionButtonText, { color: colors.text }]}>Détails de la carte</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
+                  <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
+                    <IconSymbol name="eye.fill" size={20} color="#0066FF" />
+                  </View>
+                  <Text style={[styles.actionButtonText, { color: colors.text }]}>Détails de la carte</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </>
         )}
 
@@ -656,7 +700,9 @@ export default function CardsScreen() {
                     <View style={styles.cardOptionContent}>
                       {/* Card preview */}
                       <LinearGradient
-                        colors={cardType.colors as [import("react-native").ColorValue, import("react-native").ColorValue]}
+                        colors={
+                          cardType.colors as [import("react-native").ColorValue, import("react-native").ColorValue]
+                        }
                         style={styles.miniCard}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
@@ -842,6 +888,33 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "800",
     letterSpacing: -0.5,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 24,
+    gap: 12,
+    marginBottom: 16,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterButtonActive: {
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  filterButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   content: {
     flex: 1,
