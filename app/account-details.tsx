@@ -22,6 +22,7 @@ import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as FileSystem from "expo-file-system"
 import * as Sharing from "expo-sharing"
+import React from "react"
 
 interface Transaction {
   id: string
