@@ -368,7 +368,11 @@ export default function CreditRequestScreen() {
   }) => (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-        <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+        <TouchableOpacity
+          style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
@@ -406,7 +410,7 @@ export default function CreditRequestScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
+        </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
   )
