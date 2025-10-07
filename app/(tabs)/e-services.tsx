@@ -7,7 +7,6 @@ import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
-import React from "react"
 
 interface Request {
   id: string
@@ -18,9 +17,37 @@ interface Request {
   description: string
 }
 
+interface ServiceCard {
+  id: string
+  title: string
+  description: string
+  icon: keyof typeof Ionicons.glyphMap
+  color: string
+  route: string
+}
+
 export default function EServicesScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
+
+  const services: ServiceCard[] = [
+    {
+      id: "credit",
+      title: "Demande de crédit",
+      description: "Faites une demande de crédit en ligne",
+      icon: "cash-outline",
+      color: "#3B82F6",
+      route: "/credit-request",
+    },
+    {
+      id: "checkbook",
+      title: "Demande de chéquier",
+      description: "Commandez un nouveau chéquier",
+      icon: "card-outline",
+      color: "#10B981",
+      route: "/checkbook-request",
+    },
+  ]
 
   const [requests] = useState<Request[]>([
     {
@@ -119,21 +146,27 @@ export default function EServicesScreen() {
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos demandes en ligne</Text>
         </View>
 
-        {/* New Request Button */}
         <View style={styles.section}>
-          <TouchableOpacity
-            style={[styles.newRequestButton, { backgroundColor: colors.primary, shadowColor: colors.cardShadow }]}
-            onPress={() => router.push("/new-request")}
-          >
-            <View style={styles.newRequestIcon}>
-              <Ionicons name="add" size={28} color="#FFFFFF" />
-            </View>
-            <View style={styles.newRequestContent}>
-              <Text style={styles.newRequestTitle}>Nouvelle demande</Text>
-              <Text style={styles.newRequestSubtitle}>Chéquier, attestation, crédit...</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Services disponibles</Text>
+          <View style={styles.servicesGrid}>
+            {services.map((service) => (
+              <TouchableOpacity
+                key={service.id}
+                style={[styles.serviceCard, { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow }]}
+                onPress={() => router.push(service.route as any)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.serviceIconContainer, { backgroundColor: service.color }]}>
+                  <Ionicons name={service.icon} size={32} color="#FFFFFF" />
+                </View>
+                <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
+                <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>{service.description}</Text>
+                <View style={styles.serviceArrow}>
+                  <Ionicons name="arrow-forward" size={20} color={colors.primary} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Requests History */}
@@ -232,42 +265,49 @@ const styles = StyleSheet.create({
   section: {
     padding: 24,
   },
-  newRequestButton: {
+  servicesGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 16,
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  serviceCard: {
+    flex: 1,
+    minWidth: "45%",
+    borderRadius: 20,
     padding: 20,
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 4,
+    position: "relative",
   },
-  newRequestIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+  serviceIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 18,
+    marginBottom: 16,
   },
-  newRequestContent: {
-    flex: 1,
-  },
-  newRequestTitle: {
-    fontSize: 18,
+  serviceTitle: {
+    fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 6,
+    marginBottom: 8,
     letterSpacing: -0.2,
   },
-  newRequestSubtitle: {
-    fontSize: 15,
-    color: "rgba(255, 255, 255, 0.85)",
+  serviceDescription: {
+    fontSize: 14,
     fontWeight: "500",
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  serviceArrow: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
   },
   sectionTitle: {
     fontSize: 20,
