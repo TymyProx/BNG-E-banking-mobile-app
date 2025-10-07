@@ -40,6 +40,19 @@ interface Card {
   rawStatus: string // Added to store original API status
 }
 
+interface CardDetails {
+  id: string
+  numCard: string
+  typCard: string
+  status: string
+  dateEmission: string
+  dateExpiration: string
+  idClient: string
+  accountNumber: string
+  createdAt: string
+  updatedAt: string
+}
+
 interface Account {
   id: string
   accountNumber: string
@@ -116,6 +129,10 @@ export default function CardsScreen() {
 
   const [flippedCardId, setFlippedCardId] = useState<string | null>(null)
   const flipAnimations = useRef<{ [key: string]: Animated.Value }>({}).current
+
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [selectedCardDetails, setSelectedCardDetails] = useState<CardDetails | null>(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   const getFlipAnimation = (cardId: string) => {
     if (!flipAnimations[cardId]) {
@@ -443,6 +460,58 @@ export default function CardsScreen() {
     return type?.colors || ["#F4D03F", "#F9E79F"]
   }
 
+  const fetchCardDetails = async (cardId: string) => {
+    if (!tenantId) return
+
+    setIsLoadingDetails(true)
+    setShowDetailsModal(true)
+
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token) {
+        Alert.alert("Erreur", "Vous devez être connecté pour voir les détails")
+        setShowDetailsModal(false)
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.DETAILS(tenantId, cardId)}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des détails")
+      }
+
+      const data = await response.json()
+      setSelectedCardDetails(data)
+    } catch (error: any) {
+      console.error("[v0] Error fetching card details:", error)
+      Alert.alert("Erreur", error.message || "Impossible de récupérer les détails de la carte")
+      setShowDetailsModal(false)
+    } finally {
+      setIsLoadingDetails(false)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    if (!dateString || dateString === "N/A") return "N/A"
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    } catch (e) {
+      return dateString
+    }
+  }
+
   const filteredCards = cards.filter((card) => card.rawStatus === cardFilter)
 
   return (
@@ -739,7 +808,14 @@ export default function CardsScreen() {
                   <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}
+                  onPress={() => {
+                    if (filteredCards.length > 0) {
+                      fetchCardDetails(filteredCards[activeCardIndex].id)
+                    }
+                  }}
+                >
                   <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
                     <IconSymbol name="eye.fill" size={20} color="#0066FF" />
                   </View>
@@ -1009,6 +1085,126 @@ export default function CardsScreen() {
               </TouchableOpacity>
             )}
           </View>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showDetailsModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => {
+          setShowDetailsModal(false)
+          setSelectedCardDetails(null)
+        }}
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          {/* Header */}
+          <View style={[styles.modalHeader, { backgroundColor: colors.background }]}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowDetailsModal(false)
+                setSelectedCardDetails(null)
+              }}
+              style={styles.backButton}
+            >
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la carte</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          {isLoadingDetails ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#0066FF" />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement des détails...</Text>
+            </View>
+          ) : selectedCardDetails ? (
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {/* Card Info Section */}
+              <View style={[styles.detailsSection, { backgroundColor: colors.cardBackground }]}>
+                <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>Informations de la carte</Text>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Numéro de carte</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>{selectedCardDetails.numCard}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Type de carte</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>{selectedCardDetails.typCard}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Statut</Text>
+                  <View
+                    style={[
+                      styles.detailStatusBadge,
+                      {
+                        backgroundColor:
+                          selectedCardDetails.status === "ACTIF"
+                            ? "#10B981"
+                            : selectedCardDetails.status === "BLOQUE"
+                              ? "#FF4444"
+                              : "#FFA500",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.detailStatusText}>{selectedCardDetails.status}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date d'émission</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>
+                    {formatDate(selectedCardDetails.dateEmission)}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date d'expiration</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>
+                    {formatDate(selectedCardDetails.dateExpiration)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Account Info Section */}
+              <View style={[styles.detailsSection, { backgroundColor: colors.cardBackground }]}>
+                <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>Compte associé</Text>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>{selectedCardDetails.accountNumber}</Text>
+                </View>
+              </View>
+
+              {/* Additional Info Section */}
+              <View style={[styles.detailsSection, { backgroundColor: colors.cardBackground }]}>
+                <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>Informations supplémentaires</Text>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>ID Client</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={1}>
+                    {selectedCardDetails.idClient}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Créée le</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>
+                    {formatDate(selectedCardDetails.createdAt)}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Dernière mise à jour</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>
+                    {formatDate(selectedCardDetails.updatedAt)}
+                  </Text>
+                </View>
+              </View>
+            </ScrollView>
+          ) : null}
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -1737,6 +1933,50 @@ const styles = StyleSheet.create({
   nextButtonText: {
     color: "white",
     fontSize: 16,
+    fontWeight: "700",
+  },
+  detailsSection: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  detailsSectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 16,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+    textAlign: "right",
+  },
+  detailStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  detailStatusText: {
+    color: "white",
+    fontSize: 12,
     fontWeight: "700",
   },
 })

@@ -29,5 +29,6 @@ export const API_ENDPOINTS = {
   CARD: {
     CREATE: (tenantId: string) => `/tenant/${tenantId}/card`,
     LIST: (tenantId: string) => `/tenant/${tenantId}/card`,
+    DETAILS: (tenantId: string, cardId: string) => `/tenant/${tenantId}/card/${cardId}`,
   },
 }
