@@ -468,19 +468,6 @@ export default function CardsScreen() {
                       end={{ x: 1, y: 1 }}
                       style={styles.goldCard}
                     >
-                      {(card.status === "expired" || card.isBlocked) && (
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            {
-                              backgroundColor: card.isBlocked ? "#FF4444" : "#FFA500",
-                            },
-                          ]}
-                        >
-                          <Text style={styles.statusBadgeText}>{card.isBlocked ? "BLOQUÉE" : "EN ATTENTE"}</Text>
-                        </View>
-                      )}
-
                       {/* Card pattern overlay */}
                       <View style={styles.cardPattern}>
                         <View style={[styles.patternCircle, styles.patternCircle1]} />
@@ -497,6 +484,18 @@ export default function CardsScreen() {
                             <Text style={styles.bankLogoSubtext}>BANK</Text>
                           </View>
                           <View style={styles.goldTextContainer}>
+                            {(card.status === "expired" || card.isBlocked) && (
+                              <View
+                                style={[
+                                  styles.statusBadge,
+                                  {
+                                    backgroundColor: card.isBlocked ? "#FF4444" : "#FFA500",
+                                  },
+                                ]}
+                              >
+                                <Text style={styles.statusBadgeText}>{card.isBlocked ? "BLOQUÉE" : "EN ATTENTE"}</Text>
+                              </View>
+                            )}
                             <Text style={styles.goldText}>{card.name}</Text>
                           </View>
                         </View>
@@ -870,24 +869,16 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   statusBadge: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginRight: 8,
   },
   statusBadgeText: {
     color: "white",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "700",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   cardPattern: {
     position: "absolute",
@@ -922,15 +913,15 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   goldTextContainer: {
-    flex: 1,
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   goldText: {
     fontSize: 16,
     fontWeight: "800",
     color: "rgba(255,255,255,0.95)",
     letterSpacing: 0.5,
-    textAlign: "right",
   },
   chipContainer: {
     flexDirection: "row",
