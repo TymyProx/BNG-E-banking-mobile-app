@@ -22,6 +22,8 @@ import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
+import * as Print from "expo-print"
+import * as XLSX from "xlsx"
 
 interface Transaction {
   id: string
@@ -318,12 +320,119 @@ export default function AccountDetailsScreen() {
         return
       }
 
-      let fileContent = ""
-      let fileExtension = ""
+      let fileUri = ""
+      const filename = `releve_${account.accountNumber}_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}`
 
       if (selectedFormat === "CSV") {
-        fileExtension = "csv"
-        fileContent = "Date,Type,Description,Montant,Devise,Solde,Référence\n"
+        // Generate CSV file
+        let csvContent = "Date,Type,Description,Montant,Devise,Solde,Référence\n"
+        filteredTransactions.forEach((transaction: any) => {
+          const date = new Date(transaction.date || transaction.createdAt).toLocaleDateString("fr-FR")
+          const type = transaction.type === "credit" ? "Crédit" : "Débit"
+          const description = (transaction.description || transaction.label || "N/A").replace(/"/g, '""')
+          const amount = transaction.amount || 0
+          const currency = transaction.currency || account.currency
+          const balance = transaction.balance || 0
+          const reference = transaction.reference || transaction.id
+
+          csvContent += `"${date}","${type}","${description}",${amount},"${currency}",${balance},"${reference}"\n`
+        })
+
+        fileUri = FileSystem.documentDirectory + filename + ".csv"
+        await FileSystem.writeAsStringAsync(fileUri, csvContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        })
+      } else if (selectedFormat === "PDF") {
+        // Generate PDF using HTML
+        let htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { color: #1E40AF; text-align: center; }
+              .header { margin-bottom: 30px; }
+              .info { margin-bottom: 10px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th { background-color: #1E40AF; color: white; padding: 10px; text-align: left; }
+              td { padding: 8px; border-bottom: 1px solid #ddd; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              .credit { color: #059669; font-weight: bold; }
+              .debit { color: #DC2626; font-weight: bold; }
+              .footer { margin-top: 30px; text-align: center; color: #666; }
+            </style>
+          </head>
+          <body>
+            <h1>RELEVÉ DE COMPTE</h1>
+            <div class="header">
+              <div class="info"><strong>Compte:</strong> ${account.accountName}</div>
+              <div class="info"><strong>Numéro:</strong> ${account.accountNumber}</div>
+              <div class="info"><strong>Période:</strong> ${startDate.toLocaleDateString("fr-FR")} - ${endDate.toLocaleDateString("fr-FR")}</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Montant</th>
+                  <th>Solde</th>
+                </tr>
+              </thead>
+              <tbody>
+        `
+
+        filteredTransactions.forEach((transaction: any) => {
+          const date = new Date(transaction.date || transaction.createdAt).toLocaleDateString("fr-FR")
+          const type = transaction.type === "credit" ? "Crédit" : "Débit"
+          const description = transaction.description || transaction.label || "N/A"
+          const amount = transaction.amount || 0
+          const currency = transaction.currency || account.currency
+          const balance = transaction.balance || 0
+          const amountClass = transaction.type === "credit" ? "credit" : "debit"
+          const amountSign = transaction.type === "credit" ? "+" : "-"
+
+          htmlContent += `
+            <tr>
+              <td>${date}</td>
+              <td>${type}</td>
+              <td>${description}</td>
+              <td class="${amountClass}">${amountSign}${amount} ${currency}</td>
+              <td>${balance} ${currency}</td>
+            </tr>
+          `
+        })
+
+        htmlContent += `
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>Total des transactions: ${filteredTransactions.length}</p>
+              <p>Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}</p>
+            </div>
+          </body>
+          </html>
+        `
+
+        const { uri } = await Print.printToFileAsync({ html: htmlContent })
+        fileUri = FileSystem.documentDirectory + filename + ".pdf"
+        await FileSystem.moveAsync({
+          from: uri,
+          to: fileUri,
+        })
+      } else if (selectedFormat === "EXCEL") {
+        // Generate Excel file
+        const worksheetData = [
+          ["RELEVÉ DE COMPTE"],
+          [],
+          ["Compte:", account.accountName],
+          ["Numéro:", account.accountNumber],
+          ["Période:", `${startDate.toLocaleDateString("fr-FR")} - ${endDate.toLocaleDateString("fr-FR")}`],
+          [],
+          ["Date", "Type", "Description", "Montant", "Devise", "Solde", "Référence"],
+        ]
+
         filteredTransactions.forEach((transaction: any) => {
           const date = new Date(transaction.date || transaction.createdAt).toLocaleDateString("fr-FR")
           const type = transaction.type === "credit" ? "Crédit" : "Débit"
@@ -333,44 +442,26 @@ export default function AccountDetailsScreen() {
           const balance = transaction.balance || 0
           const reference = transaction.reference || transaction.id
 
-          fileContent += `"${date}","${type}","${description}",${amount},"${currency}",${balance},"${reference}"\n`
-        })
-      } else if (selectedFormat === "PDF" || selectedFormat === "EXCEL") {
-        fileExtension = selectedFormat === "PDF" ? "txt" : "csv"
-        fileContent = `RELEVÉ DE COMPTE\n\n`
-        fileContent += `Compte: ${account.accountName}\n`
-        fileContent += `Numéro: ${account.accountNumber}\n`
-        fileContent += `Période: ${startDate.toLocaleDateString("fr-FR")} - ${endDate.toLocaleDateString("fr-FR")}\n\n`
-        fileContent += `${"=".repeat(80)}\n\n`
-
-        filteredTransactions.forEach((transaction: any) => {
-          const date = new Date(transaction.date || transaction.createdAt).toLocaleDateString("fr-FR")
-          const type = transaction.type === "credit" ? "CRÉDIT" : "DÉBIT"
-          const description = transaction.description || transaction.label || "N/A"
-          const amount = transaction.amount || 0
-          const currency = transaction.currency || account.currency
-
-          fileContent += `${date} | ${type}\n`
-          fileContent += `${description}\n`
-          fileContent += `Montant: ${amount} ${currency}\n`
-          fileContent += `${"-".repeat(80)}\n\n`
+          worksheetData.push([date, type, description, amount, currency, balance, reference])
         })
 
-        fileContent += `\nTotal des transactions: ${filteredTransactions.length}\n`
+        worksheetData.push([])
+        worksheetData.push(["Total des transactions:", filteredTransactions.length])
+
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Relevé")
+
+        const excelBuffer = XLSX.write(workbook, { type: "base64", bookType: "xlsx" })
+        fileUri = FileSystem.documentDirectory + filename + ".xlsx"
+        await FileSystem.writeAsStringAsync(fileUri, excelBuffer, {
+          encoding: FileSystem.EncodingType.Base64,
+        })
       }
 
-      const filename = `releve_${account.accountNumber}_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.${fileExtension}`
-      const fileUri = FileSystem.documentDirectory + filename
+      console.log("[v0] Fichier sauvegardé avec succès:", fileUri)
 
-      console.log("[v0] Sauvegarde du fichier:", fileUri)
-
-      await FileSystem.writeAsStringAsync(fileUri, fileContent, {
-        encoding: FileSystem.EncodingType.UTF8,
-      })
-
-      console.log("[v0] Fichier sauvegardé avec succès")
-
-      Alert.alert("Succès", "Le relevé a été généré avec succès", [
+      Alert.alert("Succès", `Le relevé ${selectedFormat} a été généré avec succès`, [
         {
           text: "Partager",
           onPress: async () => {

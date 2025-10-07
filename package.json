@@ -63,6 +63,7 @@
     "expo-image": "~2.4.0",
     "expo-linear-gradient": "latest",
     "expo-linking": "^8.0.8",
+    "expo-print": "latest",
     "expo-router": "latest",
     "expo-secure-store": "latest",
     "expo-sharing": "latest",
@@ -99,7 +100,8 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "latest",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "xlsx": "latest"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
