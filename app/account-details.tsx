@@ -11,6 +11,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Modal,
+  Platform,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { IconSymbol } from "@/components/ui/IconSymbol"
@@ -19,6 +21,9 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import DateTimePicker from "@react-native-community/datetimepicker"
+import * as FileSystem from "expo-file-system"
+import * as Sharing from "expo-sharing"
 
 interface Transaction {
   id: string
@@ -200,6 +205,14 @@ export default function AccountDetailsScreen() {
     }
   }
 
+  const [showStatementModal, setShowStatementModal] = useState(false)
+  const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)))
+  const [endDate, setEndDate] = useState(new Date())
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false)
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false)
+  const [selectedFormat, setSelectedFormat] = useState<"PDF" | "EXCEL" | "CSV">("PDF")
+  const [isDownloading, setIsDownloading] = useState(false)
+
   const handleStatementRequest = () => {
     if (!account) return
 
@@ -211,20 +224,59 @@ export default function AccountDetailsScreen() {
       return
     }
 
-    router.push({
-      pathname: "/(tabs)/statements",
-      params: {
-        preselectedAccount: JSON.stringify({
-          id: account.id,
-          name: account.accountName,
-          number: account.accountNumber,
-          type: account.type,
-          balance: account.availableBalance,
-          currency: account.currency,
-        }),
-        fromAccountDetails: "true",
-      },
-    })
+    setShowStatementModal(true)
+  }
+
+  const handleDownloadStatement = async () => {
+    if (!account || !tenantId) return
+
+    setIsDownloading(true)
+    try {
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        Alert.alert("Erreur", "Vous devez être connecté pour télécharger un relevé")
+        return
+      }
+
+      const formatMap = {
+        PDF: "pdf",
+        EXCEL: "xlsx",
+        CSV: "csv",
+      }
+
+      const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.STATEMENT(tenantId, account.id)}?startDate=${startDate.toISOString().split("T")[0]}&endDate=${endDate.toISOString().split("T")[0]}&format=${formatMap[selectedFormat]}`
+
+      const filename = `releve_${account.accountNumber}_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.${formatMap[selectedFormat]}`
+      const fileUri = FileSystem.documentDirectory + filename
+
+      const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (downloadResult.status === 200) {
+        Alert.alert("Succès", "Le relevé a été téléchargé avec succès", [
+          {
+            text: "Partager",
+            onPress: async () => {
+              if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(downloadResult.uri)
+              }
+            },
+          },
+          { text: "OK" },
+        ])
+        setShowStatementModal(false)
+      } else {
+        throw new Error("Échec du téléchargement")
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du téléchargement du relevé:", error)
+      Alert.alert("Erreur", "Impossible de télécharger le relevé. Veuillez réessayer.")
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const handleRIBRequest = () => {
@@ -493,6 +545,171 @@ export default function AccountDetailsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Statement Modal */}
+      <Modal
+        visible={showStatementModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowStatementModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Demander un relevé</Text>
+              <TouchableOpacity onPress={() => setShowStatementModal(false)}>
+                <IconSymbol name="xmark.circle.fill" size={28} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {/* Account Info */}
+              <View style={styles.modalSection}>
+                <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Compte sélectionné</Text>
+                <View style={[styles.selectedAccountCard, { backgroundColor: colors.background }]}>
+                  <View style={styles.selectedAccountInfo}>
+                    <Text style={[styles.selectedAccountName, { color: colors.text }]}>{account?.accountName}</Text>
+                    <Text style={[styles.selectedAccountNumber, { color: colors.textSecondary }]}>
+                      {account?.accountNumber}
+                    </Text>
+                  </View>
+                  <View style={[styles.selectedAccountBadge, { backgroundColor: colors.primary + "15" }]}>
+                    <IconSymbol name="checkmark.circle.fill" size={20} color={colors.primary} />
+                  </View>
+                </View>
+              </View>
+
+              {/* Period Selection */}
+              <View style={styles.modalSection}>
+                <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Période</Text>
+                <View style={styles.dateRow}>
+                  <View style={styles.dateField}>
+                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Du</Text>
+                    <TouchableOpacity
+                      style={[styles.dateButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+                      onPress={() => setShowStartDatePicker(true)}
+                    >
+                      <IconSymbol name="calendar" size={16} color={colors.primary} />
+                      <Text style={[styles.dateText, { color: colors.text }]}>
+                        {startDate.toLocaleDateString("fr-FR")}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.dateField}>
+                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Au</Text>
+                    <TouchableOpacity
+                      style={[styles.dateButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+                      onPress={() => setShowEndDatePicker(true)}
+                    >
+                      <IconSymbol name="calendar" size={16} color={colors.primary} />
+                      <Text style={[styles.dateText, { color: colors.text }]}>
+                        {endDate.toLocaleDateString("fr-FR")}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              {/* Format Selection */}
+              <View style={styles.modalSection}>
+                <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Format</Text>
+                <View style={styles.formatOptions}>
+                  {(["PDF", "EXCEL", "CSV"] as const).map((format) => (
+                    <TouchableOpacity
+                      key={format}
+                      style={[
+                        styles.formatOption,
+                        {
+                          backgroundColor: selectedFormat === format ? colors.primary : colors.background,
+                          borderColor: selectedFormat === format ? colors.primary : colors.border,
+                        },
+                      ]}
+                      onPress={() => setSelectedFormat(format)}
+                    >
+                      <IconSymbol
+                        name={
+                          format === "PDF"
+                            ? "doc.text.fill"
+                            : format === "EXCEL"
+                              ? "tablecells.fill"
+                              : "doc.plaintext.fill"
+                        }
+                        size={20}
+                        color={selectedFormat === format ? "#FFFFFF" : colors.text}
+                      />
+                      <Text style={[styles.formatText, { color: selectedFormat === format ? "#FFFFFF" : colors.text }]}>
+                        {format}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Action Buttons */}
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.cancelButton,
+                  { backgroundColor: colors.background, borderColor: colors.border },
+                ]}
+                onPress={() => setShowStatementModal(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Annuler</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.downloadButton, { backgroundColor: colors.primary }]}
+                onPress={handleDownloadStatement}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <IconSymbol name="arrow.down.circle.fill" size={20} color="#FFFFFF" />
+                    <Text style={styles.downloadButtonText}>Télécharger</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Date Pickers */}
+        {showStartDatePicker && (
+          <DateTimePicker
+            value={startDate}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={(event, selectedDate) => {
+              setShowStartDatePicker(Platform.OS === "ios")
+              if (selectedDate) {
+                setStartDate(selectedDate)
+              }
+            }}
+            maximumDate={endDate}
+          />
+        )}
+
+        {showEndDatePicker && (
+          <DateTimePicker
+            value={endDate}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={(event, selectedDate) => {
+              setShowEndDatePicker(Platform.OS === "ios")
+              if (selectedDate) {
+                setEndDate(selectedDate)
+              }
+            }}
+            minimumDate={startDate}
+            maximumDate={new Date()}
+          />
+        )}
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -718,5 +935,138 @@ const styles = StyleSheet.create({
   },
   transactionBalance: {
     fontSize: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 20,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  modalSection: {
+    marginBottom: 24,
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  selectedAccountCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  selectedAccountInfo: {
+    flex: 1,
+  },
+  selectedAccountName: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  selectedAccountNumber: {
+    fontSize: 14,
+  },
+  selectedAccountBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dateRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dateField: {
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  dateText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  formatOptions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  formatOption: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  formatText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5E5",
+  },
+  modalButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  downloadButton: {},
+  downloadButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 })
