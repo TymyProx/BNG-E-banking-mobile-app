@@ -269,8 +269,27 @@ export default function AccountDetailsScreen() {
         throw new Error(`Erreur ${transactionsResponse.status}: ${transactionsResponse.statusText}`)
       }
 
-      const allTransactions = await transactionsResponse.json()
-      console.log("[v0] Transactions récupérées:", allTransactions)
+      const responseData = await transactionsResponse.json()
+      console.log("[v0] Réponse API complète:", JSON.stringify(responseData, null, 2))
+      console.log("[v0] Type de responseData:", typeof responseData)
+      console.log("[v0] Est un tableau?", Array.isArray(responseData))
+
+      let allTransactions: any[] = []
+
+      if (Array.isArray(responseData)) {
+        allTransactions = responseData
+      } else if (responseData && Array.isArray(responseData.data)) {
+        allTransactions = responseData.data
+      } else if (responseData && Array.isArray(responseData.rows)) {
+        allTransactions = responseData.rows
+      } else if (responseData && Array.isArray(responseData.transactions)) {
+        allTransactions = responseData.transactions
+      } else {
+        console.log("[v0] Structure de réponse non reconnue:", Object.keys(responseData || {}))
+        throw new Error("Format de réponse API non reconnu")
+      }
+
+      console.log("[v0] Nombre total de transactions:", allTransactions.length)
 
       const { startDate, endDate } = getDateRange()
       const filteredTransactions = allTransactions.filter((transaction: any) => {
@@ -278,6 +297,16 @@ export default function AccountDetailsScreen() {
         const matchesAccount =
           transaction.accountId === account.id || transaction.accountNumber === account.accountNumber
         const matchesDateRange = transactionDate >= startDate && transactionDate <= endDate
+
+        console.log("[v0] Transaction:", {
+          id: transaction.id,
+          accountId: transaction.accountId,
+          accountNumber: transaction.accountNumber,
+          date: transactionDate,
+          matchesAccount,
+          matchesDateRange,
+        })
+
         return matchesAccount && matchesDateRange
       })
 
