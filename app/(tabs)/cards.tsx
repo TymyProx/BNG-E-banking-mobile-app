@@ -850,6 +850,7 @@ const styles = StyleSheet.create({
   },
   carouselContent: {
     paddingHorizontal: 24,
+    gap: 24,
   },
   cardContainer: {
     paddingRight: 0,
@@ -857,7 +858,7 @@ const styles = StyleSheet.create({
   goldCard: {
     borderRadius: 20,
     padding: 24,
-    minHeight: 220,
+    minHeight: 180,
     position: "relative",
     overflow: "hidden",
     shadowColor: "#000",
@@ -902,7 +903,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   bankLogo: {
     backgroundColor: "rgba(255,255,255,0.9)",
@@ -923,16 +924,16 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   goldText: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "800",
     color: "rgba(255,255,255,0.95)",
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
   chipContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   chip: {
     width: 48,
@@ -949,18 +950,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   cardNumber: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "600",
     color: "white",
-    letterSpacing: 3,
-    marginBottom: 16,
+    letterSpacing: 2,
+    marginBottom: 12,
     fontFamily: "monospace",
   },
   expiryDate: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "rgba(255,255,255,0.9)",
-    marginBottom: 16,
+    marginBottom: 12,
     fontFamily: "monospace",
   },
   cardFooter: {
@@ -976,13 +977,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardholderName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     color: "white",
     letterSpacing: 0.5,
   },
   visaLogo: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "800",
     color: "white",
     fontStyle: "italic",
@@ -1349,16 +1350,16 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    top: 12,
+    right: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
     zIndex: 10,
   },
   statusBadgeText: {
     color: "white",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
