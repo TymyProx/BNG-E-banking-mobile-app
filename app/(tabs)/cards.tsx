@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import React from "react"
+import { useFocusEffect } from "@react-navigation/native"
 
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 48
@@ -106,19 +107,103 @@ export default function CardsScreen() {
 
   const { user, tenantId, isLoading: authLoading } = useAuth()
 
-  const [cards] = useState<Card[]>([
-    {
-      id: "1",
-      name: "GOLD",
-      number: "4386 •••• •••• 2624",
-      type: "Visa",
-      expiry: "08/26",
-      status: "active",
-      balance: 48200,
-      isBlocked: false,
-      cardholderName: "Mr YOLOGO MOHAMED YACINE T",
-    },
-  ])
+  const [cards, setCards] = useState<Card[]>([])
+  const [isLoadingCards, setIsLoadingCards] = useState(true)
+  const [cardsError, setCardsError] = useState<string | null>(null)
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (tenantId) {
+        fetchCards()
+      }
+    }, [tenantId]),
+  )
+
+  const fetchCards = async () => {
+    if (!tenantId) return
+
+    setIsLoadingCards(true)
+    setCardsError(null)
+
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token) {
+        setCardsError("Vous devez être connecté pour voir vos cartes")
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des cartes")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Cards data received:", data)
+
+      const mappedCards: Card[] = (data.rows || []).map((card: any) => {
+        // Format card number - mask if not "N/A"
+        let formattedNumber = card.numCard
+        if (card.numCard && card.numCard !== "N/A" && card.numCard.length >= 16) {
+          const first4 = card.numCard.substring(0, 4)
+          const last4 = card.numCard.substring(card.numCard.length - 4)
+          formattedNumber = `${first4} •••• •••• ${last4}`
+        }
+
+        // Format expiry date from "2025-10-07" to "10/25"
+        let formattedExpiry = "N/A"
+        if (card.dateExpiration && card.dateExpiration !== "N/A") {
+          try {
+            const date = new Date(card.dateExpiration)
+            const month = String(date.getMonth() + 1).padStart(2, "0")
+            const year = String(date.getFullYear()).substring(2)
+            formattedExpiry = `${month}/${year}`
+          } catch (e) {
+            formattedExpiry = "N/A"
+          }
+        }
+
+        // Map status
+        let status: "active" | "blocked" | "expired" = "active"
+        if (card.status === "BLOQUE") {
+          status = "blocked"
+        } else if (card.status === "EXPIRE") {
+          status = "expired"
+        } else if (card.status === "EN ATTENTE") {
+          status = "expired" // Use expired styling for pending cards
+        }
+
+        // Determine card type (Visa or Mastercard) based on typCard
+        const cardType: "Visa" | "Mastercard" = card.typCard?.includes("MASTER") ? "Mastercard" : "Visa"
+
+        return {
+          id: card.id,
+          name: card.typCard || "CARD",
+          number: formattedNumber,
+          type: cardType,
+          expiry: formattedExpiry,
+          status: status,
+          balance: 0, // Balance not provided by API
+          isBlocked: card.status === "BLOQUE",
+          cardholderName: user?.fullName || "Titulaire de carte",
+        }
+      })
+
+      setCards(mappedCards)
+    } catch (error: any) {
+      console.error("[v0] Error fetching cards:", error)
+      setCardsError(error.message || "Impossible de récupérer vos cartes")
+    } finally {
+      setIsLoadingCards(false)
+    }
+  }
 
   useEffect(() => {
     if (showRequestModal && tenantId) {
@@ -225,7 +310,7 @@ export default function CardsScreen() {
           typCard: selectedCardType,
           status: "EN ATTENTE",
           dateEmission: currentDate,
-          dateExpiration: currentDate,//"N/A",
+          dateExpiration: currentDate, //"N/A",
           idClient: user.id,
           accountNumber: selectedAccount.accountNumber,
         },
@@ -281,6 +366,7 @@ export default function CardsScreen() {
             setCurrentStep(1)
             setSelectedCardType("")
             setSelectedAccountId("")
+            fetchCards()
           },
         },
       ])
@@ -325,6 +411,11 @@ export default function CardsScreen() {
     }
   }
 
+  const getCardColors = (cardType: string): string[] => {
+    const type = CARD_TYPES.find((t) => t.value === cardType)
+    return type?.colors || ["#F4D03F", "#F9E79F"]
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -333,108 +424,146 @@ export default function CardsScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Cards Carousel */}
-        <View style={styles.carouselContainer}>
-          <Animated.ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            onMomentumScrollEnd={handleMomentumScrollEnd}
-            scrollEventThrottle={16}
-            snapToInterval={CARD_WIDTH}
-            decelerationRate="fast"
-            contentContainerStyle={styles.carouselContent}
-          >
-            {cards.map((card, index) => (
-              <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
-                <LinearGradient
-                  colors={["#F4D03F", "#F9E79F", "#F4D03F"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.goldCard}
-                >
-                  {/* Card pattern overlay */}
-                  <View style={styles.cardPattern}>
-                    <View style={[styles.patternCircle, styles.patternCircle1]} />
-                    <View style={[styles.patternCircle, styles.patternCircle2]} />
-                    <View style={[styles.patternCircle, styles.patternCircle3]} />
+        {isLoadingCards ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0066FF" />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement de vos cartes...</Text>
+          </View>
+        ) : cardsError ? (
+          <View style={styles.errorContainer}>
+            <IconSymbol name="exclamationmark.triangle" size={48} color={colors.textSecondary} />
+            <Text style={[styles.errorText, { color: colors.text }]}>{cardsError}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchCards}>
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        ) : cards.length === 0 ? (
+          <View style={styles.emptyCardsContainer}>
+            <IconSymbol name="creditcard" size={64} color={colors.textSecondary} />
+            <Text style={[styles.emptyCardsText, { color: colors.text }]}>Aucune carte disponible</Text>
+            <Text style={[styles.emptyCardsSubtext, { color: colors.textSecondary }]}>
+              Demandez votre première carte bancaire
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Cards Carousel */}
+            <View style={styles.carouselContainer}>
+              <Animated.ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScroll}
+                onMomentumScrollEnd={handleMomentumScrollEnd}
+                scrollEventThrottle={16}
+                snapToInterval={CARD_WIDTH}
+                decelerationRate="fast"
+                contentContainerStyle={styles.carouselContent}
+              >
+                {cards.map((card, index) => (
+                  <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
+                    <LinearGradient
+                      colors={getCardColors(card.name)}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.goldCard}
+                    >
+                      {(card.status === "expired" || card.isBlocked) && (
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            {
+                              backgroundColor: card.isBlocked ? "#FF4444" : "#FFA500",
+                            },
+                          ]}
+                        >
+                          <Text style={styles.statusBadgeText}>{card.isBlocked ? "BLOQUÉE" : "EN ATTENTE"}</Text>
+                        </View>
+                      )}
+
+                      {/* Card pattern overlay */}
+                      <View style={styles.cardPattern}>
+                        <View style={[styles.patternCircle, styles.patternCircle1]} />
+                        <View style={[styles.patternCircle, styles.patternCircle2]} />
+                        <View style={[styles.patternCircle, styles.patternCircle3]} />
+                      </View>
+
+                      {/* Card content */}
+                      <View style={styles.cardContent}>
+                        {/* Bank logo and card type */}
+                        <View style={styles.cardHeader}>
+                          <View style={styles.bankLogo}>
+                            <Text style={styles.bankLogoText}>BNG</Text>
+                            <Text style={styles.bankLogoSubtext}>BANK</Text>
+                          </View>
+                          <Text style={styles.goldText}>{card.name}</Text>
+                        </View>
+
+                        {/* Chip and contactless */}
+                        <View style={styles.chipContainer}>
+                          <View style={styles.chip}>
+                            <View style={styles.chipPattern} />
+                          </View>
+                          <IconSymbol name="wave.3.right" size={24} color="rgba(255,255,255,0.9)" />
+                        </View>
+
+                        {/* Card number */}
+                        <Text style={styles.cardNumber}>{card.number}</Text>
+
+                        {/* Expiry date */}
+                        <Text style={styles.expiryDate}>{card.expiry}</Text>
+
+                        {/* Cardholder name */}
+                        <View style={styles.cardFooter}>
+                          <View>
+                            <Text style={styles.cardholderLabel}>CARDHOLDER NAME</Text>
+                            <Text style={styles.cardholderName}>{card.cardholderName}</Text>
+                          </View>
+                          <Text style={styles.visaLogo}>{card.type.toUpperCase()}</Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
                   </View>
+                ))}
+              </Animated.ScrollView>
 
-                  {/* Card content */}
-                  <View style={styles.cardContent}>
-                    {/* Bank logo and GOLD text */}
-                    <View style={styles.cardHeader}>
-                      <View style={styles.bankLogo}>
-                        <Text style={styles.bankLogoText}>BNG</Text>
-                        <Text style={styles.bankLogoSubtext}>BANK</Text>
-                      </View>
-                      <Text style={styles.goldText}>{card.name}</Text>
-                    </View>
-
-                    {/* Chip and contactless */}
-                    <View style={styles.chipContainer}>
-                      <View style={styles.chip}>
-                        <View style={styles.chipPattern} />
-                      </View>
-                      <IconSymbol name="wave.3.right" size={24} color="rgba(255,255,255,0.9)" />
-                    </View>
-
-                    {/* Card number */}
-                    <Text style={styles.cardNumber}>{card.number}</Text>
-
-                    {/* Expiry date */}
-                    <Text style={styles.expiryDate}>{card.expiry}</Text>
-
-                    {/* Cardholder name */}
-                    <View style={styles.cardFooter}>
-                      <View>
-                        <Text style={styles.cardholderLabel}>CARDHOLDER NAME</Text>
-                        <Text style={styles.cardholderName}>{card.cardholderName}</Text>
-                      </View>
-                      <Text style={styles.visaLogo}>VISA</Text>
-                    </View>
-                  </View>
-                </LinearGradient>
-              </View>
-            ))}
-          </Animated.ScrollView>
-
-          {/* Pagination dots */}
-          {cards.length > 1 && (
-            <View style={styles.pagination}>
-              {cards.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.paginationDot,
-                    {
-                      backgroundColor: index === activeCardIndex ? colors.text : colors.textSecondary,
-                      opacity: index === activeCardIndex ? 1 : 0.3,
-                    },
-                  ]}
-                />
-              ))}
+              {/* Pagination dots */}
+              {cards.length > 1 && (
+                <View style={styles.pagination}>
+                  {cards.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.paginationDot,
+                        {
+                          backgroundColor: index === activeCardIndex ? colors.text : colors.textSecondary,
+                          opacity: index === activeCardIndex ? 1 : 0.3,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        {/* Action buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
-            <View style={[styles.actionIconContainer, { backgroundColor: "#FFE5E5" }]}>
-              <IconSymbol name="lock.fill" size={20} color="#FF4444" />
-            </View>
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
-          </TouchableOpacity>
+            {/* Action buttons */}
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
+                <View style={[styles.actionIconContainer, { backgroundColor: "#FFE5E5" }]}>
+                  <IconSymbol name="lock.fill" size={20} color="#FF4444" />
+                </View>
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
-            <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
-              <IconSymbol name="eye.fill" size={20} color="#0066FF" />
+              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
+                <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
+                  <IconSymbol name="eye.fill" size={20} color="#0066FF" />
+                </View>
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Détails de la carte</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Détails de la carte</Text>
-          </TouchableOpacity>
-        </View>
+          </>
+        )}
 
         {/* Request card section */}
         <TouchableOpacity
@@ -1172,11 +1301,66 @@ const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 48,
+    paddingVertical: 80,
     gap: 16,
   },
   loadingText: {
     fontSize: 16,
+  },
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: "#0066FF",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  emptyCardsContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  emptyCardsText: {
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  emptyCardsSubtext: {
+    fontSize: 16,
+    textAlign: "center",
+  },
+  statusBadge: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  statusBadgeText: {
+    color: "white",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   emptyContainer: {
     alignItems: "center",
