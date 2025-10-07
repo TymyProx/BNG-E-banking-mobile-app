@@ -32,4 +32,7 @@ export const API_ENDPOINTS = {
     LIST: (tenantId: string) => `/tenant/${tenantId}/card`,
     DETAILS: (tenantId: string, cardId: string) => `/tenant/${tenantId}/card/${cardId}`,
   },
+  CREDIT: {
+    CREATE: (tenantId: string) => `/tenant/${tenantId}/demande-credit`,
+  },
 }
