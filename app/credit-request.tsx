@@ -379,7 +379,11 @@ export default function CreditRequestScreen() {
               <IconSymbol name="xmark" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.modalList}
+            contentContainerStyle={styles.modalListContent}
+            showsVerticalScrollIndicator={false}
+          >
             {options.map((option) => (
               <TouchableOpacity
                 key={option.value}
@@ -670,7 +674,8 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: "70%",
+    minHeight: "50%",
+    maxHeight: "80%",
     paddingBottom: 40,
   },
   modalHeader: {
@@ -695,6 +700,9 @@ const styles = StyleSheet.create({
   },
   modalList: {
     flex: 1,
+  },
+  modalListContent: {
+    paddingBottom: 20,
   },
   modalOption: {
     flexDirection: "row",
