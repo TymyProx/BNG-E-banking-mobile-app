@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  Platform,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { IconSymbol } from "@/components/ui/IconSymbol"
@@ -21,7 +20,6 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import DateTimePicker from "@react-native-community/datetimepicker"
 import * as FileSystem from "expo-file-system"
 import * as Sharing from "expo-sharing"
 
@@ -206,12 +204,32 @@ export default function AccountDetailsScreen() {
   }
 
   const [showStatementModal, setShowStatementModal] = useState(false)
-  const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)))
-  const [endDate, setEndDate] = useState(new Date())
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false)
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState<"3months" | "lastMonth" | "currentMonth">("currentMonth")
   const [selectedFormat, setSelectedFormat] = useState<"PDF" | "EXCEL" | "CSV">("PDF")
   const [isDownloading, setIsDownloading] = useState(false)
+
+  const getDateRange = () => {
+    const now = new Date()
+    let startDate: Date
+    let endDate: Date = now
+
+    switch (selectedPeriod) {
+      case "3months":
+        startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+        break
+      case "lastMonth":
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+        break
+      case "currentMonth":
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        break
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    }
+
+    return { startDate, endDate }
+  }
 
   const handleStatementRequest = () => {
     if (!account) return
@@ -243,6 +261,8 @@ export default function AccountDetailsScreen() {
         EXCEL: "xlsx",
         CSV: "csv",
       }
+
+      const { startDate, endDate } = getDateRange()
 
       const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.STATEMENT(tenantId, account.id)}?startDate=${startDate.toISOString().split("T")[0]}&endDate=${endDate.toISOString().split("T")[0]}&format=${formatMap[selectedFormat]}`
 
@@ -582,32 +602,75 @@ export default function AccountDetailsScreen() {
               {/* Period Selection */}
               <View style={styles.modalSection}>
                 <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Période</Text>
-                <View style={styles.dateRow}>
-                  <View style={styles.dateField}>
-                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Du</Text>
-                    <TouchableOpacity
-                      style={[styles.dateButton, { backgroundColor: colors.background, borderColor: colors.border }]}
-                      onPress={() => setShowStartDatePicker(true)}
+                <View style={styles.periodOptions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.periodOption,
+                      {
+                        backgroundColor: selectedPeriod === "currentMonth" ? colors.primary : colors.background,
+                        borderColor: selectedPeriod === "currentMonth" ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => setSelectedPeriod("currentMonth")}
+                  >
+                    <IconSymbol
+                      name="calendar"
+                      size={20}
+                      color={selectedPeriod === "currentMonth" ? "#FFFFFF" : colors.text}
+                    />
+                    <Text
+                      style={[
+                        styles.periodText,
+                        { color: selectedPeriod === "currentMonth" ? "#FFFFFF" : colors.text },
+                      ]}
                     >
-                      <IconSymbol name="calendar" size={16} color={colors.primary} />
-                      <Text style={[styles.dateText, { color: colors.text }]}>
-                        {startDate.toLocaleDateString("fr-FR")}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                      Mois en cours
+                    </Text>
+                  </TouchableOpacity>
 
-                  <View style={styles.dateField}>
-                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Au</Text>
-                    <TouchableOpacity
-                      style={[styles.dateButton, { backgroundColor: colors.background, borderColor: colors.border }]}
-                      onPress={() => setShowEndDatePicker(true)}
+                  <TouchableOpacity
+                    style={[
+                      styles.periodOption,
+                      {
+                        backgroundColor: selectedPeriod === "lastMonth" ? colors.primary : colors.background,
+                        borderColor: selectedPeriod === "lastMonth" ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => setSelectedPeriod("lastMonth")}
+                  >
+                    <IconSymbol
+                      name="calendar.badge.clock"
+                      size={20}
+                      color={selectedPeriod === "lastMonth" ? "#FFFFFF" : colors.text}
+                    />
+                    <Text
+                      style={[styles.periodText, { color: selectedPeriod === "lastMonth" ? "#FFFFFF" : colors.text }]}
                     >
-                      <IconSymbol name="calendar" size={16} color={colors.primary} />
-                      <Text style={[styles.dateText, { color: colors.text }]}>
-                        {endDate.toLocaleDateString("fr-FR")}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                      Mois dernier
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.periodOption,
+                      {
+                        backgroundColor: selectedPeriod === "3months" ? colors.primary : colors.background,
+                        borderColor: selectedPeriod === "3months" ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => setSelectedPeriod("3months")}
+                  >
+                    <IconSymbol
+                      name="calendar.badge.plus"
+                      size={20}
+                      color={selectedPeriod === "3months" ? "#FFFFFF" : colors.text}
+                    />
+                    <Text
+                      style={[styles.periodText, { color: selectedPeriod === "3months" ? "#FFFFFF" : colors.text }]}
+                    >
+                      3 derniers mois
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -677,38 +740,6 @@ export default function AccountDetailsScreen() {
             </View>
           </View>
         </View>
-
-        {/* Date Pickers */}
-        {showStartDatePicker && (
-          <DateTimePicker
-            value={startDate}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(event, selectedDate) => {
-              setShowStartDatePicker(Platform.OS === "ios")
-              if (selectedDate) {
-                setStartDate(selectedDate)
-              }
-            }}
-            maximumDate={endDate}
-          />
-        )}
-
-        {showEndDatePicker && (
-          <DateTimePicker
-            value={endDate}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(event, selectedDate) => {
-              setShowEndDatePicker(Platform.OS === "ios")
-              if (selectedDate) {
-                setEndDate(selectedDate)
-              }
-            }}
-            minimumDate={startDate}
-            maximumDate={new Date()}
-          />
-        )}
       </Modal>
     </SafeAreaView>
   )
@@ -999,28 +1030,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  dateRow: {
-    flexDirection: "row",
+  periodOptions: {
     gap: 12,
   },
-  dateField: {
-    flex: 1,
-  },
-  dateLabel: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  dateButton: {
+  periodOption: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    padding: 12,
+    gap: 12,
+    padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 2,
   },
-  dateText: {
+  periodText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   formatOptions: {
     flexDirection: "row",
