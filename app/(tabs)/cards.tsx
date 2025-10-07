@@ -230,6 +230,9 @@ export default function CardsScreen() {
         },
       }
 
+      console.log("[v0] Request URL:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.CREATE(tenantId)}`)
+      console.log("[v0] Request body:", JSON.stringify(requestBody, null, 2))
+
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.CREATE(tenantId)}`, {
         method: "POST",
         headers: {
@@ -239,9 +242,34 @@ export default function CardsScreen() {
         body: JSON.stringify(requestBody),
       })
 
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response headers:", response.headers)
+
+      // Get the response text first
+      const responseText = await response.text()
+      console.log("[v0] Response text:", responseText)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Erreur lors de la demande de carte")
+        // Try to parse as JSON, but handle cases where it's not JSON
+        let errorMessage = "Erreur lors de la demande de carte"
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.message || errorMessage
+        } catch (parseError) {
+          // If parsing fails, use the raw text as the error message
+          errorMessage = responseText || errorMessage
+        }
+        throw new Error(errorMessage)
+      }
+
+      // Parse successful response
+      let responseData
+      try {
+        responseData = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error("[v0] Failed to parse success response:", parseError)
+        // If we can't parse the response but the status was OK, consider it a success
+        responseData = {}
       }
 
       Alert.alert("Succès", "Votre demande de carte a été enregistrée avec succès", [
@@ -249,13 +277,14 @@ export default function CardsScreen() {
           text: "OK",
           onPress: () => {
             setShowRequestModal(false)
+            setCurrentStep(1)
             setSelectedCardType("")
             setSelectedAccountId("")
           },
         },
       ])
     } catch (error: any) {
-      console.error("Error submitting card request:", error)
+      console.error("[v0] Error submitting card request:", error)
       Alert.alert("Erreur", error.message || "Impossible de soumettre votre demande")
     } finally {
       setIsSubmitting(false)
