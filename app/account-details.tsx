@@ -24,6 +24,7 @@ import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
 import * as Print from "expo-print"
 import * as XLSX from "xlsx"
+import React from "react"
 
 interface Transaction {
   id: string
@@ -446,7 +447,7 @@ export default function AccountDetailsScreen() {
         })
 
         worksheetData.push([])
-        worksheetData.push(["Total des transactions:", filteredTransactions.length])
+        worksheetData.push(["Total des transactions:", filteredTransactions.length.toString()])
 
         const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
         const workbook = XLSX.utils.book_new()
