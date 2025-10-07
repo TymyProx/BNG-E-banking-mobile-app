@@ -102,7 +102,7 @@ importers:
         specifier: ^0.3.1
         version: 0.3.2(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)
       '@react-native-picker/picker':
-        specifier: latest
+        specifier: ^2.11.1
         version: 2.11.2(react-native@0.81.4(@babel/core@7.25.2)(@types/react@19.0.0)(react@19.1.0))(react@19.1.0)
       '@react-navigation/bottom-tabs':
         specifier: latest
