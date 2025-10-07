@@ -168,7 +168,7 @@ importers:
         specifier: latest
         version: 15.0.7(expo@54.0.8)
       expo-sharing:
-        specifier: ~14.0.7
+        specifier: latest
         version: 14.0.7(expo@54.0.8)
       expo-splash-screen:
         specifier: latest

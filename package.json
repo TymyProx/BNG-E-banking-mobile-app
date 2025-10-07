@@ -65,7 +65,7 @@
     "expo-linking": "^8.0.8",
     "expo-router": "latest",
     "expo-secure-store": "latest",
-    "expo-sharing": "~14.0.7",
+    "expo-sharing": "latest",
     "expo-splash-screen": "latest",
     "expo-status-bar": "latest",
     "expo-symbols": "latest",

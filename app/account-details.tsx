@@ -22,7 +22,6 @@ import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
-import React from "react"
 
 interface Transaction {
   id: string
@@ -267,14 +266,29 @@ export default function AccountDetailsScreen() {
 
       const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.STATEMENT(tenantId, account.id)}?startDate=${startDate.toISOString().split("T")[0]}&endDate=${endDate.toISOString().split("T")[0]}&format=${formatMap[selectedFormat]}`
 
+      console.log("[v0] Téléchargement du relevé...")
+      console.log("[v0] URL:", url)
+      console.log("[v0] Account ID:", account.id)
+      console.log("[v0] Tenant ID:", tenantId)
+      console.log("[v0] Date range:", {
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+      })
+      console.log("[v0] Format:", formatMap[selectedFormat])
+
       const filename = `releve_${account.accountNumber}_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.${formatMap[selectedFormat]}`
       const fileUri = FileSystem.documentDirectory + filename
+
+      console.log("[v0] Destination file:", fileUri)
 
       const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
+
+      console.log("[v0] Download result:", downloadResult)
+      console.log("[v0] Status:", downloadResult.status)
 
       if (downloadResult.status === 200) {
         Alert.alert("Succès", "Le relevé a été téléchargé avec succès", [
@@ -290,11 +304,16 @@ export default function AccountDetailsScreen() {
         ])
         setShowStatementModal(false)
       } else {
-        throw new Error("Échec du téléchargement")
+        console.log("[v0] Échec du téléchargement - Status:", downloadResult.status)
+        throw new Error(`Échec du téléchargement - Status: ${downloadResult.status}`)
       }
     } catch (error) {
       console.error("[v0] Erreur lors du téléchargement du relevé:", error)
-      Alert.alert("Erreur", "Impossible de télécharger le relevé. Veuillez réessayer.")
+      const errorMessage = error instanceof Error ? error.message : "Erreur inconnue"
+      Alert.alert(
+        "Erreur de téléchargement",
+        `Impossible de télécharger le relevé.\n\nDétails: ${errorMessage}\n\nVérifiez que l'endpoint API existe et fonctionne correctement.`,
+      )
     } finally {
       setIsDownloading(false)
     }
