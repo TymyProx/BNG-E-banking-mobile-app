@@ -21,7 +21,6 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
 
 interface CreditType {
   id: string
@@ -157,11 +156,10 @@ export default function CreditRequestScreen() {
 
       if (response.ok) {
         const data = await response.json()
-        // Filter only active accounts
-        const activeAccounts = (Array.isArray(data) ? data : data.rows || []).filter(
-          (account: Account) => account.status === "ACTIF",
+        const activeCurrentAccounts = (Array.isArray(data) ? data : data.rows || []).filter(
+          (account: Account) => account.status === "ACTIF" && account.type === "Courant",
         )
-        setAccounts(activeAccounts)
+        setAccounts(activeCurrentAccounts)
       }
     } catch (error) {
       console.error("[v0] Error fetching accounts:", error)
