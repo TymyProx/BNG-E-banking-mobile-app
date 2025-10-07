@@ -496,7 +496,9 @@ export default function CardsScreen() {
                             <Text style={styles.bankLogoText}>BNG</Text>
                             <Text style={styles.bankLogoSubtext}>BANK</Text>
                           </View>
-                          <Text style={styles.goldText}>{card.name}</Text>
+                          <View style={styles.goldTextContainer}>
+                            <Text style={styles.goldText}>{card.name}</Text>
+                          </View>
                         </View>
 
                         {/* Chip and contactless */}
@@ -867,33 +869,29 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 12,
   },
+  statusBadge: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  statusBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
   cardPattern: {
     position: "absolute",
     inset: 0,
-  },
-  patternCircle: {
-    position: "absolute",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 999,
-  },
-  patternCircle1: {
-    width: 200,
-    height: 200,
-    top: -100,
-    right: -50,
-  },
-  patternCircle2: {
-    width: 150,
-    height: 150,
-    bottom: -75,
-    left: -75,
-  },
-  patternCircle3: {
-    width: 100,
-    height: 100,
-    top: 60,
-    right: 80,
-    backgroundColor: "rgba(255,255,255,0.1)",
   },
   cardContent: {
     flex: 1,
@@ -904,7 +902,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 20,
-    paddingRight: 100,
   },
   bankLogo: {
     backgroundColor: "rgba(255,255,255,0.9)",
@@ -924,9 +921,13 @@ const styles = StyleSheet.create({
     color: "#666",
     letterSpacing: 2,
   },
+  goldTextContainer: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
   goldText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "800",
     color: "rgba(255,255,255,0.95)",
     letterSpacing: 0.5,
     textAlign: "right",
@@ -1349,26 +1350,6 @@ const styles = StyleSheet.create({
   emptyCardsSubtext: {
     fontSize: 16,
     textAlign: "center",
-  },
-  statusBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  statusBadgeText: {
-    color: "white",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5,
   },
   emptyContainer: {
     alignItems: "center",
