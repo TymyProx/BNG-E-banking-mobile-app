@@ -434,7 +434,7 @@ const Beneficiaries = () => {
                           <IconSymbol name="paperplane.fill" size={18} color="white" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.starButton} onPress={() => handleToggleFavorite(beneficiary)}>
-                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="#FFD700" />
+                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="white" />
                         </TouchableOpacity>
                       </>
                     )}
