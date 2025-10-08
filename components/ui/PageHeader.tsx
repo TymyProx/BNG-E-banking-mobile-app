@@ -19,7 +19,7 @@ export function PageHeader({
   showBackButton = true,
   showAddButton = false,
   onAddPress,
-  backButtonColor = "#FEF3C7",
+  backButtonColor = "rgba(251, 191, 36, 0.15)", // Changed default to match accounts page
   addButtonColor = "#2D7A4F",
 }: PageHeaderProps) {
   const router = useRouter()
@@ -43,7 +43,7 @@ export function PageHeader({
 
         {showAddButton && onAddPress && (
           <TouchableOpacity style={[styles.addButton, { backgroundColor: addButtonColor }]} onPress={onAddPress}>
-            <IconSymbol name="plus" size={24} color="white" />
+            <IconSymbol name="plus" size={22} color="white" />
           </TouchableOpacity>
         )}
 
@@ -55,10 +55,9 @@ export function PageHeader({
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "white",
+    paddingTop: 16, // Reduced from 60 to 16 to match accounts page
+    paddingBottom: 24, // Increased from 20 to 24 to match accounts page
+    paddingHorizontal: 24, // Increased from 20 to 24 to match accounts page
   },
   headerContent: {
     flexDirection: "row",
@@ -66,9 +65,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44, // Reduced from 48 to 44 to match accounts page
+    height: 44, // Reduced from 48 to 44 to match accounts page
+    borderRadius: 22, // Adjusted to match new size
     justifyContent: "center",
     alignItems: "center",
   },
@@ -79,30 +78,24 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#1F2937",
-    textAlign: "center",
+    fontWeight: "800", // Increased from "bold" to "800" to match accounts page
+    letterSpacing: -0.5, // Added letter spacing
+    marginBottom: 4, // Added margin bottom
   },
   description: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 4,
-    textAlign: "center",
+    fontSize: 13, // Reduced from 14 to 13 to match accounts page
+    fontWeight: "500", // Added font weight
+    marginTop: 0, // Removed margin top since we have marginBottom on title
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44, // Reduced from 48 to 44 to match accounts page
+    height: 44, // Reduced from 48 to 44 to match accounts page
+    borderRadius: 22, // Adjusted to match new size
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   placeholder: {
-    width: 48,
-    height: 48,
+    width: 44, // Reduced from 48 to 44 to match accounts page
+    height: 44, // Reduced from 48 to 44 to match accounts page
   },
 })

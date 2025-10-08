@@ -520,7 +520,7 @@ export default function CardsScreen() {
       <PageHeader
         title="Mes Cartes"
         description="Gérez vos cartes bancaires"
-        showBackButton={false}
+        showBackButton={true} // Changed from false to true to show back button
         showAddButton={true}
         onAddPress={() => setShowRequestModal(true)}
         addButtonColor="#2D7A4F"
