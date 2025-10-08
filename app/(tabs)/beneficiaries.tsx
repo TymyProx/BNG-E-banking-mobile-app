@@ -425,18 +425,18 @@ const Beneficiaries = () => {
                     {beneficiary.status === 0 && (
                       <>
                         <TouchableOpacity
-                          style={[styles.transferIconButton, { backgroundColor: "#FBBF24" }]}
+                          style={styles.transferIconButton}
                           onPress={() => handleTransferTo(beneficiary.id)}
                         >
-                          <IconSymbol name="paperplane.fill" size={18} color="white" />
+                          <IconSymbol name="paperplane.fill" size={18} color="#2D7A4F" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.starButton} onPress={() => handleToggleFavorite(beneficiary)}>
-                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="white" />
+                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="#FFD700" />
                         </TouchableOpacity>
                       </>
                     )}
                     <TouchableOpacity
-                      style={[styles.moreButton, { backgroundColor: colors.textSecondary + "20" }]}
+                      style={[styles.moreButton, { backgroundColor: "rgba(128,128,128,0.15)" }]}
                       onPress={() => handleBeneficiaryActions(beneficiary)}
                     >
                       <IconSymbol name="ellipsis" size={16} color={colors.textSecondary} />
@@ -717,12 +717,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FBBF24",
-    shadowColor: "#FBBF24",
+    backgroundColor: "rgba(128,128,128,0.15)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 3,
   },
   moreButton: {
     width: 36,
@@ -738,12 +738,12 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFD700",
-    shadowColor: "#FFD700",
+    backgroundColor: "rgba(128,128,128,0.15)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.15,
     shadowRadius: 6,
-    elevation: 4,
+    elevation: 3,
   },
   emptyState: {
     alignItems: "center",
