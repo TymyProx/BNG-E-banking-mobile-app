@@ -561,12 +561,12 @@ export default function CardsScreen() {
               style={styles.filterButtonGradient}
             >
               <IconSymbol name="clock.fill" size={18} color="white" />
-              <Text style={styles.filterButtonTextActive}>Demandes en cours</Text>
+              <Text style={styles.filterButtonTextActive}>Demandes</Text>
             </LinearGradient>
           ) : (
             <View style={[styles.filterButtonInactive, { backgroundColor: colors.cardBackground }]}>
               <IconSymbol name="clock" size={18} color={colors.textSecondary} />
-              <Text style={[styles.filterButtonTextInactive, { color: colors.textSecondary }]}>Demandes en cours</Text>
+              <Text style={[styles.filterButtonTextInactive, { color: colors.textSecondary }]}>Demandes</Text>
             </View>
           )}
         </TouchableOpacity>
