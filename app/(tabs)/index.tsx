@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_ENDPOINTS } from "@/constants/Api"
+import React from "react"
 
 interface Account {
   id: string
@@ -140,7 +141,7 @@ export default function Dashboard() {
           <View style={styles.section}>
             <View style={styles.quickActionsGrid}>
               <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.card }]}
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/transfer")}
               >
                 <View style={styles.actionIcon}>
@@ -150,7 +151,7 @@ export default function Dashboard() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.card }]}
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/cards")}
               >
                 <View style={styles.actionIcon}>
@@ -160,7 +161,7 @@ export default function Dashboard() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.card }]}
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/menu")}
               >
                 <View style={styles.actionIcon}>
@@ -184,7 +185,7 @@ export default function Dashboard() {
               {accounts.slice(0, 2).map((account, index) => (
                 <TouchableOpacity
                   key={account.id}
-                  style={[styles.accountCard, { backgroundColor: colors.card }]}
+                  style={[styles.accountCard, { backgroundColor: colors.surface }]}
                   onPress={() => router.push(`/account-details?id=${account.id}`)}
                 >
                   <View style={styles.accountHeader}>
@@ -220,7 +221,7 @@ export default function Dashboard() {
         </ScrollView>
 
         {/* Chat Input */}
-        <View style={[styles.chatContainer, { backgroundColor: colors.card }]}>
+        <View style={[styles.chatContainer, { backgroundColor: colors.surface }]}>
           <View style={styles.chatContent}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.attachButton}>
