@@ -455,44 +455,46 @@ export default function EServicesScreen() {
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Nom du demandeur</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.applicantName}
+                        {selectedRequest?.applicantName || "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Type de crédit</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.typedemande}
+                        {selectedRequest?.typedemande || "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Montant demandé</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {formatAmount(selectedRequest.creditAmount)} GNF
+                        {selectedRequest?.creditAmount ? formatAmount(selectedRequest.creditAmount) : "N/A"} GNF
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Durée</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.durationMonths} mois
+                        {selectedRequest?.durationMonths || "N/A"} mois
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Objet du crédit</Text>
-                      <Text style={[styles.detailItemValue, { color: colors.text }]}>{selectedRequest.purpose}</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest?.purpose || "N/A"}
+                      </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.accountNumber}
+                        {selectedRequest?.accountNumber || "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Date de création</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {formatDate(selectedRequest.createdAt)}
+                        {selectedRequest?.createdAt ? formatDate(selectedRequest.createdAt) : "N/A"}
                       </Text>
                     </View>
-                    {selectedRequest.updatedAt && (
+                    {selectedRequest?.updatedAt && (
                       <View style={styles.detailItem}>
                         <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>
                           Dernière mise à jour
@@ -508,19 +510,19 @@ export default function EServicesScreen() {
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Intitulé du compte</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.intitulecompte}
+                        {selectedRequest?.intitulecompte || "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.numcompteId}
+                        {selectedRequest?.numcompteId || "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Nombre de chéquiers</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.nbrechequier}
+                        {selectedRequest?.nbrechequier ?? "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
@@ -528,16 +530,16 @@ export default function EServicesScreen() {
                         Feuilles par chéquier
                       </Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {selectedRequest.nbrefeuille}
+                        {selectedRequest?.nbrefeuille ?? "N/A"}
                       </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Date de commande</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {formatDate(selectedRequest.dateorder)}
+                        {selectedRequest?.dateorder ? formatDate(selectedRequest.dateorder) : "N/A"}
                       </Text>
                     </View>
-                    {selectedRequest.commentaire && (
+                    {selectedRequest?.commentaire && (
                       <View style={styles.detailItem}>
                         <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Commentaire</Text>
                         <Text style={[styles.detailItemValue, { color: colors.text }]}>
@@ -548,10 +550,10 @@ export default function EServicesScreen() {
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Date de création</Text>
                       <Text style={[styles.detailItemValue, { color: colors.text }]}>
-                        {formatDate(selectedRequest.createdAt)}
+                        {selectedRequest?.createdAt ? formatDate(selectedRequest.createdAt) : "N/A"}
                       </Text>
                     </View>
-                    {selectedRequest.updatedAt && (
+                    {selectedRequest?.updatedAt && (
                       <View style={styles.detailItem}>
                         <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>
                           Dernière mise à jour
