@@ -21,6 +21,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import React from "react"
 
 interface Account {
   id: string
@@ -180,12 +181,7 @@ export default function Dashboard() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}></Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
-                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
-              </TouchableOpacity>
-            </View>
+           
 
             {accounts.length > 0 ? (
               <>
@@ -264,6 +260,12 @@ export default function Dashboard() {
                 </Text>
               </View>
             )}
+             <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}></Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
+                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Quick Actions */}
