@@ -16,13 +16,14 @@ import {
   Modal,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { router } from "expo-router"
+import { router, useFocusEffect } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
+import React from "react"
 
 interface Account {
   id: string
@@ -57,7 +58,7 @@ const CARD_SPACING = 20
 export default function Dashboard() {
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? "light"]
-  const { user, tenantId } = useAuth()
+  const { user, tenantId, isLoading: authLoading } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
@@ -71,12 +72,24 @@ export default function Dashboard() {
   const [modalVisible, setModalVisible] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
 
-  useEffect(() => {
-    if (tenantId) {
-      fetchAccounts()
-      fetchTransactions()
-    }
-  }, [tenantId])
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("[v0] Dashboard focused")
+      console.log("[v0] Auth loading:", authLoading)
+      console.log("[v0] User:", user?.email)
+      console.log("[v0] TenantId:", tenantId)
+
+      if (!authLoading && user && tenantId) {
+        console.log("[v0] Loading dashboard data...")
+        fetchAccounts()
+        fetchTransactions()
+      } else {
+        console.log("[v0] Waiting for auth to be ready...")
+      }
+    }, [authLoading, user, tenantId]),
+  )
+
+  // REMOVED: Original useEffect hook for initial data fetching, now handled by useFocusEffect
 
   useEffect(() => {
     if (accounts.length > 1) {
@@ -99,7 +112,11 @@ export default function Dashboard() {
     try {
       const token = await SecureStore.getItemAsync("token")
 
+      console.log("[v0] Fetching accounts - Token:", token ? "exists" : "missing")
+      console.log("[v0] Fetching accounts - TenantId:", tenantId)
+
       if (!token || !tenantId) {
+        console.log("[v0] Cannot fetch accounts - missing token or tenantId")
         return
       }
 
@@ -113,6 +130,7 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Accounts fetched successfully:", data.rows?.length || 0)
         const activeAccounts = data.rows?.filter((acc: any) => acc.status?.toLowerCase() === "actif") || []
         setAccounts(activeAccounts)
 
@@ -127,6 +145,8 @@ export default function Dashboard() {
           duration: 800,
           useNativeDriver: true,
         }).start()
+      } else {
+        console.log("[v0] Failed to fetch accounts:", response.status)
       }
     } catch (error) {
       console.error("[v0] Error fetching accounts:", error)
@@ -137,7 +157,11 @@ export default function Dashboard() {
     try {
       const token = await SecureStore.getItemAsync("token")
 
+      console.log("[v0] Fetching transactions - Token:", token ? "exists" : "missing")
+      console.log("[v0] Fetching transactions - TenantId:", tenantId)
+
       if (!token || !tenantId) {
+        console.log("[v0] Cannot fetch transactions - missing token or tenantId")
         return
       }
 
@@ -151,9 +175,12 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Transactions fetched successfully:", data.rows?.length || 0)
         // Get the 3 most recent transactions
         const recentTransactions = data.rows?.slice(0, 3) || []
         setTransactions(recentTransactions)
+      } else {
+        console.log("[v0] Failed to fetch transactions:", response.status)
       }
     } catch (error) {
       console.error("[v0] Error fetching transactions:", error)
