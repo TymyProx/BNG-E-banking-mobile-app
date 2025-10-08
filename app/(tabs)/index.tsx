@@ -33,6 +33,16 @@ interface Account {
   availableBalance: string
 }
 
+interface Card {
+  id: string
+  cardNumber: string
+  cardType: string
+  status: string
+  expiryDate: string
+  cardHolderName: string
+  cvv?: string
+}
+
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 48
 const CARD_SPACING = 16
@@ -42,15 +52,20 @@ export default function Dashboard() {
   const colors = Colors[colorScheme ?? "light"]
   const { user, tenantId } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [cards, setCards] = useState<Card[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
   const [chatInput, setChatInput] = useState("")
   const [activeIndex, setActiveIndex] = useState(0)
+  const [activeCardIndex, setActiveCardIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
+  const cardScrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
+  const [cardFadeAnim] = useState(new Animated.Value(0))
 
   useEffect(() => {
     fetchAccounts()
+    fetchCards()
   }, [])
 
   useEffect(() => {
@@ -69,6 +84,23 @@ export default function Dashboard() {
       return () => clearInterval(interval)
     }
   }, [accounts.length])
+
+  useEffect(() => {
+    if (cards.length > 1) {
+      const interval = setInterval(() => {
+        setActiveCardIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % cards.length
+          cardScrollViewRef.current?.scrollTo({
+            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
+            animated: true,
+          })
+          return nextIndex
+        })
+      }, 4000)
+
+      return () => clearInterval(interval)
+    }
+  }, [cards.length])
 
   const fetchAccounts = async () => {
     try {
@@ -109,6 +141,54 @@ export default function Dashboard() {
     }
   }
 
+  const fetchCards = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for cards")
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const activeCards = data.rows?.filter((card: any) => card.status?.toLowerCase() === "active") || []
+        setCards(activeCards)
+
+        // Fade in animation
+        Animated.timing(cardFadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }).start()
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching cards:", error)
+    }
+  }
+
+  const handleCardScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
+    setActiveCardIndex(index)
+  }
+
+  const handleCardDotPress = (index: number) => {
+    cardScrollViewRef.current?.scrollTo({
+      x: index * (CARD_WIDTH + CARD_SPACING),
+      animated: true,
+    })
+    setActiveCardIndex(index)
+  }
+
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x
     const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
@@ -130,6 +210,25 @@ export default function Dashboard() {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-GN").format(amount)
+  }
+
+  const getCardColor = (type: string) => {
+    const normalizedType = type?.toLowerCase() || ""
+    if (normalizedType.includes("visa")) return "#1A1F71"
+    if (normalizedType.includes("mastercard")) return "#EB001B"
+    if (normalizedType.includes("debit")) return "#2D7A4F"
+    return "#4F46E5"
+  }
+
+  const getCardIcon = (type: string) => {
+    const normalizedType = type?.toLowerCase() || ""
+    if (normalizedType.includes("visa") || normalizedType.includes("mastercard")) return "creditcard.fill"
+    if (normalizedType.includes("debit")) return "creditcard"
+    return "wallet.pass.fill"
+  }
+
+  const formatCardNumber = (cardNumber: string) => {
+    return `•••• •••• •••• ${cardNumber.slice(-4)}`
   }
 
   const getAccountIcon = (type: string) => {
@@ -301,6 +400,87 @@ export default function Dashboard() {
             </View>
           </View>
 
+          {/* Cards Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes Cartes</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/cards")}>
+                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
+              </TouchableOpacity>
+            </View>
+
+            {cards.length > 0 ? (
+              <>
+                <ScrollView
+                  ref={cardScrollViewRef}
+                  horizontal
+                  pagingEnabled={false}
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={CARD_WIDTH + CARD_SPACING}
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.carouselContent}
+                  onScroll={handleCardScroll}
+                  scrollEventThrottle={16}
+                >
+                  {cards.map((card) => (
+                    <Animated.View key={card.id} style={[styles.carouselCard, { opacity: cardFadeAnim }]}>
+                      <TouchableOpacity
+                        style={[styles.cardItem, { backgroundColor: getCardColor(card.cardType) }]}
+                        onPress={() => router.push(`/card-details?id=${card.id}`)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.cardHeader}>
+                          <View style={styles.cardTypeContainer}>
+                            <IconSymbol name={getCardIcon(card.cardType) as any} size={32} color="#FFFFFF" />
+                          </View>
+                          <Text style={styles.cardTypeText}>{card.cardType}</Text>
+                        </View>
+                        <View style={styles.cardNumberSection}>
+                          <Text style={styles.cardNumber}>{formatCardNumber(card.cardNumber)}</Text>
+                        </View>
+                        <View style={styles.cardFooter}>
+                          <View style={styles.cardHolderSection}>
+                            <Text style={styles.cardLabel}>Titulaire</Text>
+                            <Text style={styles.cardHolderName}>{card.cardHolderName}</Text>
+                          </View>
+                          <View style={styles.cardExpirySection}>
+                            <Text style={styles.cardLabel}>Expire</Text>
+                            <Text style={styles.cardExpiryDate}>{card.expiryDate}</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  ))}
+                </ScrollView>
+
+                {cards.length > 1 && (
+                  <View style={styles.paginationContainer}>
+                    {cards.map((_, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => handleCardDotPress(index)}
+                        style={[
+                          styles.paginationDot,
+                          {
+                            backgroundColor: index === activeCardIndex ? "#2D7A4F" : colors.border,
+                            width: index === activeCardIndex ? 32 : 8,
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={[styles.emptyAccountsCard, { backgroundColor: colors.surface }]}>
+                <IconSymbol name="creditcard" size={48} color={colors.tabIconDefault} />
+                <Text style={[styles.emptyAccountsText, { color: colors.tabIconDefault }]}>
+                  Aucune carte active trouvée
+                </Text>
+              </View>
+            )}
+          </View>
+
           <View style={{ height: 100 }} />
         </ScrollView>
 
@@ -378,6 +558,76 @@ const styles = StyleSheet.create({
     elevation: 6,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.04)",
+  },
+
+  cardItem: {
+    borderRadius: 24,
+    padding: 24,
+    height: 200,
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  cardTypeContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardTypeText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  cardNumberSection: {
+    marginVertical: 8,
+  },
+  cardNumber: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "600",
+    letterSpacing: 2,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  cardHolderSection: {
+    flex: 1,
+  },
+  cardExpirySection: {
+    alignItems: "flex-end",
+  },
+  cardLabel: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  cardHolderName: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  cardExpiryDate: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
 
   header: {
