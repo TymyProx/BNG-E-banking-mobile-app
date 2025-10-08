@@ -1179,7 +1179,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 40,
-    maxHeight: "85%",
+    height: "85%", // Changed from maxHeight to height
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   modalBody: {
-    flex: 1,
+    flex: 1, // This will now work properly with the fixed parent height
   },
   modalIconContainer: {
     width: 80,
