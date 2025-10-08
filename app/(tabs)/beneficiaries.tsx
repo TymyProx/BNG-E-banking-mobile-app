@@ -430,7 +430,7 @@ export default function Beneficiaries() {
                         style={[styles.transferButton, { backgroundColor: colors.primary }]}
                         onPress={() => handleTransferTo(beneficiary.id)}
                       >
-                        <Text style={styles.transferButtonText}>Virer</Text>
+                        <IconSymbol name="paperplane.fill" size={18} color="white" />
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity
@@ -683,9 +683,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   transferButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
   },
   transferButtonText: {
     color: "white",
