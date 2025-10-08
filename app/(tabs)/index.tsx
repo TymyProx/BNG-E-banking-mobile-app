@@ -43,7 +43,7 @@ interface Card {
 }
 
 const { width } = Dimensions.get("window")
-const CARD_WIDTH = width - 48
+const CARD_WIDTH = width - 80
 const CARD_SPACING = 16
 
 export default function Dashboard() {
@@ -293,11 +293,14 @@ export default function Dashboard() {
                   {accounts.map((account) => (
                     <Animated.View key={account.id} style={[styles.accountInGreenCard, { opacity: fadeAnim }]}>
                       <TouchableOpacity
+                        style={styles.individualAccountCard}
                         onPress={() => router.push(`/account-details?id=${account.id}`)}
                         activeOpacity={0.8}
                       >
                         <View style={styles.accountInGreenCardHeader}>
-                          <View style={[styles.accountInGreenCardIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                          <View
+                            style={[styles.accountInGreenCardIcon, { backgroundColor: getAccountColor(account.type) }]}
+                          >
                             <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
                           </View>
                           <View style={styles.accountInGreenCardInfo}>
@@ -856,9 +859,20 @@ const styles = StyleSheet.create({
   },
   accountCarouselContent: {
     gap: CARD_SPACING,
+    paddingRight: 24,
   },
   accountInGreenCard: {
-    width: CARD_WIDTH - 48,
+    width: CARD_WIDTH,
+  },
+  individualAccountCard: {
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
   },
   accountInGreenCardHeader: {
     flexDirection: "row",
@@ -871,19 +885,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
   accountInGreenCardInfo: {
     marginLeft: 12,
     flex: 1,
   },
   accountInGreenCardName: {
-    color: "#FFFFFF",
+    color: "#111827",
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 4,
   },
   accountInGreenCardNumber: {
-    color: "rgba(255,255,255,0.8)",
+    color: "#6B7280",
     fontSize: 13,
     fontWeight: "600",
   },
@@ -891,7 +910,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   accountInGreenCardBalanceLabel: {
-    color: "rgba(255,255,255,0.8)",
+    color: "#6B7280",
     fontSize: 11,
     fontWeight: "600",
     marginBottom: 8,
@@ -904,13 +923,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   accountInGreenCardBalance: {
-    color: "#FFFFFF",
+    color: "#111827",
     fontSize: 28,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
   accountInGreenCardCurrency: {
-    color: "rgba(255,255,255,0.9)",
+    color: "#2D7A4F",
     fontSize: 16,
     fontWeight: "600",
   },
