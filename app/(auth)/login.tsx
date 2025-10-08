@@ -4,7 +4,7 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
-import * as SecureStore from 'expo-secure-store'
+import * as SecureStore from "expo-secure-store"
 import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
@@ -24,13 +24,14 @@ import {
 } from "react-native"
 
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
+import { useAuth } from "@/contexts/AuthContext"
 
 const { width, height } = Dimensions.get("window")
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
+  const { login: authLogin, isLoading: authLoading } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -39,7 +40,6 @@ export default function LoginScreen() {
   const [isFormValid, setIsFormValid] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(50)).current
   const shakeAnim = useRef(new Animated.Value(0)).current
@@ -47,7 +47,6 @@ export default function LoginScreen() {
   const logoScaleAnim = useRef(new Animated.Value(0.8)).current
   const cardSlideAnim = useRef(new Animated.Value(100)).current
 
-  // Input refs for navigation
   const emailRef = useRef<TextInput>(null)
   const passwordRef = useRef<TextInput>(null)
 
@@ -66,7 +65,6 @@ export default function LoginScreen() {
   }, [])
 
   useEffect(() => {
-    // Enhanced entrance animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -94,7 +92,6 @@ export default function LoginScreen() {
   }, [])
 
   useEffect(() => {
-    // Real-time form validation
     const newErrors: { [key: string]: string } = {}
     let valid = true
 
@@ -102,11 +99,6 @@ export default function LoginScreen() {
       newErrors.email = "Email invalide"
       valid = false
     }
-
-    // if (password && password.length < 6) {
-    //   newErrors.password = "Minimum 6 caractères"
-    //   valid = false
-    // }
 
     setErrors(newErrors)
     setIsFormValid(email.trim() !== "" && password.trim() !== "" && valid)
@@ -141,9 +133,6 @@ export default function LoginScreen() {
     if (!password.trim()) {
       newErrors.password = "Mot de passe requis"
     }
-    // } else if (password.length < 6) {
-    //   newErrors.password = "Minimum 6 caractères"
-    // }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -159,31 +148,13 @@ export default function LoginScreen() {
     setIsLoading(true)
 
     try {
-      const res = await fetch("http://192.168.1.200:8080/api/auth/sign-in", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          invitationToken: "",
-          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2"//"afa25e29-08dd-46b6-8ea2-d778cb2d6694",
-        }),
-      })
+      const success = await authLogin(email, password)
 
-      const token = await res.text()
-
-      if (!res.ok) {
-        throw new Error(token || "Erreur de connexion")
+      if (success) {
+        router.replace("/(tabs)")
+      } else {
+        shakeAnimation()
       }
-
-      // ✅ Stockage du token dans SecureStore
-      await SecureStore.setItemAsync("token", token)
-
-      // ✅ Redirection
-      router.replace("/(tabs)")
-
     } catch (err: any) {
       shakeAnimation()
       Alert.alert("Erreur", err.message || "Une erreur s'est produite")
@@ -202,7 +173,6 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Modern Header with BNG Logo */}
           <Animated.View
             style={[
               styles.modernHeader,
@@ -221,7 +191,6 @@ export default function LoginScreen() {
             </View>
           </Animated.View>
 
-          {/* Modern Form Card */}
           <Animated.View
             style={[
               styles.modernForm,
@@ -233,7 +202,6 @@ export default function LoginScreen() {
               },
             ]}
           >
-            {/* Email Input */}
             <View style={styles.modernInputGroup}>
               <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
               <View
@@ -266,18 +234,13 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                 />
-                {email && !errors.email && (
-                  <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-                )}
+                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color={colors.success} />}
               </View>
               {errors.email && (
-                <Animated.Text style={[styles.modernErrorText, { color: colors.error }]}>
-                  {errors.email}
-                </Animated.Text>
+                <Animated.Text style={[styles.modernErrorText, { color: colors.error }]}>{errors.email}</Animated.Text>
               )}
             </View>
 
-            {/* Password Input */}
             <View style={styles.modernInputGroup}>
               <Text style={[styles.inputLabel, { color: colors.text }]}>Mot de Passe</Text>
               <View
@@ -324,7 +287,6 @@ export default function LoginScreen() {
               )}
             </View>
 
-            {/* Modern Login Button */}
             <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
               <TouchableOpacity
                 style={[
@@ -352,7 +314,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Modern Links */}
             <View style={styles.modernLinks}>
               <TouchableOpacity
                 onPress={() => router.push("/(auth)/forgot-password")}
@@ -374,7 +335,6 @@ export default function LoginScreen() {
             </View>
           </Animated.View>
 
-          {/* Security Notice */}
           <Animated.View style={[styles.securityNotice, { opacity: fadeAnim }]}>
             <Ionicons name="shield-checkmark-outline" size={16} color={colors.textSecondary} />
             <Text style={[styles.securityText, { color: colors.textSecondary }]}>

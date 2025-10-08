@@ -26,7 +26,6 @@ import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -93,7 +92,6 @@ export default function TransferScreen() {
       try {
         const token = await SecureStore.getItemAsync("token")
         if (!token || !tenantId) {
-          console.log("[v0] No token or tenantId available")
           setIsLoadingAccounts(false)
           return
         }
@@ -140,7 +138,6 @@ export default function TransferScreen() {
       try {
         const token = await SecureStore.getItemAsync("token")
         if (!token || !tenantId) {
-          console.log("[v0] No token or tenantId available")
           setIsLoadingBeneficiaries(false)
           return
         }

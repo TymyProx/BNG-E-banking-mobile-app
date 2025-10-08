@@ -61,7 +61,6 @@ export default function AccountsScreen() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available")
         setAccounts([])
         setIsLoading(false)
         return
