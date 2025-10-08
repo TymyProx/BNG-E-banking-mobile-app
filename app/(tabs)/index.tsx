@@ -72,9 +72,11 @@ export default function Dashboard() {
   const [loadingDetails, setLoadingDetails] = useState(false)
 
   useEffect(() => {
-    fetchAccounts()
-    fetchTransactions()
-  }, [])
+    if (tenantId) {
+      fetchAccounts()
+      fetchTransactions()
+    }
+  }, [tenantId])
 
   useEffect(() => {
     if (accounts.length > 1) {
@@ -98,7 +100,6 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available")
         return
       }
 
@@ -137,7 +138,6 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available for transactions")
         return
       }
 
@@ -166,7 +166,6 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available for transaction details")
         return
       }
 
