@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View,
   Text,
@@ -23,7 +23,6 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface Account {
   id: string
@@ -58,7 +57,7 @@ const CARD_SPACING = 20
 export default function Dashboard() {
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? "light"]
-  const { user, tenantId, isLoading: authLoading } = useAuth()
+  const { user } = useAuth() // Removed dependency on authLoading, user, and tenantId from useAuth context
   const [accounts, setAccounts] = useState<Account[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
@@ -72,55 +71,16 @@ export default function Dashboard() {
   const [modalVisible, setModalVisible] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
 
-  // REMOVED: Original useEffect hook for initial data fetching, now handled by useFocusEffect
-
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log("[v0] Dashboard focused")
-      console.log("[v0] Auth loading:", authLoading)
-      console.log("[v0] User:", user?.email)
-      console.log("[v0] TenantId:", tenantId)
-
-      if (!authLoading && user && tenantId) {
-        console.log("[v0] Loading dashboard data...")
-        fetchAccounts()
-        fetchTransactions()
-      } else {
-        console.log("[v0] Waiting for auth to be ready...")
-      }
-    }, [authLoading, user, tenantId]),
-  )
-
-  useEffect(() => {
-    if (accounts.length > 1) {
-      const interval = setInterval(() => {
-        setActiveIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % accounts.length
-          scrollViewRef.current?.scrollTo({
-            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
-            animated: true,
-          })
-          return nextIndex
-        })
-      }, 4000)
-
-      return () => clearInterval(interval)
-    }
-  }, [accounts.length])
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
       const token = await SecureStore.getItemAsync("token")
 
-      console.log("[v0] Fetching accounts - Token:", token ? "exists" : "missing")
-      console.log("[v0] Fetching accounts - TenantId:", tenantId)
-
-      if (!token || !tenantId) {
-        console.log("[v0] Cannot fetch accounts - missing token or tenantId")
+      if (!token) {
+        console.log("[v0] No token available")
         return
       }
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(API_CONFIG.TENANT_ID)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -151,21 +111,19 @@ export default function Dashboard() {
     } catch (error) {
       console.error("[v0] Error fetching accounts:", error)
     }
-  }
+  }, [])
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       const token = await SecureStore.getItemAsync("token")
 
       console.log("[v0] Fetching transactions - Token:", token ? "exists" : "missing")
-      console.log("[v0] Fetching transactions - TenantId:", tenantId)
-
-      if (!token || !tenantId) {
-        console.log("[v0] Cannot fetch transactions - missing token or tenantId")
+      if (!token) {
+        console.log("[v0] No token available for transactions")
         return
       }
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(API_CONFIG.TENANT_ID)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -185,19 +143,44 @@ export default function Dashboard() {
     } catch (error) {
       console.error("[v0] Error fetching transactions:", error)
     }
-  }
+  }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Dashboard screen focused, fetching data...")
+      fetchAccounts()
+      fetchTransactions()
+    }, [fetchAccounts, fetchTransactions]),
+  )
+
+  useEffect(() => {
+    if (accounts.length > 1) {
+      const interval = setInterval(() => {
+        setActiveIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % accounts.length
+          scrollViewRef.current?.scrollTo({
+            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
+            animated: true,
+          })
+          return nextIndex
+        })
+      }, 4000)
+
+      return () => clearInterval(interval)
+    }
+  }, [accounts.length])
 
   const fetchTransactionDetails = async (transactionId: string) => {
     try {
       setLoadingDetails(true)
       const token = await SecureStore.getItemAsync("token")
 
-      if (!token || !tenantId) {
+      if (!token) {
         return
       }
 
       const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(tenantId, transactionId)}`,
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(API_CONFIG.TENANT_ID, transactionId)}`,
         {
           method: "GET",
           headers: {
