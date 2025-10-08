@@ -42,7 +42,7 @@ interface Beneficiary {
 
 type FilterType = "tous" | "actif" | "desactive" | "favoris"
 
-export default function Beneficiaries() {
+const Beneficiaries = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | null>(null)
   const [showActionModal, setShowActionModal] = useState(false)
@@ -409,10 +409,6 @@ export default function Beneficiaries() {
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
-                <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
-                  <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
-                </TouchableOpacity>
-
                 <View style={styles.beneficiaryContent}>
                   <View style={styles.beneficiaryLeft}>
                     <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
@@ -429,12 +425,19 @@ export default function Beneficiaries() {
                     </View>
                   </View>
                   <View style={styles.beneficiaryActions}>
-                    <TouchableOpacity
-                      style={[styles.transferButton, { backgroundColor: colors.primary }]}
-                      onPress={() => handleTransferTo(beneficiary.id)}
-                    >
-                      <Text style={styles.transferButtonText}>Virer</Text>
-                    </TouchableOpacity>
+                    {beneficiary.status === 0 && (
+                      <>
+                        <TouchableOpacity
+                          style={[styles.transferIconButton, { backgroundColor: colors.primary }]}
+                          onPress={() => handleTransferTo(beneficiary.id)}
+                        >
+                          <IconSymbol name="paperplane.fill" size={18} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.starButton} onPress={() => handleToggleFavorite(beneficiary)}>
+                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="#FFD700" />
+                        </TouchableOpacity>
+                      </>
+                    )}
                     <TouchableOpacity
                       style={[styles.moreButton, { backgroundColor: colors.textSecondary + "20" }]}
                       onPress={() => handleBeneficiaryActions(beneficiary)}
@@ -633,15 +636,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    position: "relative", // Added for absolute positioning of star
-  },
-  starIconButton: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    zIndex: 10,
-    padding: 8,
-    borderRadius: 20,
   },
   beneficiaryContent: {
     flexDirection: "row",
@@ -685,15 +679,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  transferButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  transferButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
+  transferIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#10b981",
   },
   moreButton: {
     width: 32,
@@ -701,6 +693,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#80808020", // Corrected color
+  },
+  starButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFD700",
   },
   emptyState: {
     alignItems: "center",
@@ -734,6 +735,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
+    backgroundColor: "#000000", // Corrected color
   },
   addBeneficiaryText: {
     color: "white",
@@ -770,6 +772,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     gap: 12,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
   modalActionText: {
     fontSize: 16,
@@ -779,9 +782,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
+    backgroundColor: "#80808020", // Corrected color
   },
   modalCancelText: {
     fontSize: 16,
     fontWeight: "600",
+    color: "#000000", // Corrected color
   },
 })
+
+export default Beneficiaries
