@@ -140,7 +140,7 @@ export default function MenuScreen() {
                     </View>
                   )}
                   <View style={styles.cardIconContainer}>
-                    <Ionicons name={item.icon} size={28} color="#2D7A4F" />
+                    <Ionicons name={item.icon} size={28} color="#FBBF24" />
                   </View>
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
@@ -187,17 +187,17 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
     borderWidth: 2,
-    borderColor: "#2D7A4F",
+    borderColor: "#FBBF24",
   },
   avatarText: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#2D7A4F",
+    color: "#FBBF24",
   },
   userDetails: {
     flex: 1,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "#2D7A4F",
+    backgroundColor: "#FBBF24",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -262,19 +262,19 @@ const styles = StyleSheet.create({
   newBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#111827",
     letterSpacing: 0.5,
   },
   cardIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "rgba(45, 122, 79, 0.2)",
+    borderColor: "rgba(251, 191, 36, 0.3)",
   },
   cardTitle: {
     fontSize: 15,

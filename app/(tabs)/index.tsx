@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   Modal,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { router, useFocusEffect } from "expo-router"
+import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
@@ -57,7 +57,7 @@ const CARD_SPACING = 20
 export default function Dashboard() {
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? "light"]
-  const { user } = useAuth() // Removed dependency on authLoading, user, and tenantId from useAuth context
+  const { user, tenantId } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
@@ -71,87 +71,10 @@ export default function Dashboard() {
   const [modalVisible, setModalVisible] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
 
-  const fetchAccounts = useCallback(async () => {
-    try {
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token) {
-        console.log("[v0] No token available")
-        return
-      }
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(API_CONFIG.TENANT_ID)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("[v0] Accounts fetched successfully:", data.rows?.length || 0)
-        const activeAccounts = data.rows?.filter((acc: any) => acc.status?.toLowerCase() === "actif") || []
-        setAccounts(activeAccounts)
-
-        const total = activeAccounts.reduce((sum: number, acc: any) => {
-          return sum + (Number.parseFloat(acc.availableBalance) || 0)
-        }, 0)
-        setTotalBalance(total)
-
-        // Fade in animation
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }).start()
-      } else {
-        console.log("[v0] Failed to fetch accounts:", response.status)
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching accounts:", error)
-    }
+  useEffect(() => {
+    fetchAccounts()
+    fetchTransactions()
   }, [])
-
-  const fetchTransactions = useCallback(async () => {
-    try {
-      const token = await SecureStore.getItemAsync("token")
-
-      console.log("[v0] Fetching transactions - Token:", token ? "exists" : "missing")
-      if (!token) {
-        console.log("[v0] No token available for transactions")
-        return
-      }
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(API_CONFIG.TENANT_ID)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("[v0] Transactions fetched successfully:", data.rows?.length || 0)
-        // Get the 3 most recent transactions
-        const recentTransactions = data.rows?.slice(0, 3) || []
-        setTransactions(recentTransactions)
-      } else {
-        console.log("[v0] Failed to fetch transactions:", response.status)
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching transactions:", error)
-    }
-  }, [])
-
-  useFocusEffect(
-    useCallback(() => {
-      console.log("Dashboard screen focused, fetching data...")
-      fetchAccounts()
-      fetchTransactions()
-    }, [fetchAccounts, fetchTransactions]),
-  )
 
   useEffect(() => {
     if (accounts.length > 1) {
@@ -170,17 +93,85 @@ export default function Dashboard() {
     }
   }, [accounts.length])
 
+  const fetchAccounts = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available")
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const activeAccounts = data.rows?.filter((acc: any) => acc.status?.toLowerCase() === "actif") || []
+        setAccounts(activeAccounts)
+
+        const total = activeAccounts.reduce((sum: number, acc: any) => {
+          return sum + (Number.parseFloat(acc.availableBalance) || 0)
+        }, 0)
+        setTotalBalance(total)
+
+        // Fade in animation
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }).start()
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching accounts:", error)
+    }
+  }
+
+  const fetchTransactions = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for transactions")
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Get the 3 most recent transactions
+        const recentTransactions = data.rows?.slice(0, 3) || []
+        setTransactions(recentTransactions)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching transactions:", error)
+    }
+  }
+
   const fetchTransactionDetails = async (transactionId: string) => {
     try {
       setLoadingDetails(true)
       const token = await SecureStore.getItemAsync("token")
 
-      if (!token) {
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for transaction details")
         return
       }
 
       const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(API_CONFIG.TENANT_ID, transactionId)}`,
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(tenantId, transactionId)}`,
         {
           method: "GET",
           headers: {
