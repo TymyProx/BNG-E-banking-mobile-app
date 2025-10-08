@@ -13,6 +13,7 @@ import {
   Platform,
   Animated,
   Dimensions,
+  Modal,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -22,7 +23,6 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface Account {
   id: string
@@ -46,6 +46,8 @@ interface Transaction {
   description: string
   creditAccount: string
   commentNotes: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 const { width } = Dimensions.get("window")
@@ -65,6 +67,9 @@ export default function Dashboard() {
   const [fadeAnim] = useState(new Animated.Value(0))
   const [scaleAnims] = useState(accounts.map(() => new Animated.Value(1)))
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   useEffect(() => {
     fetchAccounts()
@@ -153,6 +158,48 @@ export default function Dashboard() {
     } catch (error) {
       console.error("[v0] Error fetching transactions:", error)
     }
+  }
+
+  const fetchTransactionDetails = async (transactionId: string) => {
+    try {
+      setLoadingDetails(true)
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for transaction details")
+        return
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(tenantId, transactionId)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedTransaction(data)
+        setModalVisible(true)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching transaction details:", error)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  const handleTransactionPress = (transaction: Transaction) => {
+    fetchTransactionDetails(transaction.id)
+  }
+
+  const closeModal = () => {
+    setModalVisible(false)
+    setSelectedTransaction(null)
   }
 
   const handleScroll = (event: any) => {
@@ -429,7 +476,8 @@ export default function Dashboard() {
                   <View key={transaction.id}>
                     <TouchableOpacity
                       style={styles.transactionItem}
-                      onPress={() => router.push(`/transaction-details?id=${transaction.id}`)}
+                      onPress={() => handleTransactionPress(transaction)}
+                      activeOpacity={0.7}
                     >
                       <View style={styles.transactionLeft}>
                         <View
@@ -548,6 +596,166 @@ export default function Dashboard() {
             </View>
           </View>
         </View>
+
+        <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
+                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                  <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
+                </TouchableOpacity>
+              </View>
+
+              {loadingDetails ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
+                </View>
+              ) : selectedTransaction ? (
+                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                  {/* Transaction Icon and Amount */}
+                  <View style={styles.modalTransactionHeader}>
+                    <View
+                      style={[
+                        styles.modalTransactionIcon,
+                        { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
+                      ]}
+                    >
+                      <IconSymbol
+                        name={getTransactionIcon(selectedTransaction.txnType) as any}
+                        size={40}
+                        color={getTransactionColor(selectedTransaction.txnType)}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.modalAmount,
+                        {
+                          color: selectedTransaction.txnType?.toLowerCase().includes("credit")
+                            ? "#10B981"
+                            : selectedTransaction.txnType?.toLowerCase().includes("debit")
+                              ? "#EF4444"
+                              : colors.text,
+                        },
+                      ]}
+                    >
+                      {selectedTransaction.txnType?.toLowerCase().includes("credit") ? "+" : "-"}
+                      {formatCurrency(Number.parseFloat(selectedTransaction.amount) || 0)} GNF
+                    </Text>
+                    <View
+                      style={[
+                        styles.modalStatusBadge,
+                        {
+                          backgroundColor:
+                            selectedTransaction.status?.toLowerCase() === "completed" ||
+                            selectedTransaction.status?.toLowerCase() === "success"
+                              ? "#10B98115"
+                              : selectedTransaction.status?.toLowerCase() === "pending"
+                                ? "#F59E0B15"
+                                : "#EF444415",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.modalStatusText,
+                          {
+                            color:
+                              selectedTransaction.status?.toLowerCase() === "completed" ||
+                              selectedTransaction.status?.toLowerCase() === "success"
+                                ? "#10B981"
+                                : selectedTransaction.status?.toLowerCase() === "pending"
+                                  ? "#F59E0B"
+                                  : "#EF4444",
+                          },
+                        ]}
+                      >
+                        {selectedTransaction.status}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Transaction Details */}
+                  <View style={[styles.detailsContainer, { backgroundColor: colors.surface }]}>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={1}>
+                        {selectedTransaction.txnId}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnType}</Text>
+                    </View>
+
+                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatDate(selectedTransaction.valueDate)}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {selectedTransaction.description || "N/A"}
+                      </Text>
+                    </View>
+
+                    {selectedTransaction.creditAccount && (
+                      <>
+                        <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {selectedTransaction.creditAccount}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+
+                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.accountId}</Text>
+                    </View>
+
+                    {selectedTransaction.commentNotes && (
+                      <>
+                        <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {selectedTransaction.commentNotes}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                  </View>
+
+                  {/* Action Buttons */}
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, { backgroundColor: "#2D7A4F" }]}
+                      onPress={closeModal}
+                    >
+                      <Text style={styles.actionButtonText}>Fermer</Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
+              ) : null}
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -1009,5 +1217,125 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 24,
+    maxHeight: "90%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalBody: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
+  modalTransactionHeader: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  modalTransactionIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  modalAmount: {
+    fontSize: 40,
+    fontWeight: "800",
+    letterSpacing: -1,
+    marginBottom: 12,
+  },
+  modalStatusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  modalStatusText: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  detailsContainer: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "right",
+  },
+  detailDivider: {
+    height: 1,
+  },
+  modalActions: {
+    paddingBottom: 32,
+  },
+  actionButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#2D7A4F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 })
