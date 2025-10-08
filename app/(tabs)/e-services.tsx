@@ -72,6 +72,10 @@ export default function EServicesScreen() {
 
   const fetchCreditRequests = async () => {
     try {
+      console.log("[v0] Fetching credit requests...")
+      console.log("[v0] URL:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(API_CONFIG.TENANT_ID)}`)
+      console.log("[v0] Token:", token ? "Present" : "Missing")
+
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(API_CONFIG.TENANT_ID)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -79,9 +83,18 @@ export default function EServicesScreen() {
         },
       })
 
+      console.log("[v0] Credit requests response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Credit requests data:", data)
+        console.log("[v0] Credit requests rows:", data.rows)
+        console.log("[v0] Credit requests count:", data.rows?.length || 0)
         setCreditRequests(data.rows || [])
+      } else {
+        console.log("[v0] Credit requests response not OK:", response.status)
+        const errorText = await response.text()
+        console.log("[v0] Error response:", errorText)
       }
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des demandes de crédit:", error)
@@ -90,6 +103,9 @@ export default function EServicesScreen() {
 
   const fetchCheckbookRequests = async () => {
     try {
+      console.log("[v0] Fetching checkbook requests...")
+      console.log("[v0] URL:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(API_CONFIG.TENANT_ID)}`)
+
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(API_CONFIG.TENANT_ID)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,9 +113,18 @@ export default function EServicesScreen() {
         },
       })
 
+      console.log("[v0] Checkbook requests response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Checkbook requests data:", data)
+        console.log("[v0] Checkbook requests rows:", data.rows)
+        console.log("[v0] Checkbook requests count:", data.rows?.length || 0)
         setCheckbookRequests(data.rows || [])
+      } else {
+        console.log("[v0] Checkbook requests response not OK:", response.status)
+        const errorText = await response.text()
+        console.log("[v0] Error response:", errorText)
       }
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des demandes de chéquier:", error)
@@ -109,9 +134,13 @@ export default function EServicesScreen() {
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
+        console.log("[v0] Starting to fetch data...")
         setLoading(true)
         await Promise.all([fetchCreditRequests(), fetchCheckbookRequests()])
         setLoading(false)
+        console.log("[v0] Finished fetching data")
+        console.log("[v0] Credit requests state:", creditRequests.length)
+        console.log("[v0] Checkbook requests state:", checkbookRequests.length)
       }
       fetchData()
     }, [token]),
