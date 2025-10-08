@@ -409,12 +409,6 @@ export default function Beneficiaries() {
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
-                {beneficiary.status === 0 && (
-                  <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
-                    <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
-                  </TouchableOpacity>
-                )}
-
                 <View style={styles.beneficiaryContent}>
                   <View style={styles.beneficiaryLeft}>
                     <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
@@ -445,6 +439,11 @@ export default function Beneficiaries() {
                     >
                       <IconSymbol name="ellipsis" size={16} color={colors.textSecondary} />
                     </TouchableOpacity>
+                    {beneficiary.status === 0 && (
+                      <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
+                        <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               </View>
@@ -637,13 +636,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    position: "relative", // Added for absolute positioning of star
   },
   starIconButton: {
-    position: "absolute",
-    top: 16,
-    right: 56, // Positioned to the left of the more button
-    zIndex: 10,
     padding: 4,
   },
   beneficiaryContent: {
