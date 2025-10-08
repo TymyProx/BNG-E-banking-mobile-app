@@ -18,7 +18,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 interface Account {
   id: string
@@ -165,7 +164,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/menu")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="square.grid.2x2" size={24} color="#2D7A4F" />
+                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
               </TouchableOpacity>
