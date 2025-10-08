@@ -13,7 +13,6 @@ import {
   Platform,
   Animated,
   Dimensions,
-  Modal,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -22,7 +21,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import { LinearGradient } from "expo-linear-gradient"
 
 interface Account {
   id: string
@@ -35,24 +33,9 @@ interface Account {
   availableBalance: string
 }
 
-interface Transaction {
-  id: string
-  txnId: string
-  accountId: string
-  txnType: string
-  amount: string
-  valueDate: string
-  status: string
-  description: string
-  creditAccount: string
-  commentNotes: string
-  createdAt?: string
-  updatedAt?: string
-}
-
 const { width } = Dimensions.get("window")
-const CARD_WIDTH = width - 32
-const CARD_SPACING = 20
+const CARD_WIDTH = width - 48
+const CARD_SPACING = 16
 
 export default function Dashboard() {
   const colorScheme = useColorScheme()
@@ -65,15 +48,9 @@ export default function Dashboard() {
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
-  const [scaleAnims] = useState(accounts.map(() => new Animated.Value(1)))
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [loadingDetails, setLoadingDetails] = useState(false)
 
   useEffect(() => {
     fetchAccounts()
-    fetchTransactions()
   }, [])
 
   useEffect(() => {
@@ -132,76 +109,6 @@ export default function Dashboard() {
     }
   }
 
-  const fetchTransactions = async () => {
-    try {
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available for transactions")
-        return
-      }
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        // Get the 3 most recent transactions
-        const recentTransactions = data.rows?.slice(0, 3) || []
-        setTransactions(recentTransactions)
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching transactions:", error)
-    }
-  }
-
-  const fetchTransactionDetails = async (transactionId: string) => {
-    try {
-      setLoadingDetails(true)
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available for transaction details")
-        return
-      }
-
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(tenantId, transactionId)}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-        setSelectedTransaction(data)
-        setModalVisible(true)
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching transaction details:", error)
-    } finally {
-      setLoadingDetails(false)
-    }
-  }
-
-  const handleTransactionPress = (transaction: Transaction) => {
-    fetchTransactionDetails(transaction.id)
-  }
-
-  const closeModal = () => {
-    setModalVisible(false)
-    setSelectedTransaction(null)
-  }
-
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x
     const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
@@ -225,34 +132,11 @@ export default function Dashboard() {
     return new Intl.NumberFormat("fr-GN").format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date)
-  }
-
-  const getTransactionIcon = (type: string) => {
-    const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("debit") || normalizedType.includes("retrait")) return "arrow-up-circle"
-    if (normalizedType.includes("credit") || normalizedType.includes("depot")) return "arrow-down-circle"
-    return "swap-horizontal"
-  }
-
-  const getTransactionColor = (type: string) => {
-    const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("debit") || normalizedType.includes("retrait")) return "#EF4444"
-    if (normalizedType.includes("credit") || normalizedType.includes("depot")) return "#10B981"
-    return "#6366F1"
-  }
-
   const getAccountIcon = (type: string) => {
     const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("courant")) return "card"
-    if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "cash"
-    return "wallet"
+    if (normalizedType.includes("courant")) return "creditcard.fill"
+    if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "banknote.fill"
+    return "wallet.pass.fill"
   }
 
   const getAccountColor = (type: string) => {
@@ -260,14 +144,6 @@ export default function Dashboard() {
     if (normalizedType.includes("courant")) return "#2D7A4F"
     if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "#10B981"
     return "#4F46E5"
-  }
-
-  const getAccountGradient = (type: string) => {
-    const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("courant")) return ["#2D7A4F", "#1E5A3A", "#0F3D26"]
-    if (normalizedType.includes("épargne") || normalizedType.includes("epargne"))
-      return ["#10B981", "#059669", "#047857"]
-    return ["#6366F1", "#4F46E5", "#4338CA"]
   }
 
   return (
@@ -292,7 +168,7 @@ export default function Dashboard() {
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notificationButton}>
-              <IconSymbol name="notifications" size={22} color="#FBBF24" />
+              <IconSymbol name="bell" size={22} color="#2D7A4F" />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
           </View>
@@ -303,8 +179,84 @@ export default function Dashboard() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Accounts Carousel Section */}
+          {/* Balance Card */}
+          <View style={styles.balanceCard}>
+            <View style={styles.balanceHeader}>
+              <View style={styles.balanceLeft}>
+                <View style={styles.balanceTitle}>
+                  <IconSymbol name="checkmark.shield" size={18} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.balanceTitleText}>Solde total</Text>
+                </View>
+                <View style={styles.balanceAmount}>
+                  <Text style={styles.balanceValue}>
+                    {showBalance ? `${formatCurrency(totalBalance)} GNF` : "••••••"}
+                  </Text>
+                  <TouchableOpacity style={styles.eyeButton} onPress={() => setShowBalance(!showBalance)}>
+                    <IconSymbol name={showBalance ? "eye" : "eye.slash"} size={20} color="rgba(255,255,255,0.8)" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.balanceRight}>
+                <View style={styles.trendContainer}>
+                  <IconSymbol name="arrow.up.right" size={14} color="#10B981" />
+                  <Text style={styles.trendText}>+2.4%</Text>
+                </View>
+                <Text style={styles.trendSubtext}>vs mois dernier</Text>
+              </View>
+            </View>
+
+            {/* Chart */}
+            <View style={styles.chartContainer}>
+              {[40, 55, 45, 70, 60, 80, 75].map((height, index) => (
+                <View key={index} style={[styles.chartBar, { height: `${height}%` }]} />
+              ))}
+            </View>
+            <Text style={styles.chartLabel}>Évolution sur 7 jours</Text>
+          </View>
+
+          {/* Quick Actions */}
           <View style={styles.section}>
+            <View style={styles.quickActionsGrid}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push("/(tabs)/transfer")}
+              >
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
+                </View>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push("/(tabs)/cards")}
+              >
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
+                </View>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push("/(tabs)/menu")}
+              >
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
+                </View>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes comptes</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
+                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
+              </TouchableOpacity>
+            </View>
+
             {accounts.length > 0 ? (
               <>
                 <ScrollView
@@ -318,83 +270,44 @@ export default function Dashboard() {
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
                 >
-                  {accounts.map((account, index) => (
-                    <Animated.View
-                      key={account.id}
-                      style={[
-                        styles.carouselCard,
-                        {
-                          opacity: fadeAnim,
-                          transform: [{ scale: index === activeIndex ? 1 : 0.95 }],
-                        },
-                      ]}
-                    >
+                  {accounts.map((account) => (
+                    <Animated.View key={account.id} style={[styles.carouselCard, { opacity: fadeAnim }]}>
                       <TouchableOpacity
-                        style={styles.modernAccountCard}
+                        style={[styles.accountCard, { backgroundColor: colors.surface }]}
                         onPress={() => router.push(`/account-details?id=${account.id}`)}
-                        activeOpacity={0.9}
+                        activeOpacity={0.8}
                       >
-                        <LinearGradient
-                          colors={getAccountGradient(account.type)}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.gradientCard}
-                        >
-                          {/* Decorative circles */}
-                          <View style={styles.decorativeCircle1} />
-                          <View style={styles.decorativeCircle2} />
-
-                          <View style={styles.cardContent}>
-                            {/* Top section */}
-                            <View style={styles.cardTop}>
-                              <View style={styles.cardTopLeft}>
-                                <View style={styles.modernAccountIcon}>
-                                  <IconSymbol name={getAccountIcon(account.type) as any} size={28} color="#FFFFFF" />
-                                </View>
-                                <View style={styles.cardTypeInfo}>
-                                  <Text style={styles.cardTypeLabel}>Type de compte</Text>
-                                  <Text style={styles.cardTypeName}>{account.type}</Text>
-                                </View>
-                              </View>
-                              <View style={styles.statusBadge}>
-                                <View style={styles.statusDot} />
-                                <Text style={styles.statusText}>Actif</Text>
-                              </View>
+                        <View style={styles.accountHeader}>
+                          <View style={styles.accountLeft}>
+                            <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
+                              <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
                             </View>
-
-                            {/* Middle section - Balance */}
-                            <View style={styles.balanceSection}>
-                              <Text style={styles.modernBalanceLabel}>Solde disponible</Text>
-                              <View style={styles.balanceAmountRow}>
-                                <Text style={styles.modernBalanceAmount}>
-                                  {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
-                                </Text>
-                                <Text style={styles.modernBalanceCurrency}>{account.currency}</Text>
-                              </View>
-                            </View>
-
-                            {/* Bottom section */}
-                            <View style={styles.cardBottom}>
-                              <View style={styles.accountNameSection}>
-                                <Text style={styles.accountNameLabel}>Nom du compte</Text>
-                                <Text style={styles.modernAccountName} numberOfLines={1}>
-                                  {account.accountName || "Compte principal"}
-                                </Text>
-                              </View>
-                              <View style={styles.accountNumberSection}>
-                                <Text style={styles.modernAccountNumber}>
-                                  •••• •••• •••• {account.accountNumber.slice(-4)}
-                                </Text>
-                              </View>
+                            <View style={styles.accountInfo}>
+                              <Text style={[styles.accountName, { color: colors.text }]}>
+                                {account.accountName || account.type}
+                              </Text>
+                              <Text style={[styles.accountNumber, { color: colors.tabIconDefault }]}>
+                                •••• {account.accountNumber.slice(-4)}
+                              </Text>
                             </View>
                           </View>
-                        </LinearGradient>
+                        </View>
+                        <View style={styles.accountBalanceSection}>
+                          <Text style={[styles.balanceLabel, { color: colors.tabIconDefault }]}>Solde disponible</Text>
+                          <View style={styles.accountBalanceRow}>
+                            <Text style={[styles.accountBalance, { color: colors.text }]}>
+                              {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
+                            </Text>
+                            <Text style={[styles.accountCurrency, { color: colors.tabIconDefault }]}>
+                              {account.currency}
+                            </Text>
+                          </View>
+                        </View>
                       </TouchableOpacity>
                     </Animated.View>
                   ))}
                 </ScrollView>
 
-                {/* Enhanced Pagination Dots */}
                 {accounts.length > 1 && (
                   <View style={styles.paginationContainer}>
                     {accounts.map((_, index) => (
@@ -402,11 +315,10 @@ export default function Dashboard() {
                         key={index}
                         onPress={() => handleDotPress(index)}
                         style={[
-                          styles.modernPaginationDot,
+                          styles.paginationDot,
                           {
-                            backgroundColor: index === activeIndex ? "#2D7A4F" : "rgba(45, 122, 79, 0.2)",
-                            width: index === activeIndex ? 40 : 10,
-                            height: index === activeIndex ? 10 : 10,
+                            backgroundColor: index === activeIndex ? "#2D7A4F" : colors.border,
+                            width: index === activeIndex ? 32 : 8,
                           },
                         ]}
                       />
@@ -416,154 +328,12 @@ export default function Dashboard() {
               </>
             ) : (
               <View style={[styles.emptyAccountsCard, { backgroundColor: colors.surface }]}>
-                <IconSymbol name="card" size={48} color={colors.tabIconDefault} />
+                <IconSymbol name="creditcard.fill" size={48} color={colors.tabIconDefault} />
                 <Text style={[styles.emptyAccountsText, { color: colors.tabIconDefault }]}>
                   Aucun compte actif trouvé
                 </Text>
               </View>
             )}
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}></Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
-                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.section}>
-            <View style={styles.quickActionsGrid}>
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/transfer")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="swap-vertical" size={24} color="#FBBF24" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/cards")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="card" size={24} color="#FBBF24" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/menu")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="menu" size={24} color="#FBBF24" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
-            </View>
-
-            <View style={[styles.transactionsCard, { backgroundColor: colors.surface }]}>
-              {transactions.length > 0 ? (
-                transactions.map((transaction, index) => (
-                  <View key={transaction.id}>
-                    <TouchableOpacity
-                      style={styles.transactionItem}
-                      onPress={() => handleTransactionPress(transaction)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.transactionLeft}>
-                        <View
-                          style={[
-                            styles.transactionIconContainer,
-                            { backgroundColor: `${getTransactionColor(transaction.txnType)}15` },
-                          ]}
-                        >
-                          <IconSymbol
-                            name={getTransactionIcon(transaction.txnType) as any}
-                            size={24}
-                            color={getTransactionColor(transaction.txnType)}
-                          />
-                        </View>
-                        <View style={styles.transactionInfo}>
-                          <Text style={[styles.transactionDescription, { color: colors.text }]} numberOfLines={1}>
-                            {transaction.description || "Transaction"}
-                          </Text>
-                          <Text style={[styles.transactionDate, { color: colors.tabIconDefault }]}>
-                            {formatDate(transaction.valueDate)}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.transactionRight}>
-                        <Text
-                          style={[
-                            styles.transactionAmount,
-                            {
-                              color: transaction.txnType?.toLowerCase().includes("credit")
-                                ? "#10B981"
-                                : transaction.txnType?.toLowerCase().includes("debit")
-                                  ? "#EF4444"
-                                  : colors.text,
-                            },
-                          ]}
-                        >
-                          {transaction.txnType?.toLowerCase().includes("credit") ? "+" : "-"}
-                          {formatCurrency(Number.parseFloat(transaction.amount) || 0)}
-                        </Text>
-                        <View
-                          style={[
-                            styles.transactionStatusBadge,
-                            {
-                              backgroundColor:
-                                transaction.status?.toLowerCase() === "completed" ||
-                                transaction.status?.toLowerCase() === "success"
-                                  ? "#10B98115"
-                                  : transaction.status?.toLowerCase() === "pending"
-                                    ? "#F59E0B15"
-                                    : "#EF444415",
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.transactionStatus,
-                              {
-                                color:
-                                  transaction.status?.toLowerCase() === "completed" ||
-                                  transaction.status?.toLowerCase() === "success"
-                                    ? "#10B981"
-                                    : transaction.status?.toLowerCase() === "pending"
-                                      ? "#F59E0B"
-                                      : "#EF4444",
-                              },
-                            ]}
-                          >
-                            {transaction.status}
-                          </Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                    {index < transactions.length - 1 && (
-                      <View style={[styles.transactionDivider, { backgroundColor: colors.border }]} />
-                    )}
-                  </View>
-                ))
-              ) : (
-                <View style={styles.emptyTransactions}>
-                  <IconSymbol name="document-text" size={40} color={colors.tabIconDefault} />
-                  <Text style={[styles.emptyTransactionsText, { color: colors.tabIconDefault }]}>
-                    Aucune transaction récente
-                  </Text>
-                </View>
-              )}
-            </View>
           </View>
 
           <View style={{ height: 100 }} />
@@ -574,7 +344,7 @@ export default function Dashboard() {
           <View style={styles.chatContent}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.attachButton}>
-                <IconSymbol name="attach" size={20} color="#FBBF24" />
+                <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
               </TouchableOpacity>
               <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <TextInput
@@ -590,172 +360,12 @@ export default function Dashboard() {
                   <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#FBBF24" }]}>
-                <IconSymbol name="send" size={18} color="#FFFFFF" />
+              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
+                <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           </View>
         </View>
-
-        <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-              {/* Modal Header */}
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
-                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                  <IconSymbol name="close-circle" size={28} color={colors.tabIconDefault} />
-                </TouchableOpacity>
-              </View>
-
-              {loadingDetails ? (
-                <View style={styles.loadingContainer}>
-                  <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
-                </View>
-              ) : selectedTransaction ? (
-                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                  {/* Transaction Icon and Amount */}
-                  <View style={styles.modalTransactionHeader}>
-                    <View
-                      style={[
-                        styles.modalTransactionIcon,
-                        { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
-                      ]}
-                    >
-                      <IconSymbol
-                        name={getTransactionIcon(selectedTransaction.txnType) as any}
-                        size={40}
-                        color={getTransactionColor(selectedTransaction.txnType)}
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.modalAmount,
-                        {
-                          color: selectedTransaction.txnType?.toLowerCase().includes("credit")
-                            ? "#10B981"
-                            : selectedTransaction.txnType?.toLowerCase().includes("debit")
-                              ? "#EF4444"
-                              : colors.text,
-                        },
-                      ]}
-                    >
-                      {selectedTransaction.txnType?.toLowerCase().includes("credit") ? "+" : "-"}
-                      {formatCurrency(Number.parseFloat(selectedTransaction.amount) || 0)} GNF
-                    </Text>
-                    <View
-                      style={[
-                        styles.modalStatusBadge,
-                        {
-                          backgroundColor:
-                            selectedTransaction.status?.toLowerCase() === "completed" ||
-                            selectedTransaction.status?.toLowerCase() === "success"
-                              ? "#10B98115"
-                              : selectedTransaction.status?.toLowerCase() === "pending"
-                                ? "#F59E0B15"
-                                : "#EF444415",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.modalStatusText,
-                          {
-                            color:
-                              selectedTransaction.status?.toLowerCase() === "completed" ||
-                              selectedTransaction.status?.toLowerCase() === "success"
-                                ? "#10B981"
-                                : selectedTransaction.status?.toLowerCase() === "pending"
-                                  ? "#F59E0B"
-                                  : "#EF4444",
-                          },
-                        ]}
-                      >
-                        {selectedTransaction.status}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Transaction Details */}
-                  <View style={[styles.detailsContainer, { backgroundColor: colors.surface }]}>
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={1}>
-                        {selectedTransaction.txnId}
-                      </Text>
-                    </View>
-
-                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnType}</Text>
-                    </View>
-
-                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {formatDate(selectedTransaction.valueDate)}
-                      </Text>
-                    </View>
-
-                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {selectedTransaction.description || "N/A"}
-                      </Text>
-                    </View>
-
-                    {selectedTransaction.creditAccount && (
-                      <>
-                        <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
-                        <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {selectedTransaction.creditAccount}
-                          </Text>
-                        </View>
-                      </>
-                    )}
-
-                    <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.accountId}</Text>
-                    </View>
-
-                    {selectedTransaction.commentNotes && (
-                      <>
-                        <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
-                        <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {selectedTransaction.commentNotes}
-                          </Text>
-                        </View>
-                      </>
-                    )}
-                  </View>
-
-                  {/* Action Buttons */}
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, { backgroundColor: "#2D7A4F" }]}
-                      onPress={closeModal}
-                    >
-                      <Text style={styles.actionButtonText}>Fermer</Text>
-                    </TouchableOpacity>
-                  </View>
-                </ScrollView>
-              ) : null}
-            </View>
-          </View>
-        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -766,6 +376,32 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
+
+  balanceCard: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 24,
+    borderRadius: 24,
+    backgroundColor: "#2D7A4F",
+    shadowColor: "#2D7A4F",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+
+  balanceValue: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+
+  trendText: {
+    color: "#10B981",
+    fontSize: 14,
+    fontWeight: "700",
+  },
 
   sectionTitle: {
     fontSize: 20,
@@ -783,6 +419,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.04)",
+  },
+
+  accountCard: {
+    borderRadius: 24,
+    padding: 20,
+    backgroundColor: "#FFFFFF",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -845,7 +494,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8,
     position: "relative",
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    backgroundColor: "rgba(45, 122, 79, 0.1)",
     borderRadius: 12,
   },
   notificationDot: {
@@ -859,6 +508,40 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  balanceLeft: { flex: 1 },
+  balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" },
+  balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
+  eyeButton: { padding: 6 },
+  balanceRight: { alignItems: "flex-end", justifyContent: "center" },
+  trendContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  trendSubtext: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4, fontWeight: "500" },
+
+  chartContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 6,
+    marginTop: 20,
+    height: 56,
+    paddingHorizontal: 4,
+  },
+  chartBar: {
+    flex: 1,
+    borderRadius: 6,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    minWidth: 8,
+  },
+  chartLabel: { color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 12, fontWeight: "500" },
 
   section: { marginBottom: 28, paddingHorizontal: 16 },
   sectionHeader: {
@@ -881,9 +564,54 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    backgroundColor: "rgba(45, 122, 79, 0.08)",
   },
   actionLabel: { fontSize: 13, textAlign: "center", fontWeight: "600", marginTop: 4 },
+
+  accountsContainer: { gap: 16 },
+  accountHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
+  accountLeft: { flexDirection: "row", gap: 12, alignItems: "center", flex: 1 },
+  accountIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  accountName: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 3,
+    letterSpacing: -0.2,
+  },
+  accountNumber: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  accountRight: { alignItems: "flex-end", gap: 6 },
+  accountBalance: {
+    fontSize: 19,
+    fontWeight: "800",
+    marginBottom: 6,
+    letterSpacing: -0.3,
+  },
+  accountChange: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  accountChangeText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
 
   chatContainer: {
     bottom: 0,
@@ -913,7 +641,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    backgroundColor: "rgba(45, 122, 79, 0.08)",
   },
   inputContainer: {
     flex: 1,
@@ -945,181 +673,53 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    shadowColor: "#FBBF24",
+    shadowColor: "#2D7A4F",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
+  accountInfo: {
+    flex: 1,
+    marginLeft: 4,
+  },
 
   carouselContent: {
-    paddingHorizontal: 0,
+    paddingHorizontal: 16,
     gap: CARD_SPACING,
   },
   carouselCard: {
     width: CARD_WIDTH,
   },
-  modernAccountCard: {
-    borderRadius: 28,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 12,
+  accountBalanceSection: {
+    marginTop: 16,
   },
-  gradientCard: {
-    padding: 24,
-    minHeight: 240,
-    position: "relative",
-    overflow: "hidden",
-  },
-  decorativeCircle1: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    top: -80,
-    right: -60,
-  },
-  decorativeCircle2: {
-    position: "absolute",
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    bottom: -40,
-    left: -40,
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: "space-between",
-    zIndex: 1,
-  },
-  cardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 24,
-  },
-  cardTopLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  modernAccountIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  cardTypeInfo: {
-    flex: 1,
-  },
-  cardTypeLabel: {
+  balanceLabel: {
     fontSize: 11,
-    color: "rgba(255, 255, 255, 0.7)",
-    fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  cardTypeName: {
-    fontSize: 15,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#10B981",
-  },
-  statusText: {
-    fontSize: 11,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  balanceSection: {
-    marginBottom: 24,
-  },
-  modernBalanceLabel: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
     fontWeight: "600",
     marginBottom: 8,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  balanceAmountRow: {
+  accountBalanceRow: {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 8,
   },
-  modernBalanceAmount: {
-    fontSize: 36,
-    color: "#FFFFFF",
-    fontWeight: "800",
-    letterSpacing: -1,
+  accountCurrency: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  modernBalanceCurrency: {
-    fontSize: 18,
-    color: "rgba(255, 255, 255, 0.9)",
-    fontWeight: "700",
-  },
-  cardBottom: {
+  paginationContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 20,
   },
-  accountNameSection: {
-    flex: 1,
-  },
-  accountNameLabel: {
-    fontSize: 10,
-    color: "rgba(255, 255, 255, 0.7)",
-    fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  modernAccountName: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  accountNumberSection: {
-    alignItems: "flex-end",
-  },
-  modernAccountNumber: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    fontWeight: "600",
-    letterSpacing: 1.5,
-  },
-  modernPaginationDot: {
-    height: 10,
-    borderRadius: 5,
+  paginationDot: {
+    height: 8,
+    borderRadius: 4,
   },
   emptyAccountsCard: {
     padding: 40,
@@ -1132,210 +732,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 24,
-  },
-
-  transactionsCard: {
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-  transactionItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  transactionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 12,
-  },
-  transactionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionDescription: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 4,
-    letterSpacing: -0.2,
-  },
-  transactionDate: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  transactionRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  transactionStatusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  transactionStatus: {
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  transactionDivider: {
-    height: 1,
-    marginVertical: 4,
-  },
-  emptyTransactions: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 32,
-  },
-  emptyTransactionsText: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 12,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 24,
-    maxHeight: "90%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  modalBody: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  modalTransactionHeader: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  modalTransactionIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  modalAmount: {
-    fontSize: 40,
-    fontWeight: "800",
-    letterSpacing: -1,
-    marginBottom: 12,
-  },
-  modalStatusBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  modalStatusText: {
-    fontSize: 13,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  detailsContainer: {
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    flex: 1,
-    textAlign: "right",
-  },
-  detailDivider: {
-    height: 1,
-  },
-  modalActions: {
-    paddingBottom: 32,
-  },
-  actionButton: {
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.5,
   },
 })

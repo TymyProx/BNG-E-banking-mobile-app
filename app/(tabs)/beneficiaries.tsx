@@ -409,6 +409,10 @@ export default function Beneficiaries() {
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
+                <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
+                  <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
+                </TouchableOpacity>
+
                 <View style={styles.beneficiaryContent}>
                   <View style={styles.beneficiaryLeft}>
                     <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
@@ -425,25 +429,18 @@ export default function Beneficiaries() {
                     </View>
                   </View>
                   <View style={styles.beneficiaryActions}>
-                    {beneficiary.status === 0 && (
-                      <TouchableOpacity
-                        style={[styles.transferButton, { backgroundColor: colors.primary }]}
-                        onPress={() => handleTransferTo(beneficiary.id)}
-                      >
-                        <IconSymbol name="paperplane.fill" size={18} color="white" />
-                      </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                      style={[styles.transferButton, { backgroundColor: colors.primary }]}
+                      onPress={() => handleTransferTo(beneficiary.id)}
+                    >
+                      <Text style={styles.transferButtonText}>Virer</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.moreButton, { backgroundColor: colors.textSecondary + "20" }]}
                       onPress={() => handleBeneficiaryActions(beneficiary)}
                     >
                       <IconSymbol name="ellipsis" size={16} color={colors.textSecondary} />
                     </TouchableOpacity>
-                    {beneficiary.status === 0 && (
-                      <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
-                        <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
-                      </TouchableOpacity>
-                    )}
                   </View>
                 </View>
               </View>
@@ -636,9 +633,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    position: "relative", // Added for absolute positioning of star
   },
   starIconButton: {
-    padding: 4,
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    padding: 8,
+    borderRadius: 20,
   },
   beneficiaryContent: {
     flexDirection: "row",
@@ -683,11 +686,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   transferButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   transferButtonText: {
     color: "white",

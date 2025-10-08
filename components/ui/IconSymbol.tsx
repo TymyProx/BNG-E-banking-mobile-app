@@ -84,27 +84,7 @@ const MAPPING = {
   bus: "directions_bus",
   "lock.open": "lock_open",
   "document-text-outline": "description",
-  notifications: "notifications",
-  "swap-vertical": "swap-vert",
-  card: "credit-card",
-  menu: "menu",
-  "arrow-up-circle": "arrow-circle-up",
-  "arrow-down-circle": "arrow-circle-down",
-  "swap-horizontal": "swap-horiz",
-  cash: "payments",
-  wallet: "account-balance-wallet",
-  attach: "attach-file",
-  mic: "mic",
-  send: "send",
-  "close-circle": "cancel",
-  "document-text": "description",
-  "list.bullet": "list",
-  "star.fill": "star",
-  star: "star-border",
-  ellipsis: "more-horiz",
-  "xmark.circle": "cancel",
-  "checkmark.circle": "check-circle",
-} as unknown as IconMapping
+} as IconMapping
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
