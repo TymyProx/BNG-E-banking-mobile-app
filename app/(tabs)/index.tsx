@@ -13,6 +13,8 @@ import {
   Platform,
   Animated,
   Dimensions,
+  Modal,
+  ActivityIndicator,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -53,6 +55,10 @@ interface Transaction {
   commentNotes?: string
 }
 
+interface TransactionDetails extends Transaction {
+  // All fields are already in Transaction interface
+}
+
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 80
 const CARD_SPACING = 16
@@ -69,6 +75,9 @@ export default function Dashboard() {
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
+  const [modalVisible, setModalVisible] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetails | null>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   useEffect(() => {
     fetchAccounts()
@@ -158,18 +167,40 @@ export default function Dashboard() {
     }
   }
 
-  const handleScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
-    setActiveIndex(index)
+  const fetchTransactionDetails = async (transactionId: string) => {
+    try {
+      setLoadingDetails(true)
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        return
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(tenantId, transactionId)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedTransaction(data)
+        setModalVisible(true)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching transaction details:", error)
+    } finally {
+      setLoadingDetails(false)
+    }
   }
 
-  const handleDotPress = (index: number) => {
-    scrollViewRef.current?.scrollTo({
-      x: index * (CARD_WIDTH + CARD_SPACING),
-      animated: true,
-    })
-    setActiveIndex(index)
+  const handleTransactionPress = (transactionId: string) => {
+    fetchTransactionDetails(transactionId)
   }
 
   const getUserInitials = () => {
@@ -226,6 +257,31 @@ export default function Dashboard() {
       month: "short",
       year: "numeric",
     }).format(date)
+  }
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
+  }
+
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
+    setActiveIndex(index)
+  }
+
+  const handleDotPress = (index: number) => {
+    scrollViewRef.current?.scrollTo({
+      x: index * (CARD_WIDTH + CARD_SPACING),
+      animated: true,
+    })
+    setActiveIndex(index)
   }
 
   return (
@@ -389,6 +445,7 @@ export default function Dashboard() {
                   <TouchableOpacity
                     key={transaction.id}
                     style={[styles.transactionCard, { backgroundColor: colors.surface }]}
+                    onPress={() => handleTransactionPress(transaction.id)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.transactionLeft}>
@@ -481,6 +538,126 @@ export default function Dashboard() {
             </View>
           </View>
         </View>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                  <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
+                </TouchableOpacity>
+              </View>
+
+              {loadingDetails ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#2D7A4F" />
+                  <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
+                </View>
+              ) : selectedTransaction ? (
+                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                  <View
+                    style={[
+                      styles.modalIconContainer,
+                      { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
+                    ]}
+                  >
+                    <IconSymbol
+                      name={getTransactionIcon(selectedTransaction.txnType) as any}
+                      size={48}
+                      color={getTransactionColor(selectedTransaction.txnType)}
+                    />
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.modalAmount,
+                      {
+                        color: selectedTransaction.txnType?.toLowerCase().includes("depot")
+                          ? "#10B981"
+                          : selectedTransaction.txnType?.toLowerCase().includes("retrait")
+                            ? "#EF4444"
+                            : colors.text,
+                      },
+                    ]}
+                  >
+                    {selectedTransaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
+                    {formatCurrency(Number.parseFloat(selectedTransaction.amount))} GNF
+                  </Text>
+
+                  <View
+                    style={[styles.modalStatus, { backgroundColor: `${getStatusColor(selectedTransaction.status)}15` }]}
+                  >
+                    <Text style={[styles.modalStatusText, { color: getStatusColor(selectedTransaction.status) }]}>
+                      {selectedTransaction.status}
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailsContainer}>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnId}</Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnType}</Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {selectedTransaction.description || "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date de valeur</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatDateTime(selectedTransaction.valueDate)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {selectedTransaction.creditAccount || "N/A"}
+                      </Text>
+                    </View>
+
+                    {selectedTransaction.commentNotes && (
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>
+                          {selectedTransaction.commentNotes}
+                        </Text>
+                      </View>
+                    )}
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Créé le</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatDateTime(selectedTransaction.createdAt)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Mis à jour le</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatDateTime(selectedTransaction.updatedAt)}
+                      </Text>
+                    </View>
+                  </View>
+                </ScrollView>
+              ) : null}
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -978,5 +1155,100 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    maxHeight: "85%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalBody: {
+    flex: 1,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  modalAmount: {
+    fontSize: 36,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  modalStatus: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: 32,
+  },
+  modalStatusText: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  detailsContainer: {
+    gap: 20,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    flex: 1.5,
+    textAlign: "right",
+  },
+  loadingContainer: {
+    padding: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 16,
   },
 })
