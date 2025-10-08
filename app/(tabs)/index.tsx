@@ -33,6 +33,15 @@ interface Account {
   availableBalance: string
 }
 
+interface Card {
+  id: string
+  cardNumber: string
+  cardType: string
+  status: string
+  expiryDate: string
+  cardHolderName: string
+}
+
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 48
 const CARD_SPACING = 16
@@ -42,15 +51,20 @@ export default function Dashboard() {
   const colors = Colors[colorScheme ?? "light"]
   const { user, tenantId } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [cards, setCards] = useState<Card[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
   const [chatInput, setChatInput] = useState("")
   const [activeIndex, setActiveIndex] = useState(0)
+  const [activeCardIndex, setActiveCardIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
+  const cardScrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
+  const [cardFadeAnim] = useState(new Animated.Value(0))
 
   useEffect(() => {
     fetchAccounts()
+    fetchCards()
   }, [])
 
   useEffect(() => {
@@ -69,6 +83,23 @@ export default function Dashboard() {
       return () => clearInterval(interval)
     }
   }, [accounts.length])
+
+  useEffect(() => {
+    if (cards.length > 1) {
+      const interval = setInterval(() => {
+        setActiveCardIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % cards.length
+          cardScrollViewRef.current?.scrollTo({
+            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
+            animated: true,
+          })
+          return nextIndex
+        })
+      }, 4000)
+
+      return () => clearInterval(interval)
+    }
+  }, [cards.length])
 
   const fetchAccounts = async () => {
     try {
@@ -108,10 +139,49 @@ export default function Dashboard() {
     }
   }
 
+  const fetchCards = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const activeCards = data.rows?.filter((card: any) => card.status?.toLowerCase() === "actif") || []
+        setCards(activeCards)
+
+        // Fade in animation
+        Animated.timing(cardFadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }).start()
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching cards:", error)
+    }
+  }
+
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x
     const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
     setActiveIndex(index)
+  }
+
+  const handleCardScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
+    setActiveCardIndex(index)
   }
 
   const handleDotPress = (index: number) => {
@@ -120,6 +190,14 @@ export default function Dashboard() {
       animated: true,
     })
     setActiveIndex(index)
+  }
+
+  const handleCardDotPress = (index: number) => {
+    cardScrollViewRef.current?.scrollTo({
+      x: index * (CARD_WIDTH + CARD_SPACING),
+      animated: true,
+    })
+    setActiveCardIndex(index)
   }
 
   const getUserInitials = () => {
@@ -143,6 +221,19 @@ export default function Dashboard() {
     if (normalizedType.includes("courant")) return "#2D7A4F"
     if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "#10B981"
     return "#4F46E5"
+  }
+
+  const getCardColor = (type: string) => {
+    const normalizedType = type?.toLowerCase() || ""
+    if (normalizedType.includes("visa")) return "#1A1F71"
+    if (normalizedType.includes("mastercard")) return "#EB001B"
+    return "#2D7A4F"
+  }
+
+  const maskCardNumber = (cardNumber: string) => {
+    if (!cardNumber) return "•••• •••• •••• ••••"
+    const last4 = cardNumber.slice(-4)
+    return `•••• •••• •••• ${last4}`
   }
 
   return (
@@ -178,39 +269,80 @@ export default function Dashboard() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Balance Card */}
           <View style={styles.balanceCard}>
             <View style={styles.balanceHeader}>
-              <View style={styles.balanceLeft}>
-                <View style={styles.balanceTitle}>
-                  <IconSymbol name="checkmark.shield" size={18} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.balanceTitleText}>Solde total</Text>
-                </View>
-                <View style={styles.balanceAmount}>
-                  <Text style={styles.balanceValue}>
-                    {showBalance ? `${formatCurrency(totalBalance)} GNF` : "••••••"}
-                  </Text>
-                  <TouchableOpacity style={styles.eyeButton} onPress={() => setShowBalance(!showBalance)}>
-                    <IconSymbol name={showBalance ? "eye" : "eye.slash"} size={20} color="rgba(255,255,255,0.8)" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.balanceRight}>
-                <View style={styles.trendContainer}>
-                  <IconSymbol name="arrow.up.right" size={14} color="#10B981" />
-                  <Text style={styles.trendText}>+2.4%</Text>
-                </View>
-                <Text style={styles.trendSubtext}>vs mois dernier</Text>
+              <View style={styles.balanceTitle}>
+                <IconSymbol name="checkmark.shield" size={18} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.balanceTitleText}>Mes comptes actifs</Text>
               </View>
             </View>
 
-            {/* Chart */}
-            <View style={styles.chartContainer}>
-              {[40, 55, 45, 70, 60, 80, 75].map((height, index) => (
-                <View key={index} style={[styles.chartBar, { height: `${height}%` }]} />
-              ))}
-            </View>
-            <Text style={styles.chartLabel}>Évolution sur 7 jours</Text>
+            {accounts.length > 0 ? (
+              <>
+                <ScrollView
+                  ref={scrollViewRef}
+                  horizontal
+                  pagingEnabled={false}
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={CARD_WIDTH + CARD_SPACING}
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.accountCarouselContent}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                >
+                  {accounts.map((account) => (
+                    <Animated.View key={account.id} style={[styles.accountInGreenCard, { opacity: fadeAnim }]}>
+                      <TouchableOpacity
+                        onPress={() => router.push(`/account-details?id=${account.id}`)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.accountInGreenCardHeader}>
+                          <View style={[styles.accountInGreenCardIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                            <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
+                          </View>
+                          <View style={styles.accountInGreenCardInfo}>
+                            <Text style={styles.accountInGreenCardName}>{account.accountName || account.type}</Text>
+                            <Text style={styles.accountInGreenCardNumber}>•••• {account.accountNumber.slice(-4)}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.accountInGreenCardBalanceSection}>
+                          <Text style={styles.accountInGreenCardBalanceLabel}>Solde disponible</Text>
+                          <View style={styles.accountInGreenCardBalanceRow}>
+                            <Text style={styles.accountInGreenCardBalance}>
+                              {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
+                            </Text>
+                            <Text style={styles.accountInGreenCardCurrency}>{account.currency}</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  ))}
+                </ScrollView>
+
+                {accounts.length > 1 && (
+                  <View style={styles.paginationContainer}>
+                    {accounts.map((_, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => handleDotPress(index)}
+                        style={[
+                          styles.paginationDot,
+                          {
+                            backgroundColor: index === activeIndex ? "#FFFFFF" : "rgba(255,255,255,0.4)",
+                            width: index === activeIndex ? 32 : 8,
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={styles.emptyInGreenCard}>
+                <IconSymbol name="creditcard.fill" size={48} color="rgba(255,255,255,0.5)" />
+                <Text style={styles.emptyInGreenCardText}>Aucun compte actif trouvé</Text>
+              </View>
+            )}
           </View>
 
           {/* Quick Actions */}
@@ -250,56 +382,46 @@ export default function Dashboard() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes comptes</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes cartes</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/cards")}>
                 <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
               </TouchableOpacity>
             </View>
 
-            {accounts.length > 0 ? (
+            {cards.length > 0 ? (
               <>
                 <ScrollView
-                  ref={scrollViewRef}
+                  ref={cardScrollViewRef}
                   horizontal
                   pagingEnabled={false}
                   showsHorizontalScrollIndicator={false}
                   snapToInterval={CARD_WIDTH + CARD_SPACING}
                   decelerationRate="fast"
                   contentContainerStyle={styles.carouselContent}
-                  onScroll={handleScroll}
+                  onScroll={handleCardScroll}
                   scrollEventThrottle={16}
                 >
-                  {accounts.map((account) => (
-                    <Animated.View key={account.id} style={[styles.carouselCard, { opacity: fadeAnim }]}>
+                  {cards.map((card) => (
+                    <Animated.View key={card.id} style={[styles.carouselCard, { opacity: cardFadeAnim }]}>
                       <TouchableOpacity
-                        style={[styles.accountCard, { backgroundColor: colors.surface }]}
-                        onPress={() => router.push(`/account-details?id=${account.id}`)}
+                        style={[styles.cardItem, { backgroundColor: getCardColor(card.cardType) }]}
                         activeOpacity={0.8}
                       >
-                        <View style={styles.accountHeader}>
-                          <View style={styles.accountLeft}>
-                            <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
-                              <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
-                            </View>
-                            <View style={styles.accountInfo}>
-                              <Text style={[styles.accountName, { color: colors.text }]}>
-                                {account.accountName || account.type}
-                              </Text>
-                              <Text style={[styles.accountNumber, { color: colors.tabIconDefault }]}>
-                                •••• {account.accountNumber.slice(-4)}
-                              </Text>
-                            </View>
-                          </View>
+                        <View style={styles.cardHeader}>
+                          <View style={styles.cardChip} />
+                          <Text style={styles.cardType}>{card.cardType}</Text>
                         </View>
-                        <View style={styles.accountBalanceSection}>
-                          <Text style={[styles.balanceLabel, { color: colors.tabIconDefault }]}>Solde disponible</Text>
-                          <View style={styles.accountBalanceRow}>
-                            <Text style={[styles.accountBalance, { color: colors.text }]}>
-                              {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
-                            </Text>
-                            <Text style={[styles.accountCurrency, { color: colors.tabIconDefault }]}>
-                              {account.currency}
-                            </Text>
+                        <View style={styles.cardMiddle}>
+                          <Text style={styles.cardNumber}>{maskCardNumber(card.cardNumber)}</Text>
+                        </View>
+                        <View style={styles.cardFooter}>
+                          <View style={styles.cardHolderSection}>
+                            <Text style={styles.cardLabel}>Titulaire</Text>
+                            <Text style={styles.cardHolderName}>{card.cardHolderName}</Text>
+                          </View>
+                          <View style={styles.cardExpirySection}>
+                            <Text style={styles.cardLabel}>Expire</Text>
+                            <Text style={styles.cardExpiry}>{card.expiryDate}</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -307,17 +429,17 @@ export default function Dashboard() {
                   ))}
                 </ScrollView>
 
-                {accounts.length > 1 && (
+                {cards.length > 1 && (
                   <View style={styles.paginationContainer}>
-                    {accounts.map((_, index) => (
+                    {cards.map((_, index) => (
                       <TouchableOpacity
                         key={index}
-                        onPress={() => handleDotPress(index)}
+                        onPress={() => handleCardDotPress(index)}
                         style={[
                           styles.paginationDot,
                           {
-                            backgroundColor: index === activeIndex ? "#2D7A4F" : colors.border,
-                            width: index === activeIndex ? 32 : 8,
+                            backgroundColor: index === activeCardIndex ? "#2D7A4F" : colors.border,
+                            width: index === activeCardIndex ? 32 : 8,
                           },
                         ]}
                       />
@@ -326,10 +448,10 @@ export default function Dashboard() {
                 )}
               </>
             ) : (
-              <View style={[styles.emptyAccountsCard, { backgroundColor: colors.surface }]}>
+              <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
                 <IconSymbol name="creditcard.fill" size={48} color={colors.tabIconDefault} />
-                <Text style={[styles.emptyAccountsText, { color: colors.tabIconDefault }]}>
-                  Aucun compte actif trouvé
+                <Text style={[styles.emptyCardText, { color: colors.tabIconDefault }]}>
+                  Aucune carte active trouvée
                 </Text>
               </View>
             )}
@@ -508,10 +630,10 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
-  balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  balanceHeader: { marginBottom: 16 },
   balanceLeft: { flex: 1 },
   balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" },
+  balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: "700" },
   balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
   eyeButton: { padding: 6 },
   balanceRight: { alignItems: "flex-end", justifyContent: "center" },
@@ -728,6 +850,152 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   emptyAccountsText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 12,
+  },
+  accountCarouselContent: {
+    gap: CARD_SPACING,
+  },
+  accountInGreenCard: {
+    width: CARD_WIDTH - 48,
+  },
+  accountInGreenCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  accountInGreenCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  accountInGreenCardInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  accountInGreenCardName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  accountInGreenCardNumber: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  accountInGreenCardBalanceSection: {
+    marginTop: 8,
+  },
+  accountInGreenCardBalanceLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  accountInGreenCardBalanceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+  },
+  accountInGreenCardBalance: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  accountInGreenCardCurrency: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  emptyInGreenCard: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyInGreenCardText: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 12,
+  },
+  cardItem: {
+    borderRadius: 20,
+    padding: 24,
+    height: 200,
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  cardChip: {
+    width: 48,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  cardType: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  cardMiddle: {
+    justifyContent: "center",
+  },
+  cardNumber: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 2,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  cardHolderSection: {
+    flex: 1,
+  },
+  cardLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 10,
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  cardHolderName: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  cardExpirySection: {
+    alignItems: "flex-end",
+  },
+  cardExpiry: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  emptyCard: {
+    padding: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCardText: {
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
