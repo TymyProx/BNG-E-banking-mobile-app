@@ -126,8 +126,6 @@ export default function CardsScreen() {
   const [isLoadingCards, setIsLoadingCards] = useState(true)
   const [cardsError, setCardsError] = useState<string | null>(null)
 
-  const [cardFilter, setCardFilter] = useState<"ACTIF" | "EN ATTENTE">("ACTIF")
-
   const [flippedCardId, setFlippedCardId] = useState<string | null>(null)
   const flipAnimations = useRef<{ [key: string]: Animated.Value }>({}).current
 
@@ -513,7 +511,7 @@ export default function CardsScreen() {
     }
   }
 
-  const filteredCards = cards.filter((card) => card.rawStatus === cardFilter)
+  const filteredCards = cards.filter((card) => card.rawStatus === "ACTIF")
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -525,52 +523,6 @@ export default function CardsScreen() {
         onAddPress={() => setShowRequestModal(true)}
         addButtonColor="#2D7A4F"
       />
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, cardFilter === "ACTIF" && styles.filterButtonActive]}
-          onPress={() => setCardFilter("ACTIF")}
-        >
-          {cardFilter === "ACTIF" ? (
-            <LinearGradient
-              colors={["#2D7A4F", "#1F5A3A"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.filterButtonGradient}
-            >
-              <IconSymbol name="creditcard.fill" size={18} color="white" />
-              <Text style={styles.filterButtonTextActive}>Mes cartes</Text>
-            </LinearGradient>
-          ) : (
-            <View style={[styles.filterButtonInactive, { backgroundColor: colors.cardBackground }]}>
-              <IconSymbol name="creditcard" size={18} color={colors.textSecondary} />
-              <Text style={[styles.filterButtonTextInactive, { color: colors.textSecondary }]}>Mes cartes</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterButton, cardFilter === "EN ATTENTE" && styles.filterButtonActive]}
-          onPress={() => setCardFilter("EN ATTENTE")}
-        >
-          {cardFilter === "EN ATTENTE" ? (
-            <LinearGradient
-              colors={["#FBBF24", "#F59E0B"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.filterButtonGradient}
-            >
-              <IconSymbol name="clock.fill" size={18} color="white" />
-              <Text style={styles.filterButtonTextActive}>Demandes</Text>
-            </LinearGradient>
-          ) : (
-            <View style={[styles.filterButtonInactive, { backgroundColor: colors.cardBackground }]}>
-              <IconSymbol name="clock" size={18} color={colors.textSecondary} />
-              <Text style={[styles.filterButtonTextInactive, { color: colors.textSecondary }]}>Demandes</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {isLoadingCards ? (
@@ -589,13 +541,9 @@ export default function CardsScreen() {
         ) : filteredCards.length === 0 ? (
           <View style={styles.emptyCardsContainer}>
             <IconSymbol name="creditcard" size={64} color={colors.textSecondary} />
-            <Text style={[styles.emptyCardsText, { color: colors.text }]}>
-              {cardFilter === "ACTIF" ? "Aucune carte active" : "Aucune demande en cours"}
-            </Text>
+            <Text style={[styles.emptyCardsText, { color: colors.text }]}>Aucune carte active</Text>
             <Text style={[styles.emptyCardsSubtext, { color: colors.textSecondary }]}>
-              {cardFilter === "ACTIF"
-                ? "Demandez votre première carte bancaire"
-                : "Vous n'avez aucune demande de carte en attente"}
+              Demandez votre première carte bancaire
             </Text>
           </View>
         ) : (
@@ -639,11 +587,7 @@ export default function CardsScreen() {
 
                   return (
                     <View key={card.id} style={[styles.cardContainer, { width: CARD_WIDTH }]}>
-                      <TouchableOpacity
-                        activeOpacity={0.95}
-                        onPress={() => cardFilter === "ACTIF" && handleCardFlip(card.id)}
-                        disabled={cardFilter !== "ACTIF"}
-                      >
+                      <TouchableOpacity activeOpacity={0.95} onPress={() => handleCardFlip(card.id)}>
                         <View style={styles.cardFlipContainer}>
                           <Animated.View
                             style={[
@@ -804,30 +748,40 @@ export default function CardsScreen() {
             </View>
 
             {/* Action buttons - Only show for active cards */}
-            {cardFilter === "ACTIF" && (
-              <View style={styles.actionsContainer}>
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
-                  <View style={[styles.actionIconContainer, { backgroundColor: "#FFE5E5" }]}>
-                    <IconSymbol name="lock.fill" size={20} color="#FF4444" />
-                  </View>
-                  <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
-                </TouchableOpacity>
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}>
+                <View style={[styles.actionIconContainer, { backgroundColor: "#FFE5E5" }]}>
+                  <IconSymbol name="lock.fill" size={20} color="#FF4444" />
+                </View>
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Bloquer</Text>
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}
-                  onPress={() => {
-                    if (filteredCards.length > 0) {
-                      fetchCardDetails(filteredCards[activeCardIndex].id)
-                    }
-                  }}
-                >
-                  <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
-                    <IconSymbol name="eye.fill" size={20} color="#0066FF" />
-                  </View>
-                  <Text style={[styles.actionButtonText, { color: colors.text }]}>Détails de la carte</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}
+                onPress={() => {
+                  if (filteredCards.length > 0) {
+                    fetchCardDetails(filteredCards[activeCardIndex].id)
+                  }
+                }}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: "#E5F0FF" }]}>
+                  <IconSymbol name="eye.fill" size={20} color="#0066FF" />
+                </View>
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Détails de la carte</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.demandesButtonContainer}>
+              <TouchableOpacity
+                style={[styles.demandesButton, { backgroundColor: colors.cardBackground }]}
+                onPress={() => setShowRequestModal(true)}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: "#FFF3E5" }]}>
+                  <IconSymbol name="clock.fill" size={20} color="#FBBF24" />
+                </View>
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Demandes</Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
 
@@ -1540,7 +1494,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 24,
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 16, // Reduced margin to make space for Demandes button
   },
   actionButton: {
     flex: 1,
@@ -1564,6 +1518,20 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  demandesButtonContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  demandesButton: {
+    padding: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   requestCardContainer: {
     marginHorizontal: 24,
