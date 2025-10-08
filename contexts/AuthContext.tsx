@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
 import * as SecureStore from "expo-secure-store"
@@ -43,6 +43,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null
+  token: string | null
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<boolean>
@@ -70,6 +71,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [pendingOTPVerification, setPendingOTPVerification] = useState(false)
   const [tenantId, setTenantId] = useState<string | null>(null)
@@ -124,9 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUserData = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token")
-      if (token) {
-        const userData = await fetchUserData(token)
+      const storedToken = await SecureStore.getItemAsync("token")
+      if (storedToken) {
+        setToken(storedToken)
+        const userData = await fetchUserData(storedToken)
         if (userData) {
           setUser(userData)
         }
@@ -139,14 +142,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = await SecureStore.getItemAsync("token")
-        if (token) {
+        const storedToken = await SecureStore.getItemAsync("token")
+        if (storedToken) {
+          setToken(storedToken)
           setIsLoading(true)
-          const userData = await fetchUserData(token)
+          const userData = await fetchUserData(storedToken)
           if (userData) {
             setUser(userData)
           } else {
             await SecureStore.deleteItemAsync("token")
+            setToken(null)
           }
           setIsLoading(false)
         }
@@ -176,16 +181,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await response.json()
-      const token = data.token || data.accessToken
+      const authToken = data.token || data.accessToken
 
-      if (!token) {
+      if (!authToken) {
         Alert.alert("Erreur", "Aucun token reçu du serveur")
         return false
       }
 
-      await SecureStore.setItemAsync("token", token)
+      await SecureStore.setItemAsync("token", authToken)
+      setToken(authToken)
 
-      const userData = await fetchUserData(token)
+      const userData = await fetchUserData(authToken)
       if (userData) {
         setUser(userData)
         return true
@@ -303,6 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await SecureStore.deleteItemAsync("token")
       setUser(null)
+      setToken(null)
       setTenantId(null)
       setPendingOTPVerification(false)
     } catch (error) {
@@ -314,6 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token,
         isLoading,
         isAuthenticated,
         login,

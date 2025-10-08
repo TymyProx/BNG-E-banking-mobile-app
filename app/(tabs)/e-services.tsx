@@ -9,7 +9,6 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 interface CreditRequest {
   id: string
@@ -20,6 +19,7 @@ interface CreditRequest {
   purpose: string
   typedemande: string
   accountNumber: string
+  status: string
 }
 
 interface CheckbookRequest {
@@ -31,6 +31,7 @@ interface CheckbookRequest {
   intitulecompte: string
   numcompteId: string
   commentaire: string
+  status: string
 }
 
 interface ServiceCard {
@@ -72,10 +73,6 @@ export default function EServicesScreen() {
 
   const fetchCreditRequests = async () => {
     try {
-      console.log("[v0] Fetching credit requests...")
-      console.log("[v0] URL:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(API_CONFIG.TENANT_ID)}`)
-      console.log("[v0] Token:", token ? "Present" : "Missing")
-
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(API_CONFIG.TENANT_ID)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -83,29 +80,17 @@ export default function EServicesScreen() {
         },
       })
 
-      console.log("[v0] Credit requests response status:", response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Credit requests data:", data)
-        console.log("[v0] Credit requests rows:", data.rows)
-        console.log("[v0] Credit requests count:", data.rows?.length || 0)
         setCreditRequests(data.rows || [])
-      } else {
-        console.log("[v0] Credit requests response not OK:", response.status)
-        const errorText = await response.text()
-        console.log("[v0] Error response:", errorText)
       }
     } catch (error) {
-      console.error("[v0] Erreur lors de la récupération des demandes de crédit:", error)
+      console.error("Erreur lors de la récupération des demandes de crédit:", error)
     }
   }
 
   const fetchCheckbookRequests = async () => {
     try {
-      console.log("[v0] Fetching checkbook requests...")
-      console.log("[v0] URL:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(API_CONFIG.TENANT_ID)}`)
-
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(API_CONFIG.TENANT_ID)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -113,34 +98,21 @@ export default function EServicesScreen() {
         },
       })
 
-      console.log("[v0] Checkbook requests response status:", response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Checkbook requests data:", data)
-        console.log("[v0] Checkbook requests rows:", data.rows)
-        console.log("[v0] Checkbook requests count:", data.rows?.length || 0)
         setCheckbookRequests(data.rows || [])
-      } else {
-        console.log("[v0] Checkbook requests response not OK:", response.status)
-        const errorText = await response.text()
-        console.log("[v0] Error response:", errorText)
       }
     } catch (error) {
-      console.error("[v0] Erreur lors de la récupération des demandes de chéquier:", error)
+      console.error("Erreur lors de la récupération des demandes de chéquier:", error)
     }
   }
 
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        console.log("[v0] Starting to fetch data...")
         setLoading(true)
         await Promise.all([fetchCreditRequests(), fetchCheckbookRequests()])
         setLoading(false)
-        console.log("[v0] Finished fetching data")
-        console.log("[v0] Credit requests state:", creditRequests.length)
-        console.log("[v0] Checkbook requests state:", checkbookRequests.length)
       }
       fetchData()
     }, [token]),
@@ -293,6 +265,12 @@ export default function EServicesScreen() {
                       <Text style={[styles.detailValue, { color: colors.text }]}>{request.accountNumber}</Text>
                     </View>
                   </View>
+                  <View style={styles.statusBadge}>
+                    <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
+                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
+                      {getStatusText(request.status)}
+                    </Text>
+                  </View>
                   <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
                     Demandé le {formatDate(request.createdAt)}
                   </Text>
@@ -333,6 +311,12 @@ export default function EServicesScreen() {
                         <Text style={[styles.detailValue, { color: colors.text }]}>{request.commentaire}</Text>
                       </View>
                     )}
+                  </View>
+                  <View style={styles.statusBadge}>
+                    <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
+                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
+                      {getStatusText(request.status)}
+                    </Text>
                   </View>
                   <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
                     Commandé le {formatDate(request.dateorder)}
