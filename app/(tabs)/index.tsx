@@ -173,9 +173,11 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
+        console.log("[v0] Missing token or tenantId")
         return
       }
 
+      console.log("[v0] Fetching transaction details for:", transactionId)
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.DETAILS(tenantId, transactionId)}`,
         {
@@ -187,10 +189,14 @@ export default function Dashboard() {
         },
       )
 
+      console.log("[v0] Response status:", response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Transaction details received:", data)
         setSelectedTransaction(data)
         setModalVisible(true)
+      } else {
+        console.log("[v0] Failed to fetch transaction details:", response.status)
       }
     } catch (error) {
       console.error("[v0] Error fetching transaction details:", error)
@@ -611,7 +617,7 @@ export default function Dashboard() {
 
                     <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                      <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={3}>
                         {selectedTransaction.description || "N/A"}
                       </Text>
                     </View>
@@ -633,7 +639,7 @@ export default function Dashboard() {
                     {selectedTransaction.commentNotes && (
                       <View style={styles.detailRow}>
                         <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
+                        <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={4}>
                           {selectedTransaction.commentNotes}
                         </Text>
                       </View>
@@ -653,8 +659,14 @@ export default function Dashboard() {
                       </Text>
                     </View>
                   </View>
+
+                  <View style={{ height: 20 }} />
                 </ScrollView>
-              ) : null}
+              ) : (
+                <View style={styles.loadingContainer}>
+                  <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Aucune donnée disponible</Text>
+                </View>
+              )}
             </View>
           </View>
         </Modal>
