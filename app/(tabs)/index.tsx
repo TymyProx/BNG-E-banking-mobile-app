@@ -21,6 +21,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import React from "react"
 
 interface Account {
   id: string
@@ -35,10 +36,10 @@ interface Account {
 
 interface Card {
   id: string
-  cardNumber: string
-  cardType: string
+  numCard: string
+  typCard: string
   status: string
-  expiryDate: string
+  dateExpiration: string
   cardHolderName: string
 }
 
@@ -412,10 +413,10 @@ export default function Dashboard() {
                       >
                         <View style={styles.cardHeader}>
                           <View style={styles.cardChip} />
-                          <Text style={styles.cardType}>{card.cardType}</Text>
+                          <Text style={styles.cardType}>{card.typCard}</Text>
                         </View>
                         <View style={styles.cardMiddle}>
-                          <Text style={styles.cardNumber}>{maskCardNumber(card.cardNumber)}</Text>
+                          <Text style={styles.cardNumber}>{maskCardNumber(card.numCard)}</Text>
                         </View>
                         <View style={styles.cardFooter}>
                           <View style={styles.cardHolderSection}>
@@ -424,7 +425,7 @@ export default function Dashboard() {
                           </View>
                           <View style={styles.cardExpirySection}>
                             <Text style={styles.cardLabel}>Expire</Text>
-                            <Text style={styles.cardExpiry}>{card.expiryDate}</Text>
+                            <Text style={styles.cardExpiry}>{card.dateExpiration}</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
