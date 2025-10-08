@@ -21,7 +21,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
 
 interface Account {
   id: string
@@ -167,6 +166,10 @@ export default function Dashboard() {
         const data = await response.json()
         console.log("[v0] Cards data received:", JSON.stringify(data, null, 2))
 
+        if (data.rows && data.rows.length > 0) {
+          console.log("[v0] First card structure:", JSON.stringify(data.rows[0], null, 2))
+        }
+
         const activeCards =
           data.rows?.filter((card: any) => {
             const status = card.status?.toLowerCase() || ""
@@ -175,6 +178,9 @@ export default function Dashboard() {
           }) || []
 
         console.log("[v0] Active cards found:", activeCards.length)
+        if (activeCards.length > 0) {
+          console.log("[v0] Active cards:", JSON.stringify(activeCards, null, 2))
+        }
         setCards(activeCards)
 
         // Fade in animation
@@ -244,7 +250,11 @@ export default function Dashboard() {
     return "wallet.pass.fill"
   }
 
-  const formatCardNumber = (cardNumber: string) => {
+  const formatCardNumber = (cardNumber: string | undefined) => {
+    if (!cardNumber || cardNumber.length < 4) {
+      console.log("[v0] Invalid card number:", cardNumber)
+      return "•••• •••• •••• ••••"
+    }
     return `•••• •••• •••• ${cardNumber.slice(-4)}`
   }
 
@@ -450,7 +460,7 @@ export default function Dashboard() {
                           <View style={styles.cardTypeContainer}>
                             <IconSymbol name={getCardIcon(card.cardType) as any} size={32} color="#FFFFFF" />
                           </View>
-                          <Text style={styles.cardTypeText}>{card.cardType}</Text>
+                          <Text style={styles.cardTypeText}>{card.cardType || "Carte bancaire"}</Text>
                         </View>
                         <View style={styles.cardNumberSection}>
                           <Text style={styles.cardNumber}>{formatCardNumber(card.cardNumber)}</Text>
@@ -458,11 +468,11 @@ export default function Dashboard() {
                         <View style={styles.cardFooter}>
                           <View style={styles.cardHolderSection}>
                             <Text style={styles.cardLabel}>Titulaire</Text>
-                            <Text style={styles.cardHolderName}>{card.cardHolderName}</Text>
+                            <Text style={styles.cardHolderName}>{card.cardHolderName || "N/A"}</Text>
                           </View>
                           <View style={styles.cardExpirySection}>
                             <Text style={styles.cardLabel}>Expire</Text>
-                            <Text style={styles.cardExpiryDate}>{card.expiryDate}</Text>
+                            <Text style={styles.cardExpiryDate}>{card.expiryDate || "N/A"}</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
