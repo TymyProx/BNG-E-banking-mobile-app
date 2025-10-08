@@ -150,6 +150,8 @@ export default function Dashboard() {
         return
       }
 
+      console.log("[v0] Fetching cards from:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`)
+
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
         method: "GET",
         headers: {
@@ -158,9 +160,20 @@ export default function Dashboard() {
         },
       })
 
+      console.log("[v0] Cards response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
-        const activeCards = data.rows?.filter((card: any) => card.status?.toLowerCase() === "active") || []
+        console.log("[v0] Cards data received:", JSON.stringify(data, null, 2))
+
+        const activeCards =
+          data.rows?.filter((card: any) => {
+            const status = card.status?.toLowerCase() || ""
+            console.log("[v0] Card status:", card.status, "normalized:", status)
+            return status === "active" || status === "actif"
+          }) || []
+
+        console.log("[v0] Active cards found:", activeCards.length)
         setCards(activeCards)
 
         // Fade in animation
@@ -169,6 +182,9 @@ export default function Dashboard() {
           duration: 800,
           useNativeDriver: true,
         }).start()
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] Error response:", errorText)
       }
     } catch (error) {
       console.error("[v0] Error fetching cards:", error)
