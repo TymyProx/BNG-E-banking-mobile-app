@@ -54,13 +54,6 @@ export default function MenuScreen() {
       isNew: true,
     },
     {
-      id: "statements",
-      title: "Relevés",
-      subtitle: "Télécharger",
-      icon: "document-outline",
-      route: "/(tabs)/statements",
-    },
-    {
       id: "beneficiaries",
       title: "Bénéficiaires",
       subtitle: "Gérer",
@@ -73,13 +66,6 @@ export default function MenuScreen() {
       subtitle: "Payer",
       icon: "receipt-outline",
       route: "/(tabs)/bills",
-    },
-    {
-      id: "insights",
-      title: "Analyses",
-      subtitle: "Dépenses",
-      icon: "analytics-outline",
-      route: "/(tabs)/insights",
     },
     {
       id: "support",
