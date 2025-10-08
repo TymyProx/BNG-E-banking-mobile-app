@@ -23,6 +23,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import React from "react"
 
 interface Account {
   id: string
@@ -324,13 +325,6 @@ export default function Dashboard() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.balanceCard}>
-            <View style={styles.balanceHeader}>
-              <View style={styles.balanceTitle}>
-                <IconSymbol name="checkmark.shield" size={18} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.balanceTitleText}>Mes comptes actifs</Text>
-              </View>
-            </View>
-
             {accounts.length > 0 ? (
               <>
                 <ScrollView
