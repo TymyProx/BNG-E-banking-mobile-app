@@ -1,6 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async (token: string): Promise<User | null> => {
     try {
+      console.log("[v0] Fetching user data from /auth/me...")
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.ME}`, {
         method: "GET",
         headers: {
@@ -92,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = await response.json()
+      console.log("[v0] User data received:", userData.email)
 
       // Map API response to User interface
       const mappedUser: User = {
@@ -111,9 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isVerified: userData.emailVerified,
       }
 
-      // Set tenantId from first tenant
       if (mappedUser.tenants.length > 0) {
-        setTenantId(mappedUser.tenants[0].tenantId)
+        const extractedTenantId = mappedUser.tenants[0].tenantId
+        console.log("[v0] TenantId extracted:", extractedTenantId)
+        setTenantId(extractedTenantId)
+        await SecureStore.setItemAsync("tenantId", extractedTenantId)
+        console.log("[v0] TenantId saved to SecureStore")
       }
 
       return mappedUser
@@ -141,18 +147,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        console.log("[v0] Checking auth status...")
         const storedToken = await SecureStore.getItemAsync("token")
+        const storedTenantId = await SecureStore.getItemAsync("tenantId")
+
         if (storedToken) {
+          console.log("[v0] Token found in SecureStore")
           setToken(storedToken)
+
+          if (storedTenantId) {
+            console.log("[v0] TenantId loaded from SecureStore:", storedTenantId)
+            setTenantId(storedTenantId)
+          }
+
           setIsLoading(true)
           const userData = await fetchUserData(storedToken)
           if (userData) {
             setUser(userData)
+            console.log("[v0] User authenticated:", userData.email)
           } else {
             await SecureStore.deleteItemAsync("token")
+            await SecureStore.deleteItemAsync("tenantId")
             setToken(null)
+            setTenantId(null)
           }
           setIsLoading(false)
+        } else {
+          console.log("[v0] No token found in SecureStore")
         }
       } catch (error) {
         console.error("Error checking auth status:", error)
@@ -166,6 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     try {
+      console.log("[v0] Attempting login for:", email)
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.SIGN_IN}`, {
         method: "POST",
         headers: {
@@ -187,12 +209,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
+      console.log("[v0] Login successful, token received")
       await SecureStore.setItemAsync("token", authToken)
       setToken(authToken)
 
       const userData = await fetchUserData(authToken)
       if (userData) {
         setUser(userData)
+        console.log("[v0] User data loaded after login")
         return true
       }
 
@@ -306,11 +330,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      console.log("[v0] Logging out...")
       await SecureStore.deleteItemAsync("token")
+      await SecureStore.deleteItemAsync("tenantId")
       setUser(null)
       setToken(null)
       setTenantId(null)
       setPendingOTPVerification(false)
+      console.log("[v0] Logout complete")
     } catch (error) {
       console.error("Logout error:", error)
     }
