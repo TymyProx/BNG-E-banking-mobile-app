@@ -409,9 +409,11 @@ export default function Beneficiaries() {
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
-                <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
-                  <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
-                </TouchableOpacity>
+                {beneficiary.status === 0 && (
+                  <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)} style={styles.starIconButton}>
+                    <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={24} color="#FFD700" />
+                  </TouchableOpacity>
+                )}
 
                 <View style={styles.beneficiaryContent}>
                   <View style={styles.beneficiaryLeft}>
@@ -429,12 +431,14 @@ export default function Beneficiaries() {
                     </View>
                   </View>
                   <View style={styles.beneficiaryActions}>
-                    <TouchableOpacity
-                      style={[styles.transferButton, { backgroundColor: colors.primary }]}
-                      onPress={() => handleTransferTo(beneficiary.id)}
-                    >
-                      <Text style={styles.transferButtonText}>Virer</Text>
-                    </TouchableOpacity>
+                    {beneficiary.status === 0 && (
+                      <TouchableOpacity
+                        style={[styles.transferButton, { backgroundColor: colors.primary }]}
+                        onPress={() => handleTransferTo(beneficiary.id)}
+                      >
+                        <Text style={styles.transferButtonText}>Virer</Text>
+                      </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                       style={[styles.moreButton, { backgroundColor: colors.textSecondary + "20" }]}
                       onPress={() => handleBeneficiaryActions(beneficiary)}
@@ -637,11 +641,10 @@ const styles = StyleSheet.create({
   },
   starIconButton: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 56, // Positioned to the left of the more button
     zIndex: 10,
-    padding: 8,
-    borderRadius: 20,
+    padding: 4,
   },
   beneficiaryContent: {
     flexDirection: "row",
