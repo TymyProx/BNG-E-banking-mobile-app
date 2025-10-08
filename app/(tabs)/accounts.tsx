@@ -20,7 +20,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 interface Account {
   id: string
@@ -314,6 +313,19 @@ export default function AccountsScreen() {
     router.push("/new-account")
   }
 
+  const getAccountTypeBackground = (type: string) => {
+    switch (type) {
+      case "primary":
+      case "checking":
+        return "rgba(251, 191, 36, 0.1)" // Yellow background
+      case "savings":
+      case "credit":
+        return "rgba(45, 122, 79, 0.1)" // Green background
+      default:
+        return "rgba(251, 191, 36, 0.1)"
+    }
+  }
+
   const AccountCard = ({ account }: { account: Account }) => {
     const [scaleAnim] = useState(new Animated.Value(1))
 
@@ -332,21 +344,6 @@ export default function AccountsScreen() {
       }).start()
     }
 
-    const getAccountColor = (type: string) => {
-      switch (type) {
-        case "primary":
-          return colors.primary
-        case "savings":
-          return colors.success
-        case "checking":
-          return colors.secondary
-        case "credit":
-          return colors.error
-        default:
-          return colors.primary
-      }
-    }
-
     return (
       <Animated.View
         style={[
@@ -363,12 +360,32 @@ export default function AccountsScreen() {
           onPressOut={handlePressOut}
           activeOpacity={1}
         >
-          <View style={[styles.accountCard, { backgroundColor: colors.cardBackground }]}>
+          <View
+            style={[
+              styles.accountCard,
+              {
+                backgroundColor: colors.cardBackground,
+                borderLeftWidth: 4,
+                borderLeftColor: account.type === "primary" || account.type === "checking" ? "#FBBF24" : "#2D7A4F",
+              },
+            ]}
+          >
             {/* Header */}
             <View style={styles.cardHeader}>
               <View style={styles.accountLeft}>
-                <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
-                  <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
+                <View
+                  style={[
+                    styles.accountIcon,
+                    {
+                      backgroundColor: getAccountTypeBackground(account.type),
+                    },
+                  ]}
+                >
+                  <IconSymbol
+                    name={getAccountIcon(account.type) as any}
+                    size={24}
+                    color={account.type === "primary" || account.type === "checking" ? "#FBBF24" : "#2D7A4F"}
+                  />
                 </View>
                 <View style={styles.accountInfo}>
                   <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
@@ -443,16 +460,16 @@ export default function AccountsScreen() {
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.primaryBackground }]}
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
             onPress={() => router.push("/")}
           >
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Mes Comptes</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos finances</Text>
           </View>
-          <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={handleNewAccount}>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: "#2D7A4F" }]} onPress={handleNewAccount}>
             <IconSymbol name="plus" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -461,16 +478,25 @@ export default function AccountsScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FBBF24" />}
       >
         {!isLoading && accounts.length > 0 && (
           <View style={styles.currencyCardsContainer}>
-            {Object.entries(getTotalsByCurrency()).map(([currency, total]) => (
+            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => (
               <Animated.View
                 key={currency}
                 style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
               >
-                <View style={[styles.currencyCard, { backgroundColor: colors.cardBackground }]}>
+                <View
+                  style={[
+                    styles.currencyCard,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderLeftWidth: 4,
+                      borderLeftColor: index % 2 === 0 ? "#FBBF24" : "#2D7A4F",
+                    },
+                  ]}
+                >
                   <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>{currency}</Text>
                   <Text style={[styles.currencyAmount, { color: colors.text }]}>{formatAmount(total)}</Text>
                 </View>
@@ -531,15 +557,15 @@ export default function AccountsScreen() {
         {/* Empty State */}
         {!isLoading && accounts.length === 0 && (
           <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View style={[styles.emptyIcon, { backgroundColor: colors.primaryBackground }]}>
-              <IconSymbol name="creditcard.fill" size={56} color={colors.primary} />
+            <View style={[styles.emptyIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+              <IconSymbol name="creditcard.fill" size={56} color="#FBBF24" />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun compte trouvé</Text>
             <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
               Ouvrez votre premier compte pour commencer à gérer vos finances
             </Text>
             <TouchableOpacity
-              style={[styles.createAccountButton, { backgroundColor: colors.primary }]}
+              style={[styles.createAccountButton, { backgroundColor: "#2D7A4F" }]}
               onPress={handleNewAccount}
             >
               <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
@@ -573,8 +599,8 @@ export default function AccountsScreen() {
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
                     <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
-                      <View style={[styles.accountTypeIcon, { backgroundColor: colors.primaryBackground }]}>
-                        <IconSymbol name="creditcard.fill" size={32} color={colors.primary} />
+                      <View style={[styles.accountTypeIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                        <IconSymbol name="creditcard.fill" size={32} color="#FBBF24" />
                       </View>
                       <View style={styles.accountTypeContent}>
                         <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Courant</Text>
@@ -583,27 +609,27 @@ export default function AccountsScreen() {
                         </Text>
                         <View style={styles.accountTypeFeatures}>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.primary }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#FBBF24" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Carte bancaire gratuite
                             </Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.primary }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#FBBF24" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Virements illimités
                             </Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.primary }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#FBBF24" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Découvert autorisé
                             </Text>
                           </View>
                         </View>
                       </View>
-                      <View style={[styles.popularBadge, { backgroundColor: colors.primaryBackground }]}>
-                        <Text style={[styles.popularBadgeText, { color: colors.primary }]}>POPULAIRE</Text>
+                      <View style={[styles.popularBadge, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                        <Text style={[styles.popularBadgeText, { color: "#FBBF24" }]}>POPULAIRE</Text>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -613,8 +639,8 @@ export default function AccountsScreen() {
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
                     <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
-                      <View style={[styles.accountTypeIcon, { backgroundColor: colors.successBackground }]}>
-                        <IconSymbol name="banknote.fill" size={32} color={colors.success} />
+                      <View style={[styles.accountTypeIcon, { backgroundColor: "rgba(45, 122, 79, 0.15)" }]}>
+                        <IconSymbol name="banknote.fill" size={32} color="#2D7A4F" />
                       </View>
                       <View style={styles.accountTypeContent}>
                         <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Épargne</Text>
@@ -623,19 +649,19 @@ export default function AccountsScreen() {
                         </Text>
                         <View style={styles.accountTypeFeatures}>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.success }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Taux d'intérêt 3.5%
                             </Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.success }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Pas de frais de gestion
                             </Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.success }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Retraits flexibles
                             </Text>
@@ -650,8 +676,8 @@ export default function AccountsScreen() {
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
                     <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
-                      <View style={[styles.accountTypeIcon, { backgroundColor: colors.warningBackground }]}>
-                        <IconSymbol name="briefcase.fill" size={32} color={colors.warning} />
+                      <View style={[styles.accountTypeIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                        <IconSymbol name="briefcase.fill" size={32} color="#FBBF24" />
                       </View>
                       <View style={styles.accountTypeContent}>
                         <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Professionnel</Text>
@@ -660,17 +686,17 @@ export default function AccountsScreen() {
                         </Text>
                         <View style={styles.accountTypeFeatures}>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.warning }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Gestion multi-devises
                             </Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.warning }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>Outils comptables</Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.warning }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Terminal de paiement
                             </Text>
@@ -685,8 +711,8 @@ export default function AccountsScreen() {
                 <View style={styles.typeCarouselCard}>
                   <TouchableOpacity onPress={handleNewAccount} activeOpacity={0.8}>
                     <View style={[styles.accountTypeCard, { backgroundColor: colors.cardBackground }]}>
-                      <View style={[styles.accountTypeIcon, { backgroundColor: `${colors.accent}20` }]}>
-                        <IconSymbol name="star.fill" size={32} color={colors.accent} />
+                      <View style={[styles.accountTypeIcon, { backgroundColor: "rgba(45, 122, 79, 0.15)" }]}>
+                        <IconSymbol name="star.fill" size={32} color="#2D7A4F" />
                       </View>
                       <View style={styles.accountTypeContent}>
                         <Text style={[styles.accountTypeTitle, { color: colors.text }]}>Compte Premium</Text>
@@ -695,23 +721,23 @@ export default function AccountsScreen() {
                         </Text>
                         <View style={styles.accountTypeFeatures}>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.accent }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>Conseiller dédié</Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.accent }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>
                               Assurances incluses
                             </Text>
                           </View>
                           <View style={styles.featureItem}>
-                            <View style={[styles.featureDot, { backgroundColor: colors.accent }]} />
+                            <View style={[styles.featureDot, { backgroundColor: "#2D7A4F" }]} />
                             <Text style={[styles.featureText, { color: colors.textSecondary }]}>Cashback 2%</Text>
                           </View>
                         </View>
                       </View>
-                      <View style={[styles.exclusiveBadge, { backgroundColor: `${colors.accent}30` }]}>
-                        <Text style={[styles.exclusiveBadgeText, { color: colors.accent }]}>EXCLUSIF</Text>
+                      <View style={[styles.exclusiveBadge, { backgroundColor: "rgba(45, 122, 79, 0.15)" }]}>
+                        <Text style={[styles.exclusiveBadgeText, { color: "#2D7A4F" }]}>EXCLUSIF</Text>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -726,7 +752,7 @@ export default function AccountsScreen() {
                     style={[
                       styles.paginationDot,
                       {
-                        backgroundColor: index === activeTypeIndex ? colors.primary : colors.borderLight,
+                        backgroundColor: index === activeTypeIndex ? "#FBBF24" : colors.borderLight,
                         width: index === activeTypeIndex ? 32 : 8,
                       },
                     ]}
@@ -806,10 +832,10 @@ const styles = StyleSheet.create({
     minHeight: 100,
     justifyContent: "space-between",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
   },
   currencyLabel: {
     fontSize: 12,
@@ -840,14 +866,16 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
   },
   accountCard: {
-    borderRadius: 20,
-    padding: 18,
+    borderRadius: 24,
+    padding: 20,
     minHeight: 220,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   cardHeader: {
     marginBottom: 20,
@@ -1045,14 +1073,16 @@ const styles = StyleSheet.create({
   },
   accountTypeCard: {
     padding: 24,
-    borderRadius: 20,
+    borderRadius: 24,
     minHeight: 280,
     position: "relative",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   accountTypeIcon: {
     width: 64,
