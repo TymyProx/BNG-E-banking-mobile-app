@@ -21,7 +21,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
 
 interface Account {
   id: string
@@ -180,76 +179,6 @@ export default function Dashboard() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Balance Card */}
-          <View style={styles.balanceCard}>
-            <View style={styles.balanceHeader}>
-              <View style={styles.balanceLeft}>
-                <View style={styles.balanceTitle}>
-                  <IconSymbol name="checkmark.shield" size={18} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.balanceTitleText}>Solde total</Text>
-                </View>
-                <View style={styles.balanceAmount}>
-                  <Text style={styles.balanceValue}>
-                    {showBalance ? `${formatCurrency(totalBalance)} GNF` : "••••••"}
-                  </Text>
-                  <TouchableOpacity style={styles.eyeButton} onPress={() => setShowBalance(!showBalance)}>
-                    <IconSymbol name={showBalance ? "eye" : "eye.slash"} size={20} color="rgba(255,255,255,0.8)" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.balanceRight}>
-                <View style={styles.trendContainer}>
-                  <IconSymbol name="arrow.up.right" size={14} color="#10B981" />
-                  <Text style={styles.trendText}>+2.4%</Text>
-                </View>
-                <Text style={styles.trendSubtext}>vs mois dernier</Text>
-              </View>
-            </View>
-
-            {/* Chart */}
-            <View style={styles.chartContainer}>
-              {[40, 55, 45, 70, 60, 80, 75].map((height, index) => (
-                <View key={index} style={[styles.chartBar, { height: `${height}%` }]} />
-              ))}
-            </View>
-            <Text style={styles.chartLabel}>Évolution sur 7 jours</Text>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.section}>
-            <View style={styles.quickActionsGrid}>
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/transfer")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/cards")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/menu")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes comptes</Text>
@@ -337,6 +266,41 @@ export default function Dashboard() {
             )}
           </View>
 
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <View style={styles.quickActionsGrid}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push("/(tabs)/transfer")}
+              >
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
+                </View>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push("/(tabs)/cards")}
+              >
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
+                </View>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push("/(tabs)/menu")}
+              >
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
+                </View>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={{ height: 100 }} />
         </ScrollView>
 
@@ -377,32 +341,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
-
-  balanceCard: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    padding: 24,
-    borderRadius: 24,
-    backgroundColor: "#2D7A4F",
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-
-  balanceValue: {
-    color: "#FFFFFF",
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-
-  trendText: {
-    color: "#10B981",
-    fontSize: 14,
-    fontWeight: "700",
-  },
 
   sectionTitle: {
     fontSize: 20,
@@ -509,40 +447,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
-
-  balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  balanceLeft: { flex: 1 },
-  balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" },
-  balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
-  eyeButton: { padding: 6 },
-  balanceRight: { alignItems: "flex-end", justifyContent: "center" },
-  trendContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  trendSubtext: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4, fontWeight: "500" },
-
-  chartContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
-    marginTop: 20,
-    height: 56,
-    paddingHorizontal: 4,
-  },
-  chartBar: {
-    flex: 1,
-    borderRadius: 6,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    minWidth: 8,
-  },
-  chartLabel: { color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 12, fontWeight: "500" },
 
   section: { marginBottom: 28, paddingHorizontal: 16 },
   sectionHeader: {
