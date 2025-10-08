@@ -35,9 +35,11 @@ export const API_ENDPOINTS = {
   CREDIT: {
     CREATE: (tenantId: string) => `/tenant/${tenantId}/demande-credit`,
     LIST: (tenantId: string) => `/tenant/${tenantId}/demande-credit`,
+    DETAILS: (tenantId: string, creditId: string) => `/tenant/${tenantId}/demande-credit/${creditId}`,
   },
   CHECKBOOK: {
     CREATE: (tenantId: string) => `/tenant/${tenantId}/commande`,
     LIST: (tenantId: string) => `/tenant/${tenantId}/commande`,
+    DETAILS: (tenantId: string, checkbookId: string) => `/tenant/${tenantId}/commande/${checkbookId}`,
   },
 }

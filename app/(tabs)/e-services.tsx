@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, ActivityIndicator, Modal } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { router, useFocusEffect } from "expo-router"
@@ -20,6 +20,7 @@ interface CreditRequest {
   typedemande: string
   accountNumber: string
   status: string
+  updatedAt?: string
 }
 
 interface CheckbookRequest {
@@ -32,6 +33,7 @@ interface CheckbookRequest {
   numcompteId: string
   commentaire: string
   status: string
+  updatedAt?: string
 }
 
 interface ServiceCard {
@@ -70,6 +72,9 @@ export default function EServicesScreen() {
   const [creditRequests, setCreditRequests] = useState<CreditRequest[]>([])
   const [checkbookRequests, setCheckbookRequests] = useState<CheckbookRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   const fetchCreditRequests = async () => {
     try {
@@ -104,6 +109,56 @@ export default function EServicesScreen() {
       }
     } catch (error) {
       console.error("Erreur lors de la récupération des demandes de chéquier:", error)
+    }
+  }
+
+  const fetchCreditDetails = async (creditId: string) => {
+    setLoadingDetails(true)
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.DETAILS(API_CONFIG.TENANT_ID, creditId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedRequest({ ...data, type: "credit" })
+        setDetailsModalVisible(true)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des détails:", error)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  const fetchCheckbookDetails = async (checkbookId: string) => {
+    setLoadingDetails(true)
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.DETAILS(API_CONFIG.TENANT_ID, checkbookId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedRequest({ ...data, type: "checkbook" })
+        setDetailsModalVisible(true)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des détails:", error)
+    } finally {
+      setLoadingDetails(false)
     }
   }
 
@@ -229,12 +284,14 @@ export default function EServicesScreen() {
             <>
               {/* Credit Requests */}
               {creditRequests.map((request) => (
-                <View
+                <TouchableOpacity
                   key={`credit-${request.id}`}
                   style={[
                     styles.requestCard,
                     { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow },
                   ]}
+                  onPress={() => fetchCreditDetails(request.id)}
+                  activeOpacity={0.7}
                 >
                   <View style={styles.requestHeader}>
                     <View style={styles.requestTitleContainer}>
@@ -274,17 +331,19 @@ export default function EServicesScreen() {
                   <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
                     Demandé le {formatDate(request.createdAt)}
                   </Text>
-                </View>
+                </TouchableOpacity>
               ))}
 
               {/* Checkbook Requests */}
               {checkbookRequests.map((request) => (
-                <View
+                <TouchableOpacity
                   key={`checkbook-${request.id}`}
                   style={[
                     styles.requestCard,
                     { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow },
                   ]}
+                  onPress={() => fetchCheckbookDetails(request.id)}
+                  activeOpacity={0.7}
                 >
                   <View style={styles.requestHeader}>
                     <View style={styles.requestTitleContainer}>
@@ -321,7 +380,7 @@ export default function EServicesScreen() {
                   <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
                     Commandé le {formatDate(request.dateorder)}
                   </Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </>
           ) : (
@@ -364,6 +423,158 @@ export default function EServicesScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Details Modal */}
+      <Modal
+        visible={detailsModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setDetailsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {selectedRequest?.type === "credit"
+                  ? "Détails de la demande de crédit"
+                  : "Détails de la commande de chéquier"}
+              </Text>
+              <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
+                <Ionicons name="close" size={28} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {loadingDetails ? (
+              <View style={styles.modalLoading}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : (
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                {selectedRequest?.type === "credit" ? (
+                  <View style={styles.detailsContainer}>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Nom du demandeur</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.applicantName}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Type de crédit</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.typedemande}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Montant demandé</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {formatAmount(selectedRequest.creditAmount)} GNF
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Durée</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.durationMonths} mois
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Objet du crédit</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>{selectedRequest.purpose}</Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.accountNumber}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Date de création</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {formatDate(selectedRequest.createdAt)}
+                      </Text>
+                    </View>
+                    {selectedRequest.updatedAt && (
+                      <View style={styles.detailItem}>
+                        <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>
+                          Dernière mise à jour
+                        </Text>
+                        <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                          {formatDate(selectedRequest.updatedAt)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <View style={styles.detailsContainer}>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Intitulé du compte</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.intitulecompte}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Numéro de compte</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.numcompteId}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Nombre de chéquiers</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.nbrechequier}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>
+                        Feuilles par chéquier
+                      </Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {selectedRequest.nbrefeuille}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Date de commande</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {formatDate(selectedRequest.dateorder)}
+                      </Text>
+                    </View>
+                    {selectedRequest.commentaire && (
+                      <View style={styles.detailItem}>
+                        <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Commentaire</Text>
+                        <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                          {selectedRequest.commentaire}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.detailItem}>
+                      <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Date de création</Text>
+                      <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                        {formatDate(selectedRequest.createdAt)}
+                      </Text>
+                    </View>
+                    {selectedRequest.updatedAt && (
+                      <View style={styles.detailItem}>
+                        <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>
+                          Dernière mise à jour
+                        </Text>
+                        <Text style={[styles.detailItemValue, { color: colors.text }]}>
+                          {formatDate(selectedRequest.updatedAt)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              style={[styles.closeButton, { backgroundColor: colors.primary }]}
+              onPress={() => setDetailsModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -572,5 +783,68 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     marginTop: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    flex: 1,
+    letterSpacing: -0.3,
+  },
+  modalScroll: {
+    marginBottom: 20,
+  },
+  modalLoading: {
+    paddingVertical: 48,
+    alignItems: "center",
+  },
+  detailsContainer: {
+    gap: 16,
+  },
+  detailItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+  },
+  detailItemLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  detailItemValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.2,
+  },
+  closeButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
 })
