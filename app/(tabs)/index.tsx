@@ -21,6 +21,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import { useFocusEffect } from "@react-navigation/native"
+import { useCallback } from "react"
 
 interface Account {
   id: string
@@ -50,7 +52,7 @@ const CARD_SPACING = 16
 export default function Dashboard() {
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? "light"]
-  const { user, tenantId } = useAuth()
+  const { user, tenantId, isLoading } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [cards, setCards] = useState<Card[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
@@ -58,28 +60,22 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("")
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeCardIndex, setActiveCardIndex] = useState(0)
-  const [isAuthReady, setIsAuthReady] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const cardScrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
   const [cardFadeAnim] = useState(new Animated.Value(0))
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = await SecureStore.getItemAsync("token")
-      if (token && tenantId) {
-        setIsAuthReady(true)
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoading && user && tenantId) {
+        console.log("[v0] Auth ready, fetching data...")
+        fetchAccounts()
+        fetchCards()
+      } else {
+        console.log("[v0] Waiting for auth...", { isLoading, hasUser: !!user, hasTenantId: !!tenantId })
       }
-    }
-    checkAuth()
-  }, [tenantId])
-
-  useEffect(() => {
-    if (isAuthReady) {
-      fetchAccounts()
-      fetchCards()
-    }
-  }, [isAuthReady])
+    }, [isLoading, user, tenantId]),
+  )
 
   useEffect(() => {
     if (accounts.length > 1) {
@@ -120,8 +116,11 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for accounts")
         return
       }
+
+      console.log("[v0] Fetching accounts with tenantId:", tenantId)
 
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
         method: "GET",
@@ -133,6 +132,7 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Accounts fetched successfully:", data.rows?.length || 0)
         const activeAccounts = data.rows?.filter((acc: any) => acc.status?.toLowerCase() === "actif") || []
         setAccounts(activeAccounts)
 
@@ -157,8 +157,11 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for cards")
         return
       }
+
+      console.log("[v0] Fetching cards with tenantId:", tenantId)
 
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
         method: "GET",
@@ -170,12 +173,20 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Cards data received:", data)
+        console.log("[v0] Total cards:", data.rows?.length || 0)
 
         const activeCards =
           data.rows?.filter((card: any) => {
             const status = card.status?.toLowerCase() || ""
+            console.log("[v0] Card status:", card.status, "normalized:", status)
             return status === "active" || status === "actif"
           }) || []
+
+        console.log("[v0] Active cards found:", activeCards.length)
+        if (activeCards.length > 0) {
+          console.log("[v0] First active card:", activeCards[0])
+        }
 
         setCards(activeCards)
 
