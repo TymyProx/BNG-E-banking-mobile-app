@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     padding: 24,
     borderRadius: 24,
-    backgroundColor: "#2D7A4F",
+    backgroundColor: "transparent", // Changed from #2D7A4F to transparent
     shadowColor: "#2D7A4F",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -816,7 +816,8 @@ const styles = StyleSheet.create({
   balanceHeader: { marginBottom: 16 },
   balanceLeft: { flex: 1 },
   balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: "700" },
+  balanceTitleText: { color: "#111827", fontSize: 16, fontWeight: "700" }, // Changed from white to dark
+
   balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
   eyeButton: { padding: 6 },
   balanceRight: { alignItems: "flex-end", justifyContent: "center" },
@@ -1019,12 +1020,12 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
   },
   individualAccountCard: {
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "#2D7A4F", // Changed from white to green
     borderRadius: 20,
     padding: 20,
-    shadowColor: "#000",
+    shadowColor: "#2D7A4F",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
@@ -1039,6 +1040,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)", // Semi-transparent white for icon background
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -1050,13 +1052,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accountInGreenCardName: {
-    color: "#111827",
+    color: "#FFFFFF", // Changed from dark to white
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 4,
   },
   accountInGreenCardNumber: {
-    color: "#6B7280",
+    color: "rgba(255,255,255,0.8)", // Changed from gray to semi-transparent white
     fontSize: 13,
     fontWeight: "600",
   },
@@ -1064,7 +1066,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   accountInGreenCardBalanceLabel: {
-    color: "#6B7280",
+    color: "rgba(255,255,255,0.8)", // Changed from gray to semi-transparent white
     fontSize: 11,
     fontWeight: "600",
     marginBottom: 8,
@@ -1077,13 +1079,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   accountInGreenCardBalance: {
-    color: "#111827",
+    color: "#FFFFFF", // Changed from dark to white
     fontSize: 28,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
   accountInGreenCardCurrency: {
-    color: "#2D7A4F",
+    color: "#10B981", // Keep the accent green color
     fontSize: 16,
     fontWeight: "600",
   },
