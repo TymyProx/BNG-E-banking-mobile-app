@@ -313,6 +313,19 @@ export default function AccountsScreen() {
     router.push("/new-account")
   }
 
+  const getAccountTypeBackground = (type: string) => {
+    switch (type) {
+      case "primary":
+      case "checking":
+        return "rgba(251, 191, 36, 0.1)" // Yellow background
+      case "savings":
+      case "credit":
+        return "rgba(45, 122, 79, 0.1)" // Green background
+      default:
+        return "rgba(251, 191, 36, 0.1)"
+    }
+  }
+
   const AccountCard = ({ account }: { account: Account }) => {
     const [scaleAnim] = useState(new Animated.Value(1))
 
@@ -331,21 +344,6 @@ export default function AccountsScreen() {
       }).start()
     }
 
-    const getAccountColor = (type: string) => {
-      switch (type) {
-        case "primary":
-          return colors.primary
-        case "savings":
-          return colors.success
-        case "checking":
-          return colors.secondary
-        case "credit":
-          return colors.error
-        default:
-          return colors.primary
-      }
-    }
-
     return (
       <Animated.View
         style={[
@@ -362,12 +360,32 @@ export default function AccountsScreen() {
           onPressOut={handlePressOut}
           activeOpacity={1}
         >
-          <View style={[styles.accountCard, { backgroundColor: colors.cardBackground }]}>
+          <View
+            style={[
+              styles.accountCard,
+              {
+                backgroundColor: colors.cardBackground,
+                borderLeftWidth: 4,
+                borderLeftColor: account.type === "primary" || account.type === "checking" ? "#FBBF24" : "#2D7A4F",
+              },
+            ]}
+          >
             {/* Header */}
             <View style={styles.cardHeader}>
               <View style={styles.accountLeft}>
-                <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
-                  <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
+                <View
+                  style={[
+                    styles.accountIcon,
+                    {
+                      backgroundColor: getAccountTypeBackground(account.type),
+                    },
+                  ]}
+                >
+                  <IconSymbol
+                    name={getAccountIcon(account.type) as any}
+                    size={24}
+                    color={account.type === "primary" || account.type === "checking" ? "#FBBF24" : "#2D7A4F"}
+                  />
                 </View>
                 <View style={styles.accountInfo}>
                   <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
