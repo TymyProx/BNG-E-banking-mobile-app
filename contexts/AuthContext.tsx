@@ -1,70 +1,35 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 
 interface Tenant {
   id: string
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
-  createdById: string
-  updatedById: string
   userId: string
   roles: string[]
-  invitationToken?: string
   status: string
   tenantId: string
   tenant: {
     id: string
-    createdAt: string
-    updatedAt: string
-    deletedAt?: string
-    createdById: string
-    updatedById: string
     name: string
-    url?: string
     plan: string
     planStatus: string
-    planStripeCustomerId?: string
-    planUserId?: string
-    settings?: any[]
   }
 }
 
 interface User {
   id: string
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
-  createdById: string
-  updatedById: string
   fullName: string
   firstName: string
   lastName: string
   email: string
   phoneNumber: string
   emailVerified: boolean
-  emailVerificationTokenExpiresAt?: string
-  provider?: string
-  providerId?: string
-  passwordResetTokenExpiresAt?: string
-  jwtTokenInvalidBefore?: string
-  importHash?: string
   tenants: Tenant[]
   avatars?: Array<{
     id: string
-    createdAt: string
-    updatedAt: string
-    deletedAt?: string
-    createdById: string
-    updatedById: string
-    name: string
-    sizeInBytes: number
-    privateUrl: string
     publicUrl: string
     downloadUrl: string
   }>
@@ -114,7 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async (token: string): Promise<User | null> => {
     try {
-      console.log("[v0] Fetching user data from /auth/me")
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.ME}`, {
         method: "GET",
         headers: {
@@ -124,33 +88,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!response.ok) {
-        console.log("[v0] Failed to fetch user data, status:", response.status)
         throw new Error("Failed to fetch user data")
       }
 
       const userData = await response.json()
-      console.log("[v0] User data fetched successfully, tenants count:", userData.tenants?.length || 0)
 
-      // Map API response to User interface with all fields
+      // Map API response to User interface
       const mappedUser: User = {
         id: userData.id,
-        createdAt: userData.createdAt,
-        updatedAt: userData.updatedAt,
-        deletedAt: userData.deletedAt,
-        createdById: userData.createdById,
-        updatedById: userData.updatedById,
         fullName: userData.fullName,
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
         phoneNumber: userData.phoneNumber,
         emailVerified: userData.emailVerified,
-        emailVerificationTokenExpiresAt: userData.emailVerificationTokenExpiresAt,
-        provider: userData.provider,
-        providerId: userData.providerId,
-        passwordResetTokenExpiresAt: userData.passwordResetTokenExpiresAt,
-        jwtTokenInvalidBefore: userData.jwtTokenInvalidBefore,
-        importHash: userData.importHash,
         tenants: userData.tenants || [],
         avatars: userData.avatars || [],
         // Legacy fields for backward compatibility
@@ -160,81 +111,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isVerified: userData.emailVerified,
       }
 
+      // Set tenantId from first tenant
       if (mappedUser.tenants.length > 0) {
-        const userTenantId = mappedUser.tenants[0].tenantId
-        console.log("[v0] Setting tenantId:", userTenantId)
-        setTenantId(userTenantId)
-        await SecureStore.setItemAsync("tenantId", userTenantId)
-      } else {
-        console.log("[v0] No tenants found for user")
+        setTenantId(mappedUser.tenants[0].tenantId)
       }
 
       return mappedUser
     } catch (error) {
-      console.error("[v0] Error fetching user data:", error)
+      console.error("Error fetching user data:", error)
       return null
     }
   }
 
   const refreshUserData = async () => {
     try {
-      console.log("[v0] Refreshing user data")
       const storedToken = await SecureStore.getItemAsync("token")
       if (storedToken) {
         setToken(storedToken)
         const userData = await fetchUserData(storedToken)
         if (userData) {
           setUser(userData)
-          console.log("[v0] User data refreshed successfully")
-        } else {
-          console.log("[v0] Failed to refresh user data, clearing stored token")
-          await SecureStore.deleteItemAsync("token")
-          await SecureStore.deleteItemAsync("tenantId")
-          setToken(null)
-          setTenantId(null)
         }
-      } else {
-        console.log("[v0] No stored token found")
       }
     } catch (error) {
-      console.error("[v0] Error refreshing user data:", error)
+      console.error("Error refreshing user data:", error)
     }
   }
 
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        console.log("[v0] Checking auth status on app startup")
         const storedToken = await SecureStore.getItemAsync("token")
-        const storedTenantId = await SecureStore.getItemAsync("tenantId")
-
-        console.log("[v0] Stored token exists:", !!storedToken)
-        console.log("[v0] Stored tenantId:", storedTenantId)
-
-        if (storedTenantId) {
-          setTenantId(storedTenantId)
-        }
-
         if (storedToken) {
           setToken(storedToken)
           setIsLoading(true)
           const userData = await fetchUserData(storedToken)
           if (userData) {
             setUser(userData)
-            console.log("[v0] User session restored successfully")
           } else {
-            console.log("[v0] Failed to restore user session, clearing stored data")
             await SecureStore.deleteItemAsync("token")
-            await SecureStore.deleteItemAsync("tenantId")
             setToken(null)
-            setTenantId(null)
           }
           setIsLoading(false)
-        } else {
-          console.log("[v0] No stored token, user not authenticated")
         }
       } catch (error) {
-        console.error("[v0] Error checking auth status:", error)
+        console.error("Error checking auth status:", error)
         setIsLoading(false)
       }
     }
@@ -245,52 +166,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     try {
-      console.log("[v0] Attempting login for:", email)
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.SIGN_IN}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email,
-          password,
-          invitationToken: "",
-          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
-        }),
+        body: JSON.stringify({ email, password }),
       })
 
       if (!response.ok) {
-        console.log("[v0] Login failed, status:", response.status)
-        const errorText = await response.text()
-        Alert.alert("Erreur", errorText || "Email ou mot de passe incorrect")
+        Alert.alert("Erreur", "Email ou mot de passe incorrect")
         return false
       }
 
-      const authToken = await response.text()
+      const data = await response.json()
+      const authToken = data.token || data.accessToken
 
       if (!authToken) {
-        console.log("[v0] No token received from server")
         Alert.alert("Erreur", "Aucun token reçu du serveur")
         return false
       }
 
-      console.log("[v0] Login successful, storing token")
       await SecureStore.setItemAsync("token", authToken)
       setToken(authToken)
 
-      console.log("[v0] Fetching user data after login")
       const userData = await fetchUserData(authToken)
       if (userData) {
         setUser(userData)
-        console.log("[v0] User data set successfully, tenantId:", tenantId)
         return true
-      } else {
-        console.log("[v0] Failed to fetch user data after login")
-        Alert.alert("Erreur", "Impossible de récupérer les informations utilisateur")
-        return false
       }
+
+      return false
     } catch (error) {
-      console.error("[v0] Login error:", error)
+      console.error("Login error:", error)
       Alert.alert("Erreur", "Une erreur est survenue lors de la connexion")
       return false
     } finally {
@@ -316,10 +224,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: userData.phone,
         accountNumber: userData.accountNumber,
         isVerified: false,
-        createdAt: "",
-        updatedAt: "",
-        createdById: "",
-        updatedById: "",
       }
 
       setUser(newUser)
@@ -402,16 +306,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      console.log("[v0] Logging out user")
       await SecureStore.deleteItemAsync("token")
-      await SecureStore.deleteItemAsync("tenantId")
       setUser(null)
       setToken(null)
       setTenantId(null)
       setPendingOTPVerification(false)
-      console.log("[v0] Logout successful, all data cleared")
     } catch (error) {
-      console.error("[v0] Logout error:", error)
+      console.error("Logout error:", error)
     }
   }
 
