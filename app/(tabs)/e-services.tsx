@@ -1,20 +1,35 @@
 "use client"
 
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from "react-native"
+import { useState, useCallback } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import { router } from "expo-router"
+import { router, useFocusEffect } from "expo-router"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import { useAuth } from "@/contexts/AuthContext"
 
-interface Request {
+interface CreditRequest {
   id: string
-  type: string
-  title: string
-  status: "pending" | "approved" | "rejected"
-  date: string
-  description: string
+  createdAt: string
+  applicantName: string
+  creditAmount: string
+  durationMonths: string
+  purpose: string
+  typedemande: string
+  accountNumber: string
+}
+
+interface CheckbookRequest {
+  id: string
+  createdAt: string
+  dateorder: string
+  nbrefeuille: number
+  nbrechequier: number
+  intitulecompte: string
+  numcompteId: string
+  commentaire: string
 }
 
 interface ServiceCard {
@@ -29,6 +44,7 @@ interface ServiceCard {
 export default function EServicesScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
+  const { token } = useAuth()
 
   const services: ServiceCard[] = [
     {
@@ -49,32 +65,56 @@ export default function EServicesScreen() {
     },
   ]
 
-  const [requests] = useState<Request[]>([
-    {
-      id: "1",
-      type: "checkbook",
-      title: "Demande de chéquier",
-      status: "approved",
-      date: "2024-01-15",
-      description: "Chéquier standard - Compte 123456789",
-    },
-    {
-      id: "2",
-      type: "attestation",
-      title: "E-attestation de solde",
-      status: "pending",
-      date: "2024-01-20",
-      description: "Attestation pour visa - Compte 123456789",
-    },
-    {
-      id: "3",
-      type: "credit",
-      title: "Demande de crédit",
-      status: "rejected",
-      date: "2024-01-10",
-      description: "Crédit automobile - 15,000,000 GNF",
-    },
-  ])
+  const [creditRequests, setCreditRequests] = useState<CreditRequest[]>([])
+  const [checkbookRequests, setCheckbookRequests] = useState<CheckbookRequest[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchCreditRequests = async () => {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(API_CONFIG.TENANT_ID)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setCreditRequests(data.rows || [])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération des demandes de crédit:", error)
+    }
+  }
+
+  const fetchCheckbookRequests = async () => {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(API_CONFIG.TENANT_ID)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setCheckbookRequests(data.rows || [])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération des demandes de chéquier:", error)
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        setLoading(true)
+        await Promise.all([fetchCreditRequests(), fetchCheckbookRequests()])
+        setLoading(false)
+      }
+      fetchData()
+    }, [token]),
+  )
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -133,6 +173,11 @@ export default function EServicesScreen() {
     })
   }
 
+  const formatAmount = (amount: string) => {
+    const numAmount = Number.parseFloat(amount)
+    return numAmount.toLocaleString("fr-FR")
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -172,31 +217,99 @@ export default function EServicesScreen() {
         {/* Requests History */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Historique des demandes</Text>
-          {requests.length > 0 ? (
-            requests.map((request) => (
-              <View
-                key={request.id}
-                style={[styles.requestCard, { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow }]}
-              >
-                <View style={styles.requestHeader}>
-                  <Text style={[styles.requestTitle, { color: colors.text }]}>{request.title}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusBackground(request.status) }]}>
-                    <Ionicons
-                      name={getStatusIcon(request.status) as keyof typeof Ionicons.glyphMap}
-                      size={16}
-                      color={getStatusColor(request.status)}
-                    />
-                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
-                      {getStatusText(request.status)}
-                    </Text>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement...</Text>
+            </View>
+          ) : creditRequests.length > 0 || checkbookRequests.length > 0 ? (
+            <>
+              {/* Credit Requests */}
+              {creditRequests.map((request) => (
+                <View
+                  key={`credit-${request.id}`}
+                  style={[
+                    styles.requestCard,
+                    { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow },
+                  ]}
+                >
+                  <View style={styles.requestHeader}>
+                    <View style={styles.requestTitleContainer}>
+                      <Ionicons name="cash-outline" size={24} color="#3B82F6" />
+                      <Text style={[styles.requestTitle, { color: colors.text }]}>Demande de crédit</Text>
+                    </View>
+                    <View style={[styles.typeBadge, { backgroundColor: "#EFF6FF" }]}>
+                      <Text style={[styles.typeText, { color: "#3B82F6" }]}>{request.typedemande}</Text>
+                    </View>
                   </View>
+                  <View style={styles.requestDetails}>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Montant:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatAmount(request.creditAmount)} GNF
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Durée:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.durationMonths} mois</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Objet:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.purpose}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Compte:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.accountNumber}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
+                    Demandé le {formatDate(request.createdAt)}
+                  </Text>
                 </View>
-                <Text style={[styles.requestDescription, { color: colors.textSecondary }]}>{request.description}</Text>
-                <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
-                  Demandé le {formatDate(request.date)}
-                </Text>
-              </View>
-            ))
+              ))}
+
+              {/* Checkbook Requests */}
+              {checkbookRequests.map((request) => (
+                <View
+                  key={`checkbook-${request.id}`}
+                  style={[
+                    styles.requestCard,
+                    { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow },
+                  ]}
+                >
+                  <View style={styles.requestHeader}>
+                    <View style={styles.requestTitleContainer}>
+                      <Ionicons name="card-outline" size={24} color="#10B981" />
+                      <Text style={[styles.requestTitle, { color: colors.text }]}>Demande de chéquier</Text>
+                    </View>
+                  </View>
+                  <View style={styles.requestDetails}>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Nombre de chéquiers:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.nbrechequier}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Feuilles par chéquier:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.nbrefeuille}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Compte:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.numcompteId}</Text>
+                    </View>
+                    {request.commentaire && (
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Commentaire:</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>{request.commentaire}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
+                    Commandé le {formatDate(request.dateorder)}
+                  </Text>
+                </View>
+              ))}
+            </>
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="document-outline" size={56} color={colors.iconSecondary} />
@@ -333,6 +446,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
+  requestTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  typeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  typeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   requestTitle: {
     fontSize: 17,
     fontWeight: "700",
@@ -351,10 +479,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  requestDescription: {
-    fontSize: 15,
-    marginBottom: 10,
+  requestDetails: {
+    marginTop: 16,
+    marginBottom: 12,
+    gap: 10,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  detailLabel: {
+    fontSize: 14,
     fontWeight: "500",
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+    textAlign: "right",
   },
   requestDate: {
     fontSize: 13,
@@ -406,5 +549,14 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: 48,
+  },
+  loadingText: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginTop: 16,
   },
 })
