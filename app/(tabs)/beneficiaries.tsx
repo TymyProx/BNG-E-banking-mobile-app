@@ -299,7 +299,7 @@ const Beneficiaries = () => {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
         </View>
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: "#FBBF24" }]} onPress={handleAddBeneficiary}>
+        <TouchableOpacity style={[styles.addButton, { backgroundColor: "#2D7A4F" }]} onPress={handleAddBeneficiary}>
           <IconSymbol name="plus" size={20} color="white" />
         </TouchableOpacity>
       </View>
@@ -331,8 +331,8 @@ const Beneficiaries = () => {
               styles.filterPill,
               filter === "tous" && styles.filterPillActive,
               {
-                backgroundColor: filter === "tous" ? "#FBBF24" : colors.cardBackground,
-                borderColor: filter === "tous" ? "#FBBF24" : colors.border,
+                backgroundColor: filter === "tous" ? "#2D7A4F" : colors.cardBackground,
+                borderColor: filter === "tous" ? "#2D7A4F" : colors.border,
               },
             ]}
             onPress={() => setFilter("tous")}
@@ -348,13 +348,13 @@ const Beneficiaries = () => {
               styles.filterPill,
               filter === "actif" && styles.filterPillActive,
               {
-                backgroundColor: filter === "actif" ? "#FBBF24" : colors.cardBackground,
-                borderColor: filter === "actif" ? "#FBBF24" : colors.border,
+                backgroundColor: filter === "actif" ? "#2D7A4F" : colors.cardBackground,
+                borderColor: filter === "actif" ? "#2D7A4F" : colors.border,
               },
             ]}
             onPress={() => setFilter("actif")}
           >
-            <IconSymbol name="checkmark.circle.fill" size={18} color={filter === "actif" ? "white" : "#FBBF24"} />
+            <IconSymbol name="checkmark.circle.fill" size={18} color={filter === "actif" ? "white" : "#2D7A4F"} />
             <Text style={[styles.filterPillText, { color: filter === "actif" ? "white" : colors.textSecondary }]}>
               Actifs
             </Text>
@@ -382,8 +382,8 @@ const Beneficiaries = () => {
               styles.filterPill,
               filter === "favoris" && styles.filterPillActive,
               {
-                backgroundColor: filter === "favoris" ? "#FBBF24" : colors.cardBackground,
-                borderColor: filter === "favoris" ? "#FBBF24" : colors.border,
+                backgroundColor: filter === "favoris" ? "#2D7A4F" : colors.cardBackground,
+                borderColor: filter === "favoris" ? "#2D7A4F" : colors.border,
               },
             ]}
             onPress={() => setFilter("favoris")}
@@ -457,7 +457,7 @@ const Beneficiaries = () => {
                 {searchTerm ? "Aucun résultat pour votre recherche" : "Vous n'avez pas encore ajouté de bénéficiaires"}
               </Text>
               <TouchableOpacity
-                style={[styles.addBeneficiaryButton, { backgroundColor: "#FBBF24" }]}
+                style={[styles.addBeneficiaryButton, { backgroundColor: "#2D7A4F" }]}
                 onPress={handleAddBeneficiary}
               >
                 <IconSymbol name="plus" size={16} color="white" />
@@ -488,7 +488,7 @@ const Beneficiaries = () => {
                 style={[styles.modalAction, { borderBottomColor: colors.border }]}
                 onPress={handleViewDetails}
               >
-                <IconSymbol name="info.circle" size={20} color="#FBBF24" />
+                <IconSymbol name="info.circle" size={20} color="#2D7A4F" />
                 <Text style={[styles.modalActionText, { color: colors.text }]}>Voir les détails</Text>
               </TouchableOpacity>
 
@@ -496,7 +496,7 @@ const Beneficiaries = () => {
                 style={[styles.modalAction, { borderBottomColor: colors.border }]}
                 onPress={handleEditBeneficiary}
               >
-                <IconSymbol name="pencil" size={20} color="#FBBF24" />
+                <IconSymbol name="pencil" size={20} color="#2D7A4F" />
                 <Text style={[styles.modalActionText, { color: colors.text }]}>Modifier</Text>
               </TouchableOpacity>
 
