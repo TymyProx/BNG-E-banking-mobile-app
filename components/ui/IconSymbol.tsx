@@ -98,6 +98,12 @@ const MAPPING = {
   send: "send",
   "close-circle": "cancel",
   "document-text": "description",
+  "list.bullet": "list",
+  "star.fill": "star",
+  star: "star-border",
+  ellipsis: "more-horiz",
+  "xmark.circle": "cancel",
+  "checkmark.circle": "check-circle",
 } as unknown as IconMapping
 
 /**
