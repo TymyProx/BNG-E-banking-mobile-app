@@ -39,6 +39,9 @@ interface Card {
   isBlocked: boolean
   cardholderName: string
   rawStatus: string // Added to store original API status
+  typCard?: string // Added to store original card type from API
+  dateExpiration: string // Added to store original expiry date from API
+  numCard?: string // Added to store original card number from API
 }
 
 interface CardDetails {
@@ -236,6 +239,9 @@ export default function CardsScreen() {
           isBlocked: card.status === "BLOQUE",
           cardholderName: user?.fullName || "Titulaire de carte",
           rawStatus: card.status, // Store original status for filtering
+          typCard: card.typCard, // Store original type
+          dateExpiration: card.dateExpiration, // Store original expiry
+          numCard: card.numCard, // Store original number
         }
       })
 
@@ -774,69 +780,49 @@ export default function CardsScreen() {
 
             {/* Pending card requests section */}
             {pendingCards.length > 0 && (
-              <View style={styles.pendingCardsSection}>
-                <Text style={[styles.pendingCardsTitle, { color: colors.text }]}>Demandes en attente</Text>
-                <Text style={[styles.pendingCardsSubtitle, { color: colors.textSecondary }]}>
-                  Vos demandes de carte en cours de traitement
-                </Text>
-
-                <View style={styles.pendingCardsList}>
-                  {pendingCards.map((card) => (
-                    <View key={card.id} style={[styles.pendingCardItem, { backgroundColor: colors.cardBackground }]}>
-                      <View style={styles.pendingCardIcon}>
-                        <LinearGradient
-                          colors={
-                            getCardColors(card.name) as [
-                              import("react-native").ColorValue,
-                              import("react-native").ColorValue,
-                            ]
-                          }
-                          style={styles.pendingCardIconGradient}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                        >
-                          <IconSymbol name="creditcard" size={24} color="white" />
-                        </LinearGradient>
-                      </View>
-
+              <View style={styles.pendingRequestsContainer}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Demandes en attente</Text>
+                {pendingCards.map((card) => {
+                  const cardType = CARD_TYPES.find((type) => type.value === card.typCard)
+                  return (
+                    <View key={card.id} style={[styles.pendingCard, { backgroundColor: colors.cardBackground }]}>
+                      <LinearGradient
+                        colors={
+                          (cardType?.colors as [
+                            import("react-native").ColorValue,
+                            import("react-native").ColorValue,
+                          ]) || ["#8B9556", "#A8B566"]
+                        }
+                        style={styles.pendingCardIcon}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.pendingCardChip} />
+                      </LinearGradient>
                       <View style={styles.pendingCardInfo}>
-                        <Text style={[styles.pendingCardName, { color: colors.text }]}>{card.name}</Text>
-                        <Text style={[styles.pendingCardNumber, { color: colors.textSecondary }]}>{card.number}</Text>
-                        <Text style={[styles.pendingCardDate, { color: colors.textSecondary }]}>
-                          Expiration: {card.expiry}
+                        <Text style={[styles.pendingCardName, { color: colors.text }]}>
+                          {cardType?.name || card.typCard}
+                        </Text>
+                        <Text style={[styles.pendingCardNumber, { color: colors.textSecondary }]}>
+                          {card.numCard !== "N/A" ? card.numCard : "En cours d'attribution"}
+                        </Text>
+                        <Text style={[styles.pendingCardExpiry, { color: colors.textSecondary }]}>
+                          Expire le {new Date(card.dateExpiration).toLocaleDateString("fr-FR")}
                         </Text>
                       </View>
-
                       <View style={styles.pendingCardStatus}>
-                        <View style={[styles.pendingStatusBadge, { backgroundColor: "#FFA500" }]}>
-                          <IconSymbol name="clock.fill" size={12} color="white" />
-                          <Text style={styles.pendingStatusText}>EN ATTENTE</Text>
+                        <View style={styles.statusBadge}>
+                          <IconSymbol name="clock.fill" size={12} color="#FF9500" />
+                          <Text style={styles.statusText}>EN ATTENTE</Text>
                         </View>
                       </View>
                     </View>
-                  ))}
-                </View>
+                  )
+                })}
               </View>
             )}
           </>
         )}
-
-        {/* Request card section */}
-        <TouchableOpacity
-          style={[styles.requestCardContainer, { backgroundColor: "#0066FF" }]}
-          onPress={() => setShowRequestModal(true)}
-        >
-          <View style={styles.requestCardContent}>
-            <View style={styles.requestCardIcon}>
-              <IconSymbol name="creditcard.fill" size={32} color="white" />
-            </View>
-            <View style={styles.requestCardText}>
-              <Text style={styles.requestCardTitle}>Demande d'une carte</Text>
-              <Text style={styles.requestCardSubtitle}>Obtenez votre carte en quelques clics</Text>
-            </View>
-            <IconSymbol name="chevron.right" size={24} color="white" />
-          </View>
-        </TouchableOpacity>
 
         {/* Info section */}
         <View style={[styles.infoContainer, { backgroundColor: colors.cardBackground }]}>
@@ -1376,6 +1362,9 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -1569,23 +1558,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  pendingCardsSection: {
+  pendingRequestsContainer: {
     paddingHorizontal: 24,
     marginBottom: 24,
   },
-  pendingCardsTitle: {
+  sectionTitle: {
     fontSize: 24,
     fontWeight: "700",
     marginBottom: 8,
   },
-  pendingCardsSubtitle: {
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  pendingCardsList: {
-    gap: 12,
-  },
-  pendingCardItem: {
+  pendingCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
@@ -1602,11 +1584,17 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 12,
     overflow: "hidden",
-  },
-  pendingCardIconGradient: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  pendingCardChip: {
+    width: 24,
+    height: 18,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 4,
+    position: "absolute",
+    bottom: 8,
+    left: 8,
   },
   pendingCardInfo: {
     flex: 1,
@@ -1621,21 +1609,13 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     fontFamily: "monospace",
   },
-  pendingCardDate: {
+  pendingCardExpiry: {
     fontSize: 12,
   },
   pendingCardStatus: {
     alignItems: "flex-end",
   },
-  pendingStatusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  pendingStatusText: {
+  statusText: {
     color: "white",
     fontSize: 11,
     fontWeight: "700",
