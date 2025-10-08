@@ -3,6 +3,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import type { SymbolWeight, SymbolViewProps } from "expo-symbols"
 import type { ComponentProps } from "react"
+import React from "react"
 import type { OpaqueColorValue, StyleProp, TextStyle } from "react-native"
 
 type IconMapping = Record<SymbolViewProps["name"], ComponentProps<typeof MaterialIcons>["name"]>
@@ -84,7 +85,7 @@ const MAPPING = {
   bus: "directions_bus",
   "lock.open": "lock_open",
   "document-text-outline": "description",
-} as IconMapping
+} as unknown as IconMapping
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

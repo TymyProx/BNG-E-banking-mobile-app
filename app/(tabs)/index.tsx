@@ -22,6 +22,7 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
+import React from "react"
 
 interface Account {
   id: string
@@ -420,9 +421,6 @@ export default function Dashboard() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
-                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={[styles.transactionsCard, { backgroundColor: colors.surface }]}>
