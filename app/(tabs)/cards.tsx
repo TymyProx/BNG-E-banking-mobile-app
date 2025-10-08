@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
 } from "react-native"
 import { IconSymbol } from "@/components/ui/IconSymbol"
-import { PageHeader } from "@/components/ui/PageHeader"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { LinearGradient } from "expo-linear-gradient"
@@ -517,14 +516,10 @@ export default function CardsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <PageHeader
-        title="Mes Cartes"
-        description="Gérez vos cartes bancaires"
-        showBackButton={true} // Changed from false to true to show back button
-        showAddButton={true}
-        onAddPress={() => setShowRequestModal(true)}
-        addButtonColor="#2D7A4F"
-      />
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Cartes</Text>
+      </View>
 
       <View style={styles.filterContainer}>
         <TouchableOpacity
@@ -533,7 +528,7 @@ export default function CardsScreen() {
         >
           {cardFilter === "ACTIF" ? (
             <LinearGradient
-              colors={["#2D7A4F", "#1F5A3A"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
+              colors={["#0066FF", "#0052CC"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.filterButtonGradient}
@@ -555,7 +550,7 @@ export default function CardsScreen() {
         >
           {cardFilter === "EN ATTENTE" ? (
             <LinearGradient
-              colors={["#FBBF24", "#F59E0B"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
+              colors={["#0066FF", "#0052CC"] as [import("react-native").ColorValue, import("react-native").ColorValue]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.filterButtonGradient}
@@ -1254,7 +1249,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   filterButtonActive: {
-    shadowColor: "#2D7A4F", // Updated shadow color
+    shadowColor: "#0066FF",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

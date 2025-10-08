@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 import { Alert } from "react-native"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
@@ -112,10 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isVerified: userData.emailVerified,
       }
 
+      // Set tenantId from first tenant
       if (mappedUser.tenants.length > 0) {
-        const userTenantId = mappedUser.tenants[0].tenantId
-        setTenantId(userTenantId)
-        await SecureStore.setItemAsync("tenantId", userTenantId)
+        setTenantId(mappedUser.tenants[0].tenantId)
       }
 
       return mappedUser
@@ -144,12 +142,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuthStatus = async () => {
       try {
         const storedToken = await SecureStore.getItemAsync("token")
-        const storedTenantId = await SecureStore.getItemAsync("tenantId")
-
-        if (storedTenantId) {
-          setTenantId(storedTenantId)
-        }
-
         if (storedToken) {
           setToken(storedToken)
           setIsLoading(true)
@@ -158,9 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userData)
           } else {
             await SecureStore.deleteItemAsync("token")
-            await SecureStore.deleteItemAsync("tenantId")
             setToken(null)
-            setTenantId(null)
           }
           setIsLoading(false)
         }
@@ -317,7 +307,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await SecureStore.deleteItemAsync("token")
-      await SecureStore.deleteItemAsync("tenantId")
       setUser(null)
       setToken(null)
       setTenantId(null)

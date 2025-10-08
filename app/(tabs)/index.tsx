@@ -17,57 +17,45 @@ import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
-import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import * as SecureStore from "expo-secure-store"
-import React from "react"
+import { API_ENDPOINTS } from "@/constants/Api"
 
-interface Transaction {
+interface Account {
   id: string
+  accountNumber: string
   type: string
-  amount: number
+  balance: number
   currency: string
-  description: string
-  date: string
   status: string
 }
 
 export default function Dashboard() {
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? "light"]
-  const { user, tenantId } = useAuth()
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const { user } = useAuth()
+  const [accounts, setAccounts] = useState<Account[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
   const [chatInput, setChatInput] = useState("")
 
   useEffect(() => {
-    if (tenantId) {
-      fetchTransactions()
-    }
-  }, [tenantId])
+    fetchAccounts()
+  }, [])
 
-  const fetchTransactions = async () => {
+  const fetchAccounts = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token || !tenantId) {
-        return
-      }
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
+      // Fetch accounts from API
+      const response = await fetch(API_ENDPOINTS.ACCOUNT.LIST)
       if (response.ok) {
         const data = await response.json()
-        setTransactions(data.rows?.slice(0, 5) || [])
+        const activeAccounts = data.rows?.filter((acc: Account) => acc.status === "ACTIF") || []
+        setAccounts(activeAccounts)
+
+        // Calculate total balance
+        const total = activeAccounts.reduce((sum: number, acc: Account) => sum + (acc.balance || 0), 0)
+        setTotalBalance(total)
       }
     } catch (error) {
-      console.error("Error fetching transactions:", error)
+      console.error("Error fetching accounts:", error)
     }
   }
 
@@ -76,23 +64,8 @@ export default function Dashboard() {
     return `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase()
   }
 
-  const getUserFullName = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName} ${user.lastName}`
-    }
-    return user?.firstName || user?.lastName || "Utilisateur"
-  }
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-GN").format(amount)
-  }
-
-  const getTransactionIcon = (type: string) => {
-    const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("virement") || normalizedType.includes("transfer")) return "arrow.up.arrow.down"
-    if (normalizedType.includes("paiement") || normalizedType.includes("payment")) return "creditcard.fill"
-    if (normalizedType.includes("retrait") || normalizedType.includes("withdrawal")) return "arrow.down.circle.fill"
-    return "banknote.fill"
   }
 
   return (
@@ -110,12 +83,14 @@ export default function Dashboard() {
             </View>
             <View style={styles.userNameContainer}>
               <Text style={[styles.userGreeting, { color: colors.tabIconDefault }]}>Bonjour,</Text>
-              <Text style={[styles.userName, { color: colors.text }]}>{getUserFullName()}</Text>
+              <Text style={[styles.userName, { color: colors.text }]}>
+                {user?.firstName || user?.lastName || "Utilisateur"}
+              </Text>
             </View>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notificationButton}>
-              <IconSymbol name="bell" size={22} color="#FBBF24" />
+              <IconSymbol name="bell" size={22} color="#2D7A4F" />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
           </View>
@@ -168,8 +143,8 @@ export default function Dashboard() {
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/transfer")}
               >
-                <View style={[styles.actionIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#FBBF24" />
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
               </TouchableOpacity>
@@ -178,8 +153,8 @@ export default function Dashboard() {
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/cards")}
               >
-                <View style={[styles.actionIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-                  <IconSymbol name="creditcard" size={24} color="#FBBF24" />
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
               </TouchableOpacity>
@@ -188,69 +163,57 @@ export default function Dashboard() {
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/menu")}
               >
-                <View style={[styles.actionIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#FBBF24" />
+                <View style={styles.actionIcon}>
+                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Recent Transactions */}
+          {/* Accounts Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes comptes</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
                 <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
               </TouchableOpacity>
             </View>
 
-            {transactions.length > 0 ? (
-              <View style={styles.transactionsContainer}>
-                {transactions.map((transaction) => (
-                  <TouchableOpacity
-                    key={transaction.id}
-                    style={[styles.transactionCard, { backgroundColor: colors.surface }]}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.transactionLeft}>
-                      <View style={[styles.transactionIcon, { backgroundColor: "rgba(45, 122, 79, 0.1)" }]}>
-                        <IconSymbol name={getTransactionIcon(transaction.type) as any} size={20} color="#2D7A4F" />
+            <View style={styles.accountsContainer}>
+              {accounts.slice(0, 2).map((account, index) => (
+                <TouchableOpacity
+                  key={account.id}
+                  style={[styles.accountCard, { backgroundColor: colors.surface }]}
+                  onPress={() => router.push(`/account-details?id=${account.id}`)}
+                >
+                  <View style={styles.accountHeader}>
+                    <View style={styles.accountLeft}>
+                      <View style={[styles.accountIcon, { backgroundColor: index === 0 ? "#4F46E5" : "#2D7A4F" }]}>
+                        <IconSymbol name="banknote" size={24} color="#FFFFFF" />
                       </View>
-                      <View style={styles.transactionInfo}>
-                        <Text style={[styles.transactionDescription, { color: colors.text }]}>
-                          {transaction.description}
-                        </Text>
-                        <Text style={[styles.transactionDate, { color: colors.tabIconDefault }]}>
-                          {new Date(transaction.date).toLocaleDateString("fr-FR")}
+                      <View style={styles.accountInfo}>
+                        <Text style={[styles.accountName, { color: colors.text }]}>{account.type}</Text>
+                        <Text style={[styles.accountNumber, { color: colors.tabIconDefault }]}>
+                          {account.accountNumber}
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.transactionRight}>
-                      <Text
-                        style={[
-                          styles.transactionAmount,
-                          {
-                            color: transaction.type?.toLowerCase().includes("retrait") ? "#EF4444" : "#10B981",
-                          },
-                        ]}
-                      >
-                        {transaction.type?.toLowerCase().includes("retrait") ? "-" : "+"}
-                        {formatCurrency(transaction.amount)}
+                    <View style={styles.accountRight}>
+                      <Text style={[styles.accountBalance, { color: colors.text }]}>
+                        {formatCurrency(account.balance || 0)} GNF
                       </Text>
-                      <Text style={[styles.transactionCurrency, { color: colors.tabIconDefault }]}>
-                        {transaction.currency}
-                      </Text>
+                      <View style={[styles.accountChange, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
+                        <IconSymbol name="arrow.up" size={12} color="#10B981" />
+                        <Text style={[styles.accountChangeText, { color: "#10B981" }]}>
+                          +{index === 0 ? "2.4" : "1.8"}%
+                        </Text>
+                      </View>
                     </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
-                <IconSymbol name="banknote.fill" size={48} color={colors.tabIconDefault} />
-                <Text style={[styles.emptyText, { color: colors.tabIconDefault }]}>Aucune transaction récente</Text>
-              </View>
-            )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           <View style={{ height: 100 }} />
@@ -261,7 +224,7 @@ export default function Dashboard() {
           <View style={styles.chatContent}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.attachButton}>
-                <IconSymbol name="paperclip" size={20} color="#FBBF24" />
+                <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
               </TouchableOpacity>
               <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <TextInput
@@ -277,7 +240,7 @@ export default function Dashboard() {
                   <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#FBBF24" }]}>
+              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
                 <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -294,6 +257,70 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
 
+  balanceCard: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 24,
+    borderRadius: 24,
+    backgroundColor: "#2D7A4F",
+    shadowColor: "#2D7A4F",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+
+  balanceValue: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+
+  trendText: {
+    color: "#10B981",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 16,
+    letterSpacing: -0.5,
+  },
+
+  actionCard: {
+    width: "30%",
+    paddingVertical: 20,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.04)",
+  },
+
+  accountCard: {
+    borderRadius: 24,
+    padding: 20,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.04)",
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -307,6 +334,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     paddingRight: 16,
+    paddingBottom: 16,
   },
   profileAvatar: {
     width: 56,
@@ -346,7 +374,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8,
     position: "relative",
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    backgroundColor: "rgba(45, 122, 79, 0.1)",
     borderRadius: 12,
   },
   notificationDot: {
@@ -361,29 +389,11 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
-  balanceCard: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    padding: 24,
-    borderRadius: 24,
-    backgroundColor: "#2D7A4F",
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
   balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   balanceLeft: { flex: 1 },
   balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" },
   balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
-  balanceValue: {
-    color: "#FFFFFF",
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
   eyeButton: { padding: 6 },
   balanceRight: { alignItems: "flex-end", justifyContent: "center" },
   trendContainer: {
@@ -394,11 +404,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
-  },
-  trendText: {
-    color: "#10B981",
-    fontSize: 14,
-    fontWeight: "700",
   },
   trendSubtext: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4, fontWeight: "500" },
 
@@ -425,11 +430,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
   sectionAction: { fontSize: 14, fontWeight: "600" },
 
   quickActionsGrid: {
@@ -438,79 +438,59 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     rowGap: 16,
   },
-  actionCard: {
-    width: "30%",
-    paddingVertical: 20,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
   actionIcon: {
     justifyContent: "center",
     alignItems: "center",
     width: 48,
     height: 48,
     borderRadius: 16,
+    backgroundColor: "rgba(45, 122, 79, 0.08)",
   },
   actionLabel: { fontSize: 13, textAlign: "center", fontWeight: "600", marginTop: 4 },
 
-  transactionsContainer: { gap: 12 },
-  transactionCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
+  accountsContainer: { gap: 16 },
+  accountHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
+  accountLeft: { flexDirection: "row", gap: 12, alignItems: "center", flex: 1 },
+  accountIcon: {
+    width: 48,
+    height: 48,
     borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  transactionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionDescription: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  transactionDate: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  transactionRight: {
-    alignItems: "flex-end",
-  },
-  transactionAmount: {
+  accountName: {
     fontSize: 16,
     fontWeight: "700",
-    marginBottom: 2,
+    marginBottom: 3,
+    letterSpacing: -0.2,
   },
-  transactionCurrency: {
-    fontSize: 12,
-    fontWeight: "500",
+  accountNumber: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  accountRight: { alignItems: "flex-end", gap: 6 },
+  accountBalance: {
+    fontSize: 19,
+    fontWeight: "800",
+    marginBottom: 6,
+    letterSpacing: -0.3,
+  },
+  accountChange: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  accountChangeText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   chatContainer: {
@@ -524,6 +504,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 12,
+    backgroundColor: "#FFFFFF",
   },
   chatContent: {
     paddingHorizontal: 16,
@@ -540,7 +521,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    backgroundColor: "rgba(45, 122, 79, 0.08)",
   },
   inputContainer: {
     flex: 1,
@@ -548,8 +529,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 12,
     borderWidth: 1.5,
+    borderColor: "#E5E7EB",
     paddingHorizontal: 14,
     paddingVertical: 10,
+    backgroundColor: "#F9FAFB",
   },
   textInput: {
     flex: 1,
@@ -570,22 +553,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    shadowColor: "#FBBF24",
+    shadowColor: "#2D7A4F",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
-
-  emptyCard: {
-    padding: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 12,
+  accountInfo: {
+    flex: 1,
+    marginLeft: 4,
   },
 })
