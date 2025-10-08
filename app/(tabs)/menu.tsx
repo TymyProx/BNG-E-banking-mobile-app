@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensi
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface MenuItem {
   id: string
@@ -18,6 +19,8 @@ const { width } = Dimensions.get("window")
 const cardWidth = (width - 60) / 2
 
 export default function MenuScreen() {
+  const { logout } = useAuth()
+
   const user = {
     name: "Utilisateur",
     email: "user@example.com",
@@ -44,6 +47,13 @@ export default function MenuScreen() {
       subtitle: "Gérer",
       icon: "card-outline",
       route: "/(tabs)/cards",
+    },
+    {
+      id: "transfer",
+      title: "Virement",
+      subtitle: "Transférer",
+      icon: "swap-horizontal-outline",
+      route: "/(tabs)/transfer",
     },
     {
       id: "e-services",
@@ -88,8 +98,9 @@ export default function MenuScreen() {
     router.push(route as any)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log("Logging out...")
+    await logout()
     router.replace("/(auth)/login")
   }
 
