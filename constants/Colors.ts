@@ -1,21 +1,20 @@
 /**
- * BNG Guinée - Palette de couleurs moderne et élégante
- * Inspirée du logo BNG avec un équilibre entre verts naturels et or
+ * BNG Guinée - Palette de couleurs officielle
+ * Basée sur l'identité visuelle BNG avec vert forêt et accents or
  */
 
-// Couleurs primaires BNG - Or et verts équilibrés
-const bngGold = "#FFD700" // Or principal du logo
-const bngGoldLight = "#FFF8DC" // Or très clair
-const bngGoldDark = "#B8860B" // Or foncé
-const bngGreen = "#10B981" // Vert du logo BNG
-const bngGreenLight = "#32CD32" // Vert clair
-const bngGreenDark = "#006400" // Vert foncé
+// Couleurs primaires BNG - Vert forêt et or
+const bngGold = "#FFC107" // Or/Jaune pour les accents et badges
+const bngGoldLight = "#FFD54F" // Or clair
+const bngGoldDark = "#FFA000" // Or foncé
+const bngGreen = "#2D7A4F" // Vert forêt principal du logo BNG
+const bngGreenLight = "#48BB78" // Vert clair
+const bngGreenDark = "#1B5E3F" // Vert foncé
 
-// Couleurs secondaires - Tons chauds et naturels
-const warmGold = "#F4A460" // Or sable chaud
-const forestGreen = "#228B22" // Vert forêt
-const emeraldGreen = "#50C878" // Vert émeraude
-const darkGreen = "#013220" // Vert très foncé
+// Couleurs secondaires - Tons naturels
+const mintGreen = "#E8F5E9" // Vert menthe très clair pour les backgrounds
+const forestGreen = "#1B7F4E" // Vert forêt alternatif
+const emeraldGreen = "#10B981" // Vert émeraude
 
 // Couleurs neutres modernes
 const slate50 = "#F8FAFC"
@@ -56,22 +55,21 @@ export const Colors = {
     surface: "#FFFFFF",
     surfaceSecondary: slate50,
 
-    // Couleurs principales BNG - Vert mais utilisé avec parcimonie
     primary: bngGreen, // Vert comme couleur principale
     primaryLight: bngGreenLight,
     primaryDark: bngGreenDark,
-    primaryBackground: `${bngGreen}08`, // Très léger
+    primaryBackground: mintGreen, // Très léger
 
-    // Couleurs secondaires - Gris neutre dominant
-    secondary: slate400, // Gris comme couleur secondaire
-    secondaryLight: slate300,
-    secondaryDark: slate500,
-    secondaryBackground: `${slate400}08`,
+    // Couleurs secondaires
+    secondary: emeraldGreen, // Gris comme couleur secondaire
+    secondaryLight: bngGreenLight,
+    secondaryDark: forestGreen,
+    secondaryBackground: `${emeraldGreen}15`,
 
-    // Couleurs d'accent - Jaune/Or avec parcimonie
+    // Couleurs d'accent - Or/Jaune avec parcimonie
     accent: bngGold, // Jaune pour les accents
     accentLight: bngGoldLight,
-    accentBackground: `${bngGold}08`,
+    accentBackground: `${bngGold}15`,
 
     // Couleurs d'état
     success: emerald,
@@ -110,13 +108,13 @@ export const Colors = {
 
     // Gradients subtils - Gris dominant avec touches de vert
     gradientPrimary: `linear-gradient(135deg, ${bngGreen} 0%, ${bngGreenDark} 100%)`,
-    gradientSecondary: `linear-gradient(135deg, ${slate100} 0%, ${slate200} 100%)`,
-    gradientAccent: `linear-gradient(135deg, ${bngGold} 0%, ${warmGold} 100%)`,
+    gradientSecondary: `linear-gradient(135deg, ${mintGreen} 0%, ${bngGreenLight} 100%)`,
+    gradientAccent: `linear-gradient(135deg, ${bngGold} 0%, ${bngGoldDark} 100%)`,
     gradientNeutral: `linear-gradient(135deg, ${slate50} 0%, ${slate100} 100%)`,
 
     // Couleurs spécifiques BNG
     bngPrimary: bngGreen, // Vert comme couleur principale
-    bngSecondary: slate400, // Gris comme couleur secondaire
+    bngSecondary: emeraldGreen, // Gris comme couleur secondaire
     bngAccent: bngGold, // Jaune comme accent
     bngNeutral: slate500,
 
@@ -126,8 +124,8 @@ export const Colors = {
     shadow: slate300,
     gradient: {
       primary: [bngGreen, bngGreenDark],
-      secondary: [slate100, slate200],
-      accent: [bngGold, warmGold],
+      secondary: [mintGreen, bngGreenLight],
+      accent: [bngGold, bngGoldDark],
       card: [slate50, slate100],
     },
   },
@@ -144,22 +142,20 @@ export const Colors = {
     surface: slate800,
     surfaceSecondary: slate700,
 
-    // Couleurs principales BNG - Vert mais utilisé avec parcimonie
     primary: bngGreenLight, // Vert clair pour le dark mode
     primaryLight: "#90EE90",
     primaryDark: bngGreen,
-    primaryBackground: `${bngGreenLight}10`,
+    primaryBackground: `${bngGreenLight}15`,
 
-    // Couleurs secondaires - Gris neutre dominant
-    secondary: slate500, // Gris comme couleur secondaire
-    secondaryLight: slate400,
-    secondaryDark: slate600,
-    secondaryBackground: `${slate500}10`,
+    // Couleurs secondaires
+    secondary: emeraldGreen, // Gris comme couleur secondaire
+    secondaryLight: bngGreenLight,
+    secondaryDark: bngGreen,
+    secondaryBackground: `${emeraldGreen}15`,
 
-    // Couleurs d'accent - Jaune/Or avec parcimonie
     accent: bngGoldLight, // Jaune clair pour les accents
     accentLight: "#FFFACD",
-    accentBackground: `${bngGoldLight}10`,
+    accentBackground: `${bngGoldLight}15`,
 
     // Couleurs d'état
     success: emeraldLight,
@@ -198,12 +194,12 @@ export const Colors = {
     // Gradients subtils - Gris dominant avec touches de vert
     gradientPrimary: `linear-gradient(135deg, ${bngGreenLight} 0%, ${bngGreen} 100%)`,
     gradientSecondary: `linear-gradient(135deg, ${slate700} 0%, ${slate600} 100%)`,
-    gradientAccent: `linear-gradient(135deg, ${bngGoldLight} 0%, ${warmGold} 100%)`,
+    gradientAccent: `linear-gradient(135deg, ${bngGoldLight} 0%, ${bngGoldDark} 100%)`,
     gradientNeutral: `linear-gradient(135deg, ${slate800} 0%, ${slate700} 100%)`,
 
     // Couleurs spécifiques BNG
     bngPrimary: bngGreenLight, // Vert clair comme couleur principale
-    bngSecondary: slate500, // Gris comme couleur secondaire
+    bngSecondary: emeraldGreen, // Gris comme couleur secondaire
     bngAccent: bngGoldLight, // Jaune clair comme accent
     bngNeutral: slate400,
 
@@ -214,7 +210,7 @@ export const Colors = {
     gradient: {
       primary: [bngGreenLight, bngGreen],
       secondary: [slate700, slate800],
-      accent: [bngGoldLight, warmGold],
+      accent: [bngGoldLight, bngGoldDark],
       card: [slate800, slate900],
     },
   },
@@ -222,19 +218,18 @@ export const Colors = {
 
 // Export des couleurs pour usage direct
 export const ModernColors = {
-  // Couleurs principales BNG - Or en premier
-  bngGold,
-  bngGoldLight,
-  bngGoldDark,
+  // Couleurs principales BNG
   bngGreen,
   bngGreenLight,
   bngGreenDark,
+  bngGold,
+  bngGoldLight,
+  bngGoldDark,
 
   // Couleurs secondaires
-  warmGold,
+  mintGreen,
   forestGreen,
   emeraldGreen,
-  darkGreen,
 
   // Couleurs neutres
   slate: {
