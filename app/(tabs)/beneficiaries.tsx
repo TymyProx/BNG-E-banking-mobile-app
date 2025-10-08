@@ -299,10 +299,7 @@ const Beneficiaries = () => {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
         </View>
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-          onPress={handleAddBeneficiary}
-        >
+        <TouchableOpacity style={[styles.addButton, { backgroundColor: "#FBBF24" }]} onPress={handleAddBeneficiary}>
           <IconSymbol name="plus" size={20} color="white" />
         </TouchableOpacity>
       </View>
@@ -334,8 +331,8 @@ const Beneficiaries = () => {
               styles.filterPill,
               filter === "tous" && styles.filterPillActive,
               {
-                backgroundColor: filter === "tous" ? colors.primary : colors.cardBackground,
-                borderColor: filter === "tous" ? colors.primary : colors.border,
+                backgroundColor: filter === "tous" ? "#FBBF24" : colors.cardBackground,
+                borderColor: filter === "tous" ? "#FBBF24" : colors.border,
               },
             ]}
             onPress={() => setFilter("tous")}
@@ -351,13 +348,13 @@ const Beneficiaries = () => {
               styles.filterPill,
               filter === "actif" && styles.filterPillActive,
               {
-                backgroundColor: filter === "actif" ? "#10b981" : colors.cardBackground,
-                borderColor: filter === "actif" ? "#10b981" : colors.border,
+                backgroundColor: filter === "actif" ? "#FBBF24" : colors.cardBackground,
+                borderColor: filter === "actif" ? "#FBBF24" : colors.border,
               },
             ]}
             onPress={() => setFilter("actif")}
           >
-            <IconSymbol name="checkmark.circle.fill" size={18} color={filter === "actif" ? "white" : "#10b981"} />
+            <IconSymbol name="checkmark.circle.fill" size={18} color={filter === "actif" ? "white" : "#FBBF24"} />
             <Text style={[styles.filterPillText, { color: filter === "actif" ? "white" : colors.textSecondary }]}>
               Actifs
             </Text>
@@ -385,8 +382,8 @@ const Beneficiaries = () => {
               styles.filterPill,
               filter === "favoris" && styles.filterPillActive,
               {
-                backgroundColor: filter === "favoris" ? "#FFD700" : colors.cardBackground,
-                borderColor: filter === "favoris" ? "#FFD700" : colors.border,
+                backgroundColor: filter === "favoris" ? "#FBBF24" : colors.cardBackground,
+                borderColor: filter === "favoris" ? "#FBBF24" : colors.border,
               },
             ]}
             onPress={() => setFilter("favoris")}
@@ -428,7 +425,7 @@ const Beneficiaries = () => {
                     {beneficiary.status === 0 && (
                       <>
                         <TouchableOpacity
-                          style={[styles.transferIconButton, { backgroundColor: colors.primary }]}
+                          style={[styles.transferIconButton, { backgroundColor: "#FBBF24" }]}
                           onPress={() => handleTransferTo(beneficiary.id)}
                         >
                           <IconSymbol name="paperplane.fill" size={18} color="white" />
@@ -460,7 +457,7 @@ const Beneficiaries = () => {
                 {searchTerm ? "Aucun résultat pour votre recherche" : "Vous n'avez pas encore ajouté de bénéficiaires"}
               </Text>
               <TouchableOpacity
-                style={[styles.addBeneficiaryButton, { backgroundColor: colors.primary }]}
+                style={[styles.addBeneficiaryButton, { backgroundColor: "#FBBF24" }]}
                 onPress={handleAddBeneficiary}
               >
                 <IconSymbol name="plus" size={16} color="white" />
@@ -491,7 +488,7 @@ const Beneficiaries = () => {
                 style={[styles.modalAction, { borderBottomColor: colors.border }]}
                 onPress={handleViewDetails}
               >
-                <IconSymbol name="info.circle" size={20} color={colors.primary} />
+                <IconSymbol name="info.circle" size={20} color="#FBBF24" />
                 <Text style={[styles.modalActionText, { color: colors.text }]}>Voir les détails</Text>
               </TouchableOpacity>
 
@@ -499,7 +496,7 @@ const Beneficiaries = () => {
                 style={[styles.modalAction, { borderBottomColor: colors.border }]}
                 onPress={handleEditBeneficiary}
               >
-                <IconSymbol name="pencil" size={20} color={colors.primary} />
+                <IconSymbol name="pencil" size={20} color="#FBBF24" />
                 <Text style={[styles.modalActionText, { color: colors.text }]}>Modifier</Text>
               </TouchableOpacity>
 
@@ -560,6 +557,8 @@ const styles = StyleSheet.create({
     marginRight: 16,
     padding: 8,
     borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.05)",
   },
   headerContent: {
@@ -718,8 +717,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#10b981",
-    shadowColor: "#10b981",
+    backgroundColor: "#FBBF24",
+    shadowColor: "#FBBF24",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
