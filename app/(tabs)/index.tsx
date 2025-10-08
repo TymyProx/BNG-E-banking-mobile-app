@@ -50,9 +50,6 @@ export default function Dashboard() {
   const scrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
 
-  const [activeTypeIndex, setActiveTypeIndex] = useState(0)
-  const typeScrollViewRef = useRef<ScrollView>(null)
-
   useEffect(() => {
     fetchAccounts()
   }, [])
@@ -73,24 +70,6 @@ export default function Dashboard() {
       return () => clearInterval(interval)
     }
   }, [accounts.length])
-
-  useEffect(() => {
-    const accountTypes = 4 // Number of account types
-    const typeAutoScrollInterval = setInterval(() => {
-      setActiveTypeIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % accountTypes
-        typeScrollViewRef.current?.scrollTo({
-          x: nextIndex * (CARD_WIDTH + CARD_SPACING),
-          animated: true,
-        })
-        return nextIndex
-      })
-    }, 5000) // Auto-scroll every 5 seconds
-
-    return () => {
-      clearInterval(typeAutoScrollInterval)
-    }
-  }, [])
 
   const fetchAccounts = async () => {
     try {
@@ -135,20 +114,6 @@ export default function Dashboard() {
     const scrollPosition = event.nativeEvent.contentOffset.x
     const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
     setActiveIndex(index)
-  }
-
-  const handleTypeDotPress = (index: number) => {
-    typeScrollViewRef.current?.scrollTo({
-      x: index * (CARD_WIDTH + CARD_SPACING),
-      animated: true,
-    })
-    setActiveTypeIndex(index)
-  }
-
-  const handleTypeScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
-    setActiveTypeIndex(index)
   }
 
   const handleDotPress = (index: number) => {
@@ -215,89 +180,8 @@ export default function Dashboard() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Balance Card */}
           <View style={styles.balanceCard}>
-            <View style={styles.accountsInCard}>
-              <View style={styles.accountsHeader}>
-                <Text style={styles.accountsTitle}>Mes comptes actifs</Text>
-                <Text style={styles.accountsSubtitle}>Gérez vos comptes bancaires</Text>
-              </View>
-
-              {accounts.length > 0 ? (
-                <>
-                  <ScrollView
-                    ref={scrollViewRef}
-                    horizontal
-                    pagingEnabled={false}
-                    showsHorizontalScrollIndicator={false}
-                    snapToInterval={CARD_WIDTH + CARD_SPACING}
-                    decelerationRate="fast"
-                    contentContainerStyle={styles.accountsCarouselContent}
-                    onScroll={handleScroll}
-                    scrollEventThrottle={16}
-                  >
-                    {accounts.map((account) => (
-                      <Animated.View key={account.id} style={[styles.accountCarouselCard, { opacity: fadeAnim }]}>
-                        <TouchableOpacity
-                          style={styles.accountCardInDashboard}
-                          onPress={() => router.push(`/account-details?id=${account.id}`)}
-                          activeOpacity={0.8}
-                        >
-                          <View style={styles.accountCardHeader}>
-                            <View style={styles.accountCardLeft}>
-                              <View
-                                style={[styles.accountCardIcon, { backgroundColor: getAccountColor(account.type) }]}
-                              >
-                                <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
-                              </View>
-                              <View style={styles.accountCardInfo}>
-                                <Text style={styles.accountCardName}>{account.accountName || account.type}</Text>
-                                <Text style={styles.accountCardNumber}>•••• {account.accountNumber.slice(-4)}</Text>
-                              </View>
-                            </View>
-                          </View>
-                          <View style={styles.accountCardBalanceSection}>
-                            <Text style={styles.accountCardBalanceLabel}>Solde disponible</Text>
-                            <View style={styles.accountCardBalanceRow}>
-                              <Text style={styles.accountCardBalance}>
-                                {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
-                              </Text>
-                              <Text style={styles.accountCardCurrency}>{account.currency}</Text>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      </Animated.View>
-                    ))}
-                  </ScrollView>
-
-                  {accounts.length > 1 && (
-                    <View style={styles.accountsPaginationContainer}>
-                      {accounts.map((_, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => handleDotPress(index)}
-                          style={[
-                            styles.accountsPaginationDot,
-                            {
-                              backgroundColor: index === activeIndex ? "#FFFFFF" : "rgba(255,255,255,0.3)",
-                              width: index === activeIndex ? 32 : 8,
-                            },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  )}
-                </>
-              ) : (
-                <View style={styles.emptyAccountsInCard}>
-                  <IconSymbol name="creditcard.fill" size={48} color="rgba(255,255,255,0.5)" />
-                  <Text style={styles.emptyAccountsText}>Aucun compte actif</Text>
-                  <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push("/new-account")}>
-                    <Text style={styles.createAccountButtonText}>Créer un compte</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-
             <View style={styles.balanceHeader}>
               <View style={styles.balanceLeft}>
                 <View style={styles.balanceTitle}>
@@ -452,8 +336,6 @@ export default function Dashboard() {
               </View>
             )}
           </View>
-
-          {/* Removed Account Types Carousel */}
 
           <View style={{ height: 100 }} />
         </ScrollView>
@@ -628,7 +510,7 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
-  balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8, marginTop: 24 },
+  balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   balanceLeft: { flex: 1 },
   balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" },
@@ -852,155 +734,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 12,
   },
-
-  accountsInCard: {
-    marginBottom: 24,
-  },
-  accountsHeader: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  accountsTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 4,
-  },
-  accountsSubtitle: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.7)",
-  },
-  accountsCarouselContent: {
-    paddingHorizontal: 16,
-    gap: CARD_SPACING,
-  },
-  accountCarouselCard: {
-    width: CARD_WIDTH,
-  },
-  accountCardInDashboard: {
-    borderRadius: 20,
-    padding: 18,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-  accountCardHeader: {
-    marginBottom: 16,
-  },
-  accountCardLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  accountCardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  accountCardInfo: {
-    flex: 1,
-  },
-  accountCardName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-    letterSpacing: -0.2,
-  },
-  accountCardNumber: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#6B7280",
-    letterSpacing: 1,
-  },
-  accountCardBalanceSection: {
-    marginTop: 4,
-  },
-  accountCardBalanceLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  accountCardBalanceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
-  },
-  accountCardBalance: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#111827",
-    letterSpacing: -0.5,
-  },
-  accountCardCurrency: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  accountsPaginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 20,
-  },
-  accountsPaginationDot: {
-    height: 8,
-    borderRadius: 4,
-  },
-  emptyAccountsInCard: {
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  createAccountButton: {
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-  },
-  createAccountButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#2D7A4F",
-  },
-  // Styles for account types carousel - REMOVED
-  accountTypesInCard: {},
-  accountTypesHeader: {},
-  accountTypesTitle: {},
-  accountTypesSubtitle: {},
-  typesCarouselContent: {},
-  typeCarouselCard: {},
-  accountTypeCard: {},
-  accountTypeIcon: {},
-  accountTypeContent: {},
-  accountTypeTitle: {},
-  accountTypeDescription: {},
-  accountTypeFeatures: {},
-  featureItem: {},
-  featureDot: {},
-  featureText: {},
-  popularBadge: {},
-  popularBadgeText: {},
-  exclusiveBadge: {},
-  exclusiveBadgeText: {},
-  typesPaginationContainer: {},
-  typesPaginationDot: {},
 })
