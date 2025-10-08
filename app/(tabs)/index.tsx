@@ -58,15 +58,28 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("")
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeCardIndex, setActiveCardIndex] = useState(0)
+  const [isAuthReady, setIsAuthReady] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const cardScrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
   const [cardFadeAnim] = useState(new Animated.Value(0))
 
   useEffect(() => {
-    fetchAccounts()
-    fetchCards()
-  }, [])
+    const checkAuth = async () => {
+      const token = await SecureStore.getItemAsync("token")
+      if (token && tenantId) {
+        setIsAuthReady(true)
+      }
+    }
+    checkAuth()
+  }, [tenantId])
+
+  useEffect(() => {
+    if (isAuthReady) {
+      fetchAccounts()
+      fetchCards()
+    }
+  }, [isAuthReady])
 
   useEffect(() => {
     if (accounts.length > 1) {
@@ -107,7 +120,6 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available")
         return
       }
 
@@ -129,7 +141,6 @@ export default function Dashboard() {
         }, 0)
         setTotalBalance(total)
 
-        // Fade in animation
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 800,
@@ -146,11 +157,8 @@ export default function Dashboard() {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available for cards")
         return
       }
-
-      console.log("[v0] Fetching cards from:", `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`)
 
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
         method: "GET",
@@ -160,38 +168,22 @@ export default function Dashboard() {
         },
       })
 
-      console.log("[v0] Cards response status:", response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Cards data received:", JSON.stringify(data, null, 2))
-
-        if (data.rows && data.rows.length > 0) {
-          console.log("[v0] First card structure:", JSON.stringify(data.rows[0], null, 2))
-        }
 
         const activeCards =
           data.rows?.filter((card: any) => {
             const status = card.status?.toLowerCase() || ""
-            console.log("[v0] Card status:", card.status, "normalized:", status)
             return status === "active" || status === "actif"
           }) || []
 
-        console.log("[v0] Active cards found:", activeCards.length)
-        if (activeCards.length > 0) {
-          console.log("[v0] Active cards:", JSON.stringify(activeCards, null, 2))
-        }
         setCards(activeCards)
 
-        // Fade in animation
         Animated.timing(cardFadeAnim, {
           toValue: 1,
           duration: 800,
           useNativeDriver: true,
         }).start()
-      } else {
-        const errorText = await response.text()
-        console.error("[v0] Error response:", errorText)
       }
     } catch (error) {
       console.error("[v0] Error fetching cards:", error)
@@ -252,7 +244,6 @@ export default function Dashboard() {
 
   const formatCardNumber = (cardNumber: string | undefined) => {
     if (!cardNumber || cardNumber.length < 4) {
-      console.log("[v0] Invalid card number:", cardNumber)
       return "•••• •••• •••• ••••"
     }
     return `•••• •••• •••• ${cardNumber.slice(-4)}`
