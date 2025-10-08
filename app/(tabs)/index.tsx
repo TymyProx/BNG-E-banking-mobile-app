@@ -21,7 +21,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
+import { LinearGradient } from "expo-linear-gradient"
 
 interface Account {
   id: string
@@ -35,8 +35,8 @@ interface Account {
 }
 
 const { width } = Dimensions.get("window")
-const CARD_WIDTH = width - 48
-const CARD_SPACING = 16
+const CARD_WIDTH = width - 32
+const CARD_SPACING = 20
 
 export default function Dashboard() {
   const colorScheme = useColorScheme()
@@ -49,6 +49,7 @@ export default function Dashboard() {
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
+  const [scaleAnims] = useState(accounts.map(() => new Animated.Value(1)))
 
   useEffect(() => {
     fetchAccounts()
@@ -147,6 +148,14 @@ export default function Dashboard() {
     return "#4F46E5"
   }
 
+  const getAccountGradient = (type: string) => {
+    const normalizedType = type?.toLowerCase() || ""
+    if (normalizedType.includes("courant")) return ["#2D7A4F", "#1E5A3A", "#0F3D26"]
+    if (normalizedType.includes("épargne") || normalizedType.includes("epargne"))
+      return ["#10B981", "#059669", "#047857"]
+    return ["#6366F1", "#4F46E5", "#4338CA"]
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={["top"]}>
       <KeyboardAvoidingView
@@ -180,9 +189,8 @@ export default function Dashboard() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Accounts Carousel Section */}
           <View style={styles.section}>
-           
-
             {accounts.length > 0 ? (
               <>
                 <ScrollView
@@ -196,44 +204,83 @@ export default function Dashboard() {
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
                 >
-                  {accounts.map((account) => (
-                    <Animated.View key={account.id} style={[styles.carouselCard, { opacity: fadeAnim }]}>
+                  {accounts.map((account, index) => (
+                    <Animated.View
+                      key={account.id}
+                      style={[
+                        styles.carouselCard,
+                        {
+                          opacity: fadeAnim,
+                          transform: [{ scale: index === activeIndex ? 1 : 0.95 }],
+                        },
+                      ]}
+                    >
                       <TouchableOpacity
-                        style={[styles.accountCard, { backgroundColor: colors.surface }]}
+                        style={styles.modernAccountCard}
                         onPress={() => router.push(`/account-details?id=${account.id}`)}
-                        activeOpacity={0.8}
+                        activeOpacity={0.9}
                       >
-                        <View style={styles.accountHeader}>
-                          <View style={styles.accountLeft}>
-                            <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
-                              <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
+                        <LinearGradient
+                          colors={getAccountGradient(account.type)}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.gradientCard}
+                        >
+                          {/* Decorative circles */}
+                          <View style={styles.decorativeCircle1} />
+                          <View style={styles.decorativeCircle2} />
+
+                          <View style={styles.cardContent}>
+                            {/* Top section */}
+                            <View style={styles.cardTop}>
+                              <View style={styles.cardTopLeft}>
+                                <View style={styles.modernAccountIcon}>
+                                  <IconSymbol name={getAccountIcon(account.type) as any} size={28} color="#FFFFFF" />
+                                </View>
+                                <View style={styles.cardTypeInfo}>
+                                  <Text style={styles.cardTypeLabel}>Type de compte</Text>
+                                  <Text style={styles.cardTypeName}>{account.type}</Text>
+                                </View>
+                              </View>
+                              <View style={styles.statusBadge}>
+                                <View style={styles.statusDot} />
+                                <Text style={styles.statusText}>Actif</Text>
+                              </View>
                             </View>
-                            <View style={styles.accountInfo}>
-                              <Text style={[styles.accountName, { color: colors.text }]}>
-                                {account.accountName || account.type}
-                              </Text>
-                              <Text style={[styles.accountNumber, { color: colors.tabIconDefault }]}>
-                                •••• {account.accountNumber.slice(-4)}
-                              </Text>
+
+                            {/* Middle section - Balance */}
+                            <View style={styles.balanceSection}>
+                              <Text style={styles.modernBalanceLabel}>Solde disponible</Text>
+                              <View style={styles.balanceAmountRow}>
+                                <Text style={styles.modernBalanceAmount}>
+                                  {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
+                                </Text>
+                                <Text style={styles.modernBalanceCurrency}>{account.currency}</Text>
+                              </View>
+                            </View>
+
+                            {/* Bottom section */}
+                            <View style={styles.cardBottom}>
+                              <View style={styles.accountNameSection}>
+                                <Text style={styles.accountNameLabel}>Nom du compte</Text>
+                                <Text style={styles.modernAccountName} numberOfLines={1}>
+                                  {account.accountName || "Compte principal"}
+                                </Text>
+                              </View>
+                              <View style={styles.accountNumberSection}>
+                                <Text style={styles.modernAccountNumber}>
+                                  •••• •••• •••• {account.accountNumber.slice(-4)}
+                                </Text>
+                              </View>
                             </View>
                           </View>
-                        </View>
-                        <View style={styles.accountBalanceSection}>
-                          <Text style={[styles.balanceLabel, { color: colors.tabIconDefault }]}>Solde disponible</Text>
-                          <View style={styles.accountBalanceRow}>
-                            <Text style={[styles.accountBalance, { color: colors.text }]}>
-                              {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
-                            </Text>
-                            <Text style={[styles.accountCurrency, { color: colors.tabIconDefault }]}>
-                              {account.currency}
-                            </Text>
-                          </View>
-                        </View>
+                        </LinearGradient>
                       </TouchableOpacity>
                     </Animated.View>
                   ))}
                 </ScrollView>
 
+                {/* Enhanced Pagination Dots */}
                 {accounts.length > 1 && (
                   <View style={styles.paginationContainer}>
                     {accounts.map((_, index) => (
@@ -241,10 +288,11 @@ export default function Dashboard() {
                         key={index}
                         onPress={() => handleDotPress(index)}
                         style={[
-                          styles.paginationDot,
+                          styles.modernPaginationDot,
                           {
-                            backgroundColor: index === activeIndex ? "#2D7A4F" : colors.border,
-                            width: index === activeIndex ? 32 : 8,
+                            backgroundColor: index === activeIndex ? "#2D7A4F" : "rgba(45, 122, 79, 0.2)",
+                            width: index === activeIndex ? 40 : 10,
+                            height: index === activeIndex ? 10 : 10,
                           },
                         ]}
                       />
@@ -260,7 +308,7 @@ export default function Dashboard() {
                 </Text>
               </View>
             )}
-             <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}></Text>
               <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
                 <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
@@ -369,19 +417,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.04)",
   },
 
-  accountCard: {
-    borderRadius: 24,
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -475,51 +510,6 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 13, textAlign: "center", fontWeight: "600", marginTop: 4 },
 
-  accountsContainer: { gap: 16 },
-  accountHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
-  accountLeft: { flexDirection: "row", gap: 12, alignItems: "center", flex: 1 },
-  accountIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  accountName: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 3,
-    letterSpacing: -0.2,
-  },
-  accountNumber: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  accountRight: { alignItems: "flex-end", gap: 6 },
-  accountBalance: {
-    fontSize: 19,
-    fontWeight: "800",
-    marginBottom: 6,
-    letterSpacing: -0.3,
-  },
-  accountChange: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-  },
-  accountChangeText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
   chatContainer: {
     bottom: 0,
     left: 0,
@@ -586,47 +576,175 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  accountInfo: {
-    flex: 1,
-    marginLeft: 4,
-  },
 
   carouselContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     gap: CARD_SPACING,
   },
   carouselCard: {
     width: CARD_WIDTH,
   },
-  accountBalanceSection: {
-    marginTop: 16,
+  modernAccountCard: {
+    borderRadius: 28,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  balanceLabel: {
+  gradientCard: {
+    padding: 24,
+    minHeight: 240,
+    position: "relative",
+    overflow: "hidden",
+  },
+  decorativeCircle1: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    top: -80,
+    right: -60,
+  },
+  decorativeCircle2: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    bottom: -40,
+    left: -40,
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: "space-between",
+    zIndex: 1,
+  },
+  cardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 24,
+  },
+  cardTopLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  modernAccountIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  cardTypeInfo: {
+    flex: 1,
+  },
+  cardTypeLabel: {
     fontSize: 11,
+    color: "rgba(255, 255, 255, 0.7)",
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  cardTypeName: {
+    fontSize: 15,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#10B981",
+  },
+  statusText: {
+    fontSize: 11,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  balanceSection: {
+    marginBottom: 24,
+  },
+  modernBalanceLabel: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
     fontWeight: "600",
     marginBottom: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
-  accountBalanceRow: {
+  balanceAmountRow: {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 8,
   },
-  accountCurrency: {
-    fontSize: 14,
-    fontWeight: "600",
+  modernBalanceAmount: {
+    fontSize: 36,
+    color: "#FFFFFF",
+    fontWeight: "800",
+    letterSpacing: -1,
   },
-  paginationContainer: {
+  modernBalanceCurrency: {
+    fontSize: 18,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "700",
+  },
+  cardBottom: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 20,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
   },
-  paginationDot: {
-    height: 8,
-    borderRadius: 4,
+  accountNameSection: {
+    flex: 1,
+  },
+  accountNameLabel: {
+    fontSize: 10,
+    color: "rgba(255, 255, 255, 0.7)",
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  modernAccountName: {
+    fontSize: 14,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  accountNumberSection: {
+    alignItems: "flex-end",
+  },
+  modernAccountNumber: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "600",
+    letterSpacing: 1.5,
+  },
+  modernPaginationDot: {
+    height: 10,
+    borderRadius: 5,
   },
   emptyAccountsCard: {
     padding: 40,
@@ -639,5 +757,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 24,
   },
 })
