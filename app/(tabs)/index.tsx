@@ -292,7 +292,7 @@ export default function Dashboard() {
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notificationButton}>
-              <IconSymbol name="notifications" size={22} color="#2D7A4F" />
+              <IconSymbol name="notifications" size={22} color="#FBBF24" />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
           </View>
@@ -438,7 +438,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/transfer")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="swap-vertical" size={24} color="#2D7A4F" />
+                  <IconSymbol name="swap-vertical" size={24} color="#FBBF24" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
               </TouchableOpacity>
@@ -448,7 +448,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/cards")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="card" size={24} color="#2D7A4F" />
+                  <IconSymbol name="card" size={24} color="#FBBF24" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
               </TouchableOpacity>
@@ -458,7 +458,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/menu")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="menu" size={24} color="#2D7A4F" />
+                  <IconSymbol name="menu" size={24} color="#FBBF24" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
               </TouchableOpacity>
@@ -574,7 +574,7 @@ export default function Dashboard() {
           <View style={styles.chatContent}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.attachButton}>
-                <IconSymbol name="attach" size={20} color="#2D7A4F" />
+                <IconSymbol name="attach" size={20} color="#FBBF24" />
               </TouchableOpacity>
               <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <TextInput
@@ -590,7 +590,7 @@ export default function Dashboard() {
                   <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
+              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#FBBF24" }]}>
                 <IconSymbol name="send" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8,
     position: "relative",
-    backgroundColor: "rgba(45, 122, 79, 0.1)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
     borderRadius: 12,
   },
   notificationDot: {
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
   },
   actionLabel: { fontSize: 13, textAlign: "center", fontWeight: "600", marginTop: 4 },
 
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
   },
   inputContainer: {
     flex: 1,
@@ -945,7 +945,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    shadowColor: "#2D7A4F",
+    shadowColor: "#FBBF24",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
