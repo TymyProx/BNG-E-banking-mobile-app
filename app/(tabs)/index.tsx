@@ -34,6 +34,19 @@ interface Account {
   availableBalance: string
 }
 
+interface Transaction {
+  id: string
+  txnId: string
+  accountId: string
+  txnType: string
+  amount: string
+  valueDate: string
+  status: string
+  description: string
+  creditAccount: string
+  commentNotes: string
+}
+
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width - 32
 const CARD_SPACING = 20
@@ -50,9 +63,11 @@ export default function Dashboard() {
   const scrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
   const [scaleAnims] = useState(accounts.map(() => new Animated.Value(1)))
+  const [transactions, setTransactions] = useState<Transaction[]>([])
 
   useEffect(() => {
     fetchAccounts()
+    fetchTransactions()
   }, [])
 
   useEffect(() => {
@@ -111,6 +126,34 @@ export default function Dashboard() {
     }
   }
 
+  const fetchTransactions = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for transactions")
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Get the 3 most recent transactions
+        const recentTransactions = data.rows?.slice(0, 3) || []
+        setTransactions(recentTransactions)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching transactions:", error)
+    }
+  }
+
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x
     const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
@@ -132,6 +175,29 @@ export default function Dashboard() {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-GN").format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date)
+  }
+
+  const getTransactionIcon = (type: string) => {
+    const normalizedType = type?.toLowerCase() || ""
+    if (normalizedType.includes("debit") || normalizedType.includes("retrait")) return "arrow.up.circle.fill"
+    if (normalizedType.includes("credit") || normalizedType.includes("depot")) return "arrow.down.circle.fill"
+    return "arrow.left.arrow.right.circle.fill"
+  }
+
+  const getTransactionColor = (type: string) => {
+    const normalizedType = type?.toLowerCase() || ""
+    if (normalizedType.includes("debit") || normalizedType.includes("retrait")) return "#EF4444"
+    if (normalizedType.includes("credit") || normalizedType.includes("depot")) return "#10B981"
+    return "#6366F1"
   }
 
   const getAccountIcon = (type: string) => {
@@ -348,6 +414,109 @@ export default function Dashboard() {
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
+                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.transactionsCard, { backgroundColor: colors.surface }]}>
+              {transactions.length > 0 ? (
+                transactions.map((transaction, index) => (
+                  <View key={transaction.id}>
+                    <TouchableOpacity
+                      style={styles.transactionItem}
+                      onPress={() => router.push(`/transaction-details?id=${transaction.id}`)}
+                    >
+                      <View style={styles.transactionLeft}>
+                        <View
+                          style={[
+                            styles.transactionIconContainer,
+                            { backgroundColor: `${getTransactionColor(transaction.txnType)}15` },
+                          ]}
+                        >
+                          <IconSymbol
+                            name={getTransactionIcon(transaction.txnType) as any}
+                            size={24}
+                            color={getTransactionColor(transaction.txnType)}
+                          />
+                        </View>
+                        <View style={styles.transactionInfo}>
+                          <Text style={[styles.transactionDescription, { color: colors.text }]} numberOfLines={1}>
+                            {transaction.description || "Transaction"}
+                          </Text>
+                          <Text style={[styles.transactionDate, { color: colors.tabIconDefault }]}>
+                            {formatDate(transaction.valueDate)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.transactionRight}>
+                        <Text
+                          style={[
+                            styles.transactionAmount,
+                            {
+                              color: transaction.txnType?.toLowerCase().includes("credit")
+                                ? "#10B981"
+                                : transaction.txnType?.toLowerCase().includes("debit")
+                                  ? "#EF4444"
+                                  : colors.text,
+                            },
+                          ]}
+                        >
+                          {transaction.txnType?.toLowerCase().includes("credit") ? "+" : "-"}
+                          {formatCurrency(Number.parseFloat(transaction.amount) || 0)}
+                        </Text>
+                        <View
+                          style={[
+                            styles.transactionStatusBadge,
+                            {
+                              backgroundColor:
+                                transaction.status?.toLowerCase() === "completed" ||
+                                transaction.status?.toLowerCase() === "success"
+                                  ? "#10B98115"
+                                  : transaction.status?.toLowerCase() === "pending"
+                                    ? "#F59E0B15"
+                                    : "#EF444415",
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.transactionStatus,
+                              {
+                                color:
+                                  transaction.status?.toLowerCase() === "completed" ||
+                                  transaction.status?.toLowerCase() === "success"
+                                    ? "#10B981"
+                                    : transaction.status?.toLowerCase() === "pending"
+                                      ? "#F59E0B"
+                                      : "#EF4444",
+                              },
+                            ]}
+                          >
+                            {transaction.status}
+                          </Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                    {index < transactions.length - 1 && (
+                      <View style={[styles.transactionDivider, { backgroundColor: colors.border }]} />
+                    )}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyTransactions}>
+                  <IconSymbol name="doc.text" size={40} color={colors.tabIconDefault} />
+                  <Text style={[styles.emptyTransactionsText, { color: colors.tabIconDefault }]}>
+                    Aucune transaction récente
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -764,5 +933,83 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginTop: 24,
+  },
+
+  transactionsCard: {
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.04)",
+  },
+  transactionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  transactionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 12,
+  },
+  transactionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionDescription: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 4,
+    letterSpacing: -0.2,
+  },
+  transactionDate: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  transactionRight: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
+  transactionStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  transactionStatus: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  transactionDivider: {
+    height: 1,
+    marginVertical: 4,
+  },
+  emptyTransactions: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+  },
+  emptyTransactionsText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 12,
   },
 })
