@@ -21,7 +21,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
 
 interface Account {
   id: string
@@ -36,23 +35,22 @@ interface Account {
 
 interface Transaction {
   id: string
-  type: string
-  amount: number
-  currency: string
-  description: string
   createdAt: string
+  updatedAt: string
+  deletedAt?: string
+  createdById: string
+  updatedById: string
+  importHash?: string
+  tenantId: string
+  txnId: string
+  accountId: string
+  txnType: string
+  amount: string
+  valueDate: string
   status: string
-  recipientName?: string
-  senderName?: string
-}
-
-interface Card {
-  id: string
-  numCard: string
-  typCard: string
-  status: string
-  dateExpiration: string
-  cardHolderName: string
+  description: string
+  creditAccount: string
+  commentNotes?: string
 }
 
 const { width } = Dimensions.get("window")
@@ -69,17 +67,12 @@ export default function Dashboard() {
   const [showBalance, setShowBalance] = useState(true)
   const [chatInput, setChatInput] = useState("")
   const [activeIndex, setActiveIndex] = useState(0)
-  const [activeCardIndex, setActiveCardIndex] = useState(0)
   const scrollViewRef = useRef<ScrollView>(null)
-  const cardScrollViewRef = useRef<ScrollView>(null)
   const [fadeAnim] = useState(new Animated.Value(0))
-  const [cardFadeAnim] = useState(new Animated.Value(0))
-  const [cards, setCards] = useState<Card[]>([])
 
   useEffect(() => {
     fetchAccounts()
     fetchTransactions()
-    fetchCards()
   }, [])
 
   useEffect(() => {
@@ -98,23 +91,6 @@ export default function Dashboard() {
       return () => clearInterval(interval)
     }
   }, [accounts.length])
-
-  useEffect(() => {
-    if (cards.length > 1) {
-      const interval = setInterval(() => {
-        setActiveCardIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % cards.length
-          cardScrollViewRef.current?.scrollTo({
-            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
-            animated: true,
-          })
-          return nextIndex
-        })
-      }, 4000)
-
-      return () => clearInterval(interval)
-    }
-  }, [cards.length])
 
   const fetchAccounts = async () => {
     try {
@@ -142,7 +118,6 @@ export default function Dashboard() {
         }, 0)
         setTotalBalance(total)
 
-        // Fade in animation
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 800,
@@ -151,39 +126,6 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("[v0] Error fetching accounts:", error)
-    }
-  }
-
-  const fetchCards = async () => {
-    try {
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token || !tenantId) {
-        return
-      }
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CARD.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const activeCards = data.rows?.filter((card: any) => card.status?.toLowerCase() === "actif") || []
-        setCards(activeCards)
-
-        // Fade in animation
-        Animated.timing(cardFadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }).start()
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching cards:", error)
     }
   }
 
@@ -205,8 +147,10 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
-        // Get only the 3 most recent transactions
-        const recentTransactions = data.rows?.slice(0, 3) || []
+        // Get the 3 most recent transactions
+        const recentTransactions = (data.rows || [])
+          .sort((a: Transaction, b: Transaction) => new Date(b.valueDate).getTime() - new Date(a.valueDate).getTime())
+          .slice(0, 3)
         setTransactions(recentTransactions)
       }
     } catch (error) {
@@ -220,26 +164,12 @@ export default function Dashboard() {
     setActiveIndex(index)
   }
 
-  const handleCardScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
-    setActiveCardIndex(index)
-  }
-
   const handleDotPress = (index: number) => {
     scrollViewRef.current?.scrollTo({
       x: index * (CARD_WIDTH + CARD_SPACING),
       animated: true,
     })
     setActiveIndex(index)
-  }
-
-  const handleCardDotPress = (index: number) => {
-    cardScrollViewRef.current?.scrollTo({
-      x: index * (CARD_WIDTH + CARD_SPACING),
-      animated: true,
-    })
-    setActiveCardIndex(index)
   }
 
   const getUserInitials = () => {
@@ -265,43 +195,37 @@ export default function Dashboard() {
     return "#4F46E5"
   }
 
-  const getCardColor = (type: string) => {
-    const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("visa")) return "#1A1F71"
-    if (normalizedType.includes("mastercard")) return "#EB001B"
-    return "#2D7A4F"
-  }
-
-  const maskCardNumber = (cardNumber: string) => {
-    if (!cardNumber) return "•••• •••• •••• ••••"
-    const last4 = cardNumber.slice(-4)
-    return `•••• •••• •••• ${last4}`
-  }
-
   const getTransactionIcon = (type: string) => {
     const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("virement") || normalizedType.includes("transfer")) return "arrow.left.arrow.right"
-    if (normalizedType.includes("depot") || normalizedType.includes("deposit")) return "arrow.down.circle.fill"
-    if (normalizedType.includes("retrait") || normalizedType.includes("withdrawal")) return "arrow.up.circle.fill"
+    if (normalizedType.includes("depot") || normalizedType.includes("dépôt")) return "arrow.down.circle.fill"
+    if (normalizedType.includes("retrait")) return "arrow.up.circle.fill"
+    if (normalizedType.includes("virement")) return "arrow.left.arrow.right.circle.fill"
     return "dollarsign.circle.fill"
   }
 
   const getTransactionColor = (type: string) => {
     const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("depot") || normalizedType.includes("deposit")) return "#10B981"
-    if (normalizedType.includes("retrait") || normalizedType.includes("withdrawal")) return "#EF4444"
-    return "#2D7A4F"
+    if (normalizedType.includes("depot") || normalizedType.includes("dépôt")) return "#10B981"
+    if (normalizedType.includes("retrait")) return "#EF4444"
+    if (normalizedType.includes("virement")) return "#3B82F6"
+    return "#6B7280"
+  }
+
+  const getStatusColor = (status: string) => {
+    const normalizedStatus = status?.toLowerCase() || ""
+    if (normalizedStatus.includes("success") || normalizedStatus.includes("réussi")) return "#10B981"
+    if (normalizedStatus.includes("pending") || normalizedStatus.includes("attente")) return "#F59E0B"
+    if (normalizedStatus.includes("failed") || normalizedStatus.includes("échoué")) return "#EF4444"
+    return "#6B7280"
   }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return "Aujourd'hui"
-    if (diffDays === 1) return "Hier"
-    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date)
   }
 
   return (
@@ -416,84 +340,6 @@ export default function Dashboard() {
             )}
           </View>
 
-          {/* Cards Carousel */}
-          <View style={styles.balanceCard}>
-            <View style={styles.balanceHeader}>
-              <View style={styles.balanceTitle}>
-                <IconSymbol name="creditcard" size={18} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.balanceTitleText}>Mes cartes actives</Text>
-              </View>
-            </View>
-
-            {cards.length > 0 ? (
-              <>
-                <ScrollView
-                  ref={cardScrollViewRef}
-                  horizontal
-                  pagingEnabled={false}
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={CARD_WIDTH + CARD_SPACING}
-                  decelerationRate="fast"
-                  contentContainerStyle={styles.accountCarouselContent}
-                  onScroll={handleCardScroll}
-                  scrollEventThrottle={16}
-                >
-                  {cards.map((card) => (
-                    <Animated.View key={card.id} style={[styles.cardItem, { opacity: cardFadeAnim }]}>
-                      <TouchableOpacity
-                        style={styles.individualAccountCard}
-                        onPress={() => router.push(`/card-details?id=${card.id}`)}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.cardHeader}>
-                          <View style={[styles.cardChip, { backgroundColor: getCardColor(card.cardType) }]} />
-                          <View style={styles.cardHolderSection}>
-                            <Text style={styles.cardLabel}>Titulaire</Text>
-                            <Text style={styles.cardHolderName}>John Doe</Text>
-                          </View>
-                          <View style={styles.cardExpirySection}>
-                            <Text style={styles.cardLabel}>Expiration</Text>
-                            <Text style={styles.cardExpiry}>12/24</Text>
-                          </View>
-                        </View>
-                        <View style={styles.cardMiddle}>
-                          <Text style={styles.cardNumber}>{maskCardNumber(card.cardNumber)}</Text>
-                        </View>
-                        <View style={styles.cardFooter}>
-                          <Text style={styles.cardLabel}>Type de carte</Text>
-                          <Text style={styles.cardType}>{card.cardType}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  ))}
-                </ScrollView>
-
-                {cards.length > 1 && (
-                  <View style={styles.paginationContainer}>
-                    {cards.map((_, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => handleCardDotPress(index)}
-                        style={[
-                          styles.paginationDot,
-                          {
-                            backgroundColor: index === activeCardIndex ? "#FFFFFF" : "rgba(255,255,255,0.4)",
-                            width: index === activeCardIndex ? 32 : 8,
-                          },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                )}
-              </>
-            ) : (
-              <View style={styles.emptyInGreenCard}>
-                <IconSymbol name="creditcard" size={48} color="rgba(255,255,255,0.5)" />
-                <Text style={styles.emptyInGreenCardText}>Aucune carte active trouvée</Text>
-              </View>
-            )}
-          </View>
-
           {/* Quick Actions */}
           <View style={styles.section}>
             <View style={styles.quickActionsGrid}>
@@ -537,88 +383,69 @@ export default function Dashboard() {
               </TouchableOpacity>
             </View>
 
-            {cards.length > 0 ? (
-              <>
-                <ScrollView
-                  ref={cardScrollViewRef}
-                  horizontal
-                  pagingEnabled={false}
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={CARD_WIDTH + CARD_SPACING}
-                  decelerationRate="fast"
-                  contentContainerStyle={styles.carouselContent}
-                  onScroll={handleCardScroll}
-                  scrollEventThrottle={16}
-                >
-                  {cards.map((card) => (
-                    <Animated.View key={card.id} style={[styles.carouselCard, { opacity: cardFadeAnim }]}>
-                      <TouchableOpacity
-                        style={[styles.cardItem, { backgroundColor: getCardColor(card.cardType) }]}
-                        activeOpacity={0.8}
+            {transactions.length > 0 ? (
+              <View style={styles.transactionsContainer}>
+                {transactions.map((transaction) => (
+                  <TouchableOpacity
+                    key={transaction.id}
+                    style={[styles.transactionCard, { backgroundColor: colors.surface }]}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.transactionLeft}>
+                      <View
+                        style={[
+                          styles.transactionIcon,
+                          { backgroundColor: `${getTransactionColor(transaction.txnType)}15` },
+                        ]}
                       >
-                        <View style={styles.cardHeader}>
-                          <View style={styles.cardChip} />
-                          <Text style={styles.cardType}>{card.typCard}</Text>
-                        </View>
-                        <View style={styles.cardMiddle}>
-                          <Text style={styles.cardNumber}>{maskCardNumber(card.numCard)}</Text>
-                        </View>
-                        <View style={styles.cardFooter}>
-                          <View style={styles.cardHolderSection}>
-                            <Text style={styles.cardLabel}>Titulaire</Text>
-                            <Text style={styles.cardHolderName}>{card.cardHolderName}</Text>
-                          </View>
-                          <View style={styles.cardExpirySection}>
-                            <Text style={styles.cardLabel}>Expire</Text>
-                            <Text style={styles.cardExpiry}>{card.dateExpiration}</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  ))}
-                </ScrollView>
-
-                {cards.length > 1 && (
-                  <View style={styles.paginationContainer}>
-                    {cards.map((_, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => handleCardDotPress(index)}
+                        <IconSymbol
+                          name={getTransactionIcon(transaction.txnType) as any}
+                          size={24}
+                          color={getTransactionColor(transaction.txnType)}
+                        />
+                      </View>
+                      <View style={styles.transactionInfo}>
+                        <Text style={[styles.transactionDescription, { color: colors.text }]}>
+                          {transaction.description || transaction.txnType}
+                        </Text>
+                        <Text style={[styles.transactionDate, { color: colors.tabIconDefault }]}>
+                          {formatDate(transaction.valueDate)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.transactionRight}>
+                      <Text
                         style={[
                           styles.transactionAmount,
                           {
-                            color: transaction.type?.toLowerCase().includes("depot")
+                            color: transaction.txnType?.toLowerCase().includes("depot")
                               ? "#10B981"
-                              : transaction.type?.toLowerCase().includes("retrait")
+                              : transaction.txnType?.toLowerCase().includes("retrait")
                                 ? "#EF4444"
                                 : colors.text,
                           },
                         ]}
                       >
-                        {transaction.type?.toLowerCase().includes("depot") ? "+" : "-"}
-                        {formatCurrency(transaction.amount)} {transaction.currency}
+                        {transaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
+                        {formatCurrency(Number.parseFloat(transaction.amount))}
                       </Text>
-                      <Text
+                      <View
                         style={[
                           styles.transactionStatus,
-                          {
-                            color:
-                              transaction.status?.toLowerCase() === "completed" ||
-                              transaction.status?.toLowerCase() === "reussi"
-                                ? "#10B981"
-                                : "#F59E0B",
-                          },
+                          { backgroundColor: `${getStatusColor(transaction.status)}15` },
                         ]}
                       >
-                        {transaction.status}
-                      </Text>
+                        <Text style={[styles.transactionStatusText, { color: getStatusColor(transaction.status) }]}>
+                          {transaction.status}
+                        </Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
               </View>
             ) : (
               <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
-                <IconSymbol name="arrow.left.arrow.right" size={48} color={colors.tabIconDefault} />
+                <IconSymbol name="list.bullet" size={48} color={colors.tabIconDefault} />
                 <Text style={[styles.emptyCardText, { color: colors.tabIconDefault }]}>Aucune transaction récente</Text>
               </View>
             )}
@@ -972,32 +799,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  carouselContent: {
-    paddingHorizontal: 16,
-    gap: CARD_SPACING,
-  },
-  carouselCard: {
-    width: CARD_WIDTH,
-  },
-  accountBalanceSection: {
-    marginTop: 16,
-  },
-  balanceLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  accountBalanceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
-  },
-  accountCurrency: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1108,69 +909,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 12,
   },
-  cardItem: {
+  emptyCard: {
+    padding: 40,
     borderRadius: 20,
-    padding: 24,
-    height: 200,
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-  },
-  cardChip: {
-    width: 48,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.3)",
-  },
-  cardType: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  cardMiddle: {
     justifyContent: "center",
   },
-  cardNumber: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 2,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cardHolderSection: {
-    flex: 1,
-  },
-  cardLabel: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 10,
+  emptyCardText: {
+    fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "uppercase",
-  },
-  cardHolderName: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  cardExpirySection: {
-    alignItems: "flex-end",
-  },
-  cardExpiry: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
+    marginTop: 12,
   },
   transactionsContainer: {
     gap: 12,
@@ -1183,7 +931,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -1194,16 +942,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   transactionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
   transactionInfo: {
     flex: 1,
   },
-  transactionTitle: {
+  transactionDescription: {
     fontSize: 15,
     fontWeight: "700",
     marginBottom: 4,
@@ -1214,6 +962,7 @@ const styles = StyleSheet.create({
   },
   transactionRight: {
     alignItems: "flex-end",
+    gap: 6,
   },
   transactionAmount: {
     fontSize: 16,
@@ -1221,18 +970,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   transactionStatus: {
-    fontSize: 12,
-    fontWeight: "600",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  emptyCard: {
-    padding: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyCardText: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 12,
+  transactionStatusText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
 })
