@@ -251,17 +251,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          invitationToken: "",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+        }),
       })
 
       if (!response.ok) {
         console.log("[v0] Login failed, status:", response.status)
-        Alert.alert("Erreur", "Email ou mot de passe incorrect")
+        const errorText = await response.text()
+        Alert.alert("Erreur", errorText || "Email ou mot de passe incorrect")
         return false
       }
 
-      const data = await response.json()
-      const authToken = data.token || data.accessToken
+      const authToken = await response.text()
 
       if (!authToken) {
         console.log("[v0] No token received from server")
