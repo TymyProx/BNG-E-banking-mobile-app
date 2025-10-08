@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -11,8 +11,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Animated,
-  Dimensions,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -22,64 +20,40 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 
-interface Account {
+interface Transaction {
   id: string
-  accountNumber: string
-  accountName: string
   type: string
-  balance: number
+  amount: number
   currency: string
+  description: string
+  date: string
   status: string
-  availableBalance: string
 }
-
-const { width } = Dimensions.get("window")
-const CARD_WIDTH = width - 48
-const CARD_SPACING = 16
 
 export default function Dashboard() {
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? "light"]
   const { user, tenantId } = useAuth()
-  const [accounts, setAccounts] = useState<Account[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [showBalance, setShowBalance] = useState(true)
   const [chatInput, setChatInput] = useState("")
-  const [activeIndex, setActiveIndex] = useState(0)
-  const scrollViewRef = useRef<ScrollView>(null)
-  const [fadeAnim] = useState(new Animated.Value(0))
 
   useEffect(() => {
-    fetchAccounts()
-  }, [])
-
-  useEffect(() => {
-    if (accounts.length > 1) {
-      const interval = setInterval(() => {
-        setActiveIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % accounts.length
-          scrollViewRef.current?.scrollTo({
-            x: nextIndex * (CARD_WIDTH + CARD_SPACING),
-            animated: true,
-          })
-          return nextIndex
-        })
-      }, 4000)
-
-      return () => clearInterval(interval)
+    if (tenantId) {
+      fetchTransactions()
     }
-  }, [accounts.length])
+  }, [tenantId])
 
-  const fetchAccounts = async () => {
+  const fetchTransactions = async () => {
     try {
       const token = await SecureStore.getItemAsync("token")
 
       if (!token || !tenantId) {
-        console.log("[v0] No token or tenantId available")
         return
       }
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -89,38 +63,11 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
-        const activeAccounts = data.rows?.filter((acc: any) => acc.status?.toLowerCase() === "actif") || []
-        setAccounts(activeAccounts)
-
-        const total = activeAccounts.reduce((sum: number, acc: any) => {
-          return sum + (Number.parseFloat(acc.availableBalance) || 0)
-        }, 0)
-        setTotalBalance(total)
-
-        // Fade in animation
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }).start()
+        setTransactions(data.rows?.slice(0, 5) || [])
       }
     } catch (error) {
-      console.error("[v0] Error fetching accounts:", error)
+      console.error("Error fetching transactions:", error)
     }
-  }
-
-  const handleScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / (CARD_WIDTH + CARD_SPACING))
-    setActiveIndex(index)
-  }
-
-  const handleDotPress = (index: number) => {
-    scrollViewRef.current?.scrollTo({
-      x: index * (CARD_WIDTH + CARD_SPACING),
-      animated: true,
-    })
-    setActiveIndex(index)
   }
 
   const getUserInitials = () => {
@@ -128,22 +75,23 @@ export default function Dashboard() {
     return `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase()
   }
 
+  const getUserFullName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`
+    }
+    return user?.firstName || user?.lastName || "Utilisateur"
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-GN").format(amount)
   }
 
-  const getAccountIcon = (type: string) => {
+  const getTransactionIcon = (type: string) => {
     const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("courant")) return "creditcard.fill"
-    if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "banknote.fill"
-    return "wallet.pass.fill"
-  }
-
-  const getAccountColor = (type: string) => {
-    const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("courant")) return "#2D7A4F"
-    if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "#10B981"
-    return "#4F46E5"
+    if (normalizedType.includes("virement") || normalizedType.includes("transfer")) return "arrow.up.arrow.down"
+    if (normalizedType.includes("paiement") || normalizedType.includes("payment")) return "creditcard.fill"
+    if (normalizedType.includes("retrait") || normalizedType.includes("withdrawal")) return "arrow.down.circle.fill"
+    return "banknote.fill"
   }
 
   return (
@@ -161,14 +109,12 @@ export default function Dashboard() {
             </View>
             <View style={styles.userNameContainer}>
               <Text style={[styles.userGreeting, { color: colors.tabIconDefault }]}>Bonjour,</Text>
-              <Text style={[styles.userName, { color: colors.text }]}>
-                {user?.firstName || user?.lastName || "Utilisateur"}
-              </Text>
+              <Text style={[styles.userName, { color: colors.text }]}>{getUserFullName()}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notificationButton}>
-              <IconSymbol name="bell" size={22} color="#2D7A4F" />
+              <IconSymbol name="bell" size={22} color="#FBBF24" />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
           </View>
@@ -221,8 +167,8 @@ export default function Dashboard() {
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/transfer")}
               >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
+                <View style={[styles.actionIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#FBBF24" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
               </TouchableOpacity>
@@ -231,8 +177,8 @@ export default function Dashboard() {
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/cards")}
               >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
+                <View style={[styles.actionIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                  <IconSymbol name="creditcard" size={24} color="#FBBF24" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
               </TouchableOpacity>
@@ -241,97 +187,67 @@ export default function Dashboard() {
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push("/(tabs)/menu")}
               >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
+                <View style={[styles.actionIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#FBBF24" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
               </TouchableOpacity>
             </View>
           </View>
 
+          {/* Recent Transactions */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes comptes</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
                 <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
               </TouchableOpacity>
             </View>
 
-            {accounts.length > 0 ? (
-              <>
-                <ScrollView
-                  ref={scrollViewRef}
-                  horizontal
-                  pagingEnabled={false}
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={CARD_WIDTH + CARD_SPACING}
-                  decelerationRate="fast"
-                  contentContainerStyle={styles.carouselContent}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                >
-                  {accounts.map((account) => (
-                    <Animated.View key={account.id} style={[styles.carouselCard, { opacity: fadeAnim }]}>
-                      <TouchableOpacity
-                        style={[styles.accountCard, { backgroundColor: colors.surface }]}
-                        onPress={() => router.push(`/account-details?id=${account.id}`)}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.accountHeader}>
-                          <View style={styles.accountLeft}>
-                            <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.type) }]}>
-                              <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
-                            </View>
-                            <View style={styles.accountInfo}>
-                              <Text style={[styles.accountName, { color: colors.text }]}>
-                                {account.accountName || account.type}
-                              </Text>
-                              <Text style={[styles.accountNumber, { color: colors.tabIconDefault }]}>
-                                •••• {account.accountNumber.slice(-4)}
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-                        <View style={styles.accountBalanceSection}>
-                          <Text style={[styles.balanceLabel, { color: colors.tabIconDefault }]}>Solde disponible</Text>
-                          <View style={styles.accountBalanceRow}>
-                            <Text style={[styles.accountBalance, { color: colors.text }]}>
-                              {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
-                            </Text>
-                            <Text style={[styles.accountCurrency, { color: colors.tabIconDefault }]}>
-                              {account.currency}
-                            </Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  ))}
-                </ScrollView>
-
-                {accounts.length > 1 && (
-                  <View style={styles.paginationContainer}>
-                    {accounts.map((_, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => handleDotPress(index)}
+            {transactions.length > 0 ? (
+              <View style={styles.transactionsContainer}>
+                {transactions.map((transaction) => (
+                  <TouchableOpacity
+                    key={transaction.id}
+                    style={[styles.transactionCard, { backgroundColor: colors.surface }]}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.transactionLeft}>
+                      <View style={[styles.transactionIcon, { backgroundColor: "rgba(45, 122, 79, 0.1)" }]}>
+                        <IconSymbol name={getTransactionIcon(transaction.type) as any} size={20} color="#2D7A4F" />
+                      </View>
+                      <View style={styles.transactionInfo}>
+                        <Text style={[styles.transactionDescription, { color: colors.text }]}>
+                          {transaction.description}
+                        </Text>
+                        <Text style={[styles.transactionDate, { color: colors.tabIconDefault }]}>
+                          {new Date(transaction.date).toLocaleDateString("fr-FR")}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.transactionRight}>
+                      <Text
                         style={[
-                          styles.paginationDot,
+                          styles.transactionAmount,
                           {
-                            backgroundColor: index === activeIndex ? "#2D7A4F" : colors.border,
-                            width: index === activeIndex ? 32 : 8,
+                            color: transaction.type?.toLowerCase().includes("retrait") ? "#EF4444" : "#10B981",
                           },
                         ]}
-                      />
-                    ))}
-                  </View>
-                )}
-              </>
+                      >
+                        {transaction.type?.toLowerCase().includes("retrait") ? "-" : "+"}
+                        {formatCurrency(transaction.amount)}
+                      </Text>
+                      <Text style={[styles.transactionCurrency, { color: colors.tabIconDefault }]}>
+                        {transaction.currency}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             ) : (
-              <View style={[styles.emptyAccountsCard, { backgroundColor: colors.surface }]}>
-                <IconSymbol name="creditcard.fill" size={48} color={colors.tabIconDefault} />
-                <Text style={[styles.emptyAccountsText, { color: colors.tabIconDefault }]}>
-                  Aucun compte actif trouvé
-                </Text>
+              <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
+                <IconSymbol name="banknote.fill" size={48} color={colors.tabIconDefault} />
+                <Text style={[styles.emptyText, { color: colors.tabIconDefault }]}>Aucune transaction récente</Text>
               </View>
             )}
           </View>
@@ -344,7 +260,7 @@ export default function Dashboard() {
           <View style={styles.chatContent}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.attachButton}>
-                <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
+                <IconSymbol name="paperclip" size={20} color="#FBBF24" />
               </TouchableOpacity>
               <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <TextInput
@@ -360,7 +276,7 @@ export default function Dashboard() {
                   <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
+              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#FBBF24" }]}>
                 <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -377,70 +293,6 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
 
-  balanceCard: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    padding: 24,
-    borderRadius: 24,
-    backgroundColor: "#2D7A4F",
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-
-  balanceValue: {
-    color: "#FFFFFF",
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-
-  trendText: {
-    color: "#10B981",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 16,
-    letterSpacing: -0.5,
-  },
-
-  actionCard: {
-    width: "30%",
-    paddingVertical: 20,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-
-  accountCard: {
-    borderRadius: 24,
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -454,7 +306,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     paddingRight: 16,
-    paddingBottom: 16,
   },
   profileAvatar: {
     width: 56,
@@ -494,7 +345,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8,
     position: "relative",
-    backgroundColor: "rgba(45, 122, 79, 0.1)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
     borderRadius: 12,
   },
   notificationDot: {
@@ -509,11 +360,29 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
+  balanceCard: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 24,
+    borderRadius: 24,
+    backgroundColor: "#2D7A4F",
+    shadowColor: "#2D7A4F",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
   balanceHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   balanceLeft: { flex: 1 },
   balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   balanceTitleText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" },
   balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
+  balanceValue: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
   eyeButton: { padding: 6 },
   balanceRight: { alignItems: "flex-end", justifyContent: "center" },
   trendContainer: {
@@ -524,6 +393,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
+  },
+  trendText: {
+    color: "#10B981",
+    fontSize: 14,
+    fontWeight: "700",
   },
   trendSubtext: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4, fontWeight: "500" },
 
@@ -550,6 +424,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
   sectionAction: { fontSize: 14, fontWeight: "600" },
 
   quickActionsGrid: {
@@ -558,59 +437,79 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     rowGap: 16,
   },
+  actionCard: {
+    width: "30%",
+    paddingVertical: 20,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.04)",
+  },
   actionIcon: {
     justifyContent: "center",
     alignItems: "center",
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
   },
   actionLabel: { fontSize: 13, textAlign: "center", fontWeight: "600", marginTop: 4 },
 
-  accountsContainer: { gap: 16 },
-  accountHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
-  accountLeft: { flexDirection: "row", gap: 12, alignItems: "center", flex: 1 },
-  accountIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: "center",
+  transactionsContainer: { gap: 12 },
+  transactionCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    padding: 16,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  accountName: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 3,
-    letterSpacing: -0.2,
-  },
-  accountNumber: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  accountRight: { alignItems: "flex-end", gap: 6 },
-  accountBalance: {
-    fontSize: 19,
-    fontWeight: "800",
-    marginBottom: 6,
-    letterSpacing: -0.3,
-  },
-  accountChange: {
+  transactionLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
+    gap: 12,
+    flex: 1,
   },
-  accountChangeText: {
-    fontSize: 13,
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionDescription: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  transactionDate: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  transactionRight: {
+    alignItems: "flex-end",
+  },
+  transactionAmount: {
+    fontSize: 16,
     fontWeight: "700",
+    marginBottom: 2,
+  },
+  transactionCurrency: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 
   chatContainer: {
@@ -624,7 +523,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 12,
-    backgroundColor: "#FFFFFF",
   },
   chatContent: {
     paddingHorizontal: 16,
@@ -641,7 +539,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
   },
   inputContainer: {
     flex: 1,
@@ -649,10 +547,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#E5E7EB",
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#F9FAFB",
   },
   textInput: {
     flex: 1,
@@ -673,62 +569,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    shadowColor: "#2D7A4F",
+    shadowColor: "#FBBF24",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
-  accountInfo: {
-    flex: 1,
-    marginLeft: 4,
-  },
 
-  carouselContent: {
-    paddingHorizontal: 16,
-    gap: CARD_SPACING,
-  },
-  carouselCard: {
-    width: CARD_WIDTH,
-  },
-  accountBalanceSection: {
-    marginTop: 16,
-  },
-  balanceLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  accountBalanceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
-  },
-  accountCurrency: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 20,
-  },
-  paginationDot: {
-    height: 8,
-    borderRadius: 4,
-  },
-  emptyAccountsCard: {
+  emptyCard: {
     padding: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 16,
   },
-  emptyAccountsText: {
+  emptyText: {
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
