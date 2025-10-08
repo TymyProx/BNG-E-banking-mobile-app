@@ -72,6 +72,8 @@ export default function Dashboard() {
   const [modalVisible, setModalVisible] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
 
+  // REMOVED: Original useEffect hook for initial data fetching, now handled by useFocusEffect
+
   useFocusEffect(
     React.useCallback(() => {
       console.log("[v0] Dashboard focused")
@@ -88,8 +90,6 @@ export default function Dashboard() {
       }
     }, [authLoading, user, tenantId]),
   )
-
-  // REMOVED: Original useEffect hook for initial data fetching, now handled by useFocusEffect
 
   useEffect(() => {
     if (accounts.length > 1) {
