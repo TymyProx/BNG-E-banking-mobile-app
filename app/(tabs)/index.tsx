@@ -236,9 +236,9 @@ export default function Dashboard() {
 
   const getTransactionIcon = (type: string) => {
     const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("debit") || normalizedType.includes("retrait")) return "arrow.up.circle.fill"
-    if (normalizedType.includes("credit") || normalizedType.includes("depot")) return "arrow.down.circle.fill"
-    return "arrow.left.arrow.right.circle.fill"
+    if (normalizedType.includes("debit") || normalizedType.includes("retrait")) return "arrow-up-circle"
+    if (normalizedType.includes("credit") || normalizedType.includes("depot")) return "arrow-down-circle"
+    return "swap-horizontal"
   }
 
   const getTransactionColor = (type: string) => {
@@ -250,9 +250,9 @@ export default function Dashboard() {
 
   const getAccountIcon = (type: string) => {
     const normalizedType = type?.toLowerCase() || ""
-    if (normalizedType.includes("courant")) return "creditcard.fill"
-    if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "banknote.fill"
-    return "wallet.pass.fill"
+    if (normalizedType.includes("courant")) return "card"
+    if (normalizedType.includes("épargne") || normalizedType.includes("epargne")) return "cash"
+    return "wallet"
   }
 
   const getAccountColor = (type: string) => {
@@ -292,7 +292,7 @@ export default function Dashboard() {
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notificationButton}>
-              <IconSymbol name="bell" size={22} color="#2D7A4F" />
+              <IconSymbol name="notifications" size={22} color="#2D7A4F" />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
           </View>
@@ -416,7 +416,7 @@ export default function Dashboard() {
               </>
             ) : (
               <View style={[styles.emptyAccountsCard, { backgroundColor: colors.surface }]}>
-                <IconSymbol name="creditcard.fill" size={48} color={colors.tabIconDefault} />
+                <IconSymbol name="card" size={48} color={colors.tabIconDefault} />
                 <Text style={[styles.emptyAccountsText, { color: colors.tabIconDefault }]}>
                   Aucun compte actif trouvé
                 </Text>
@@ -438,7 +438,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/transfer")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
+                  <IconSymbol name="swap-vertical" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
               </TouchableOpacity>
@@ -448,7 +448,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/cards")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
+                  <IconSymbol name="card" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
               </TouchableOpacity>
@@ -458,7 +458,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/(tabs)/menu")}
               >
                 <View style={styles.actionIcon}>
-                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
+                  <IconSymbol name="menu" size={24} color="#2D7A4F" />
                 </View>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
               </TouchableOpacity>
@@ -557,7 +557,7 @@ export default function Dashboard() {
                 ))
               ) : (
                 <View style={styles.emptyTransactions}>
-                  <IconSymbol name="doc.text" size={40} color={colors.tabIconDefault} />
+                  <IconSymbol name="document-text" size={40} color={colors.tabIconDefault} />
                   <Text style={[styles.emptyTransactionsText, { color: colors.tabIconDefault }]}>
                     Aucune transaction récente
                   </Text>
@@ -574,7 +574,7 @@ export default function Dashboard() {
           <View style={styles.chatContent}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.attachButton}>
-                <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
+                <IconSymbol name="attach" size={20} color="#2D7A4F" />
               </TouchableOpacity>
               <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <TextInput
@@ -591,7 +591,7 @@ export default function Dashboard() {
                 </TouchableOpacity>
               </View>
               <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
-                <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
+                <IconSymbol name="send" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -604,7 +604,7 @@ export default function Dashboard() {
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
                 <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                  <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
+                  <IconSymbol name="close-circle" size={28} color={colors.tabIconDefault} />
                 </TouchableOpacity>
               </View>
 
