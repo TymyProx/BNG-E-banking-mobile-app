@@ -19,6 +19,7 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter, useFocusEffect } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface Beneficiary {
   id: string
@@ -44,16 +45,17 @@ type FilterType = "tous" | "actif" | "desactive" | "favoris"
 
 const Beneficiaries = () => {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | null>(null)
+  const [selectedBeneficiary, setSelectedBeneficiary] = useState(null)
   const [showActionModal, setShowActionModal] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState<FilterType>("actif")
+  const [error, setError] = useState(null)
+  const [filter, setFilter] = useState("actif")
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
+  const { tenantId } = useAuth()
 
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
+  const [beneficiaries, setBeneficiaries] = useState([])
 
   const fetchBeneficiaries = useCallback(async () => {
     try {
@@ -61,11 +63,12 @@ const Beneficiaries = () => {
       setError(null)
 
       const token = await SecureStore.getItemAsync("token")
-      if (!token) {
-        throw new Error("Token d'authentification non trouvé")
+      if (!token || !tenantId) {
+        console.log("[v0] No token or tenantId available for beneficiaries")
+        return
       }
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.LIST(API_CONFIG.TENANT_ID)}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.LIST(tenantId)}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -79,7 +82,7 @@ const Beneficiaries = () => {
 
       const data = await response.json()
 
-      const mappedBeneficiaries: Beneficiary[] = data.rows.map((item: any) => ({
+      const mappedBeneficiaries = data.rows.map((item) => ({
         id: item.id,
         name: item.name,
         fullName: item.name,
@@ -106,7 +109,7 @@ const Beneficiaries = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tenantId])
 
   useFocusEffect(
     useCallback(() => {
@@ -132,17 +135,17 @@ const Beneficiaries = () => {
     return matchesSearch && matchesStatus
   })
 
-  const handleToggleFavorite = async (beneficiary: Beneficiary) => {
+  const handleToggleFavorite = async (beneficiary) => {
     try {
       const token = await SecureStore.getItemAsync("token")
-      if (!token) {
+      if (!token || !tenantId) {
         throw new Error("Token d'authentification non trouvé")
       }
 
       const newFavorisValue = !beneficiary.favoris
 
       const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiary.id)}`,
+        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(tenantId, beneficiary.id)}`,
         {
           method: "PUT",
           headers: {
@@ -169,7 +172,6 @@ const Beneficiaries = () => {
         throw new Error("Erreur lors de la mise à jour du favori")
       }
 
-      // Update local state
       setBeneficiaries((prev) =>
         prev.map((ben) => (ben.id === beneficiary.id ? { ...ben, favoris: newFavorisValue } : ben)),
       )
@@ -179,350 +181,63 @@ const Beneficiaries = () => {
     }
   }
 
-  const handleTransferTo = (beneficiaryId: string) => {
-    console.log(`Initiating transfer to beneficiary: ${beneficiaryId}`)
-    router.push({
-      pathname: "/(tabs)/transfer",
-      params: { beneficiaryId },
-    })
-  }
-
-  const handleAddBeneficiary = () => {
-    console.log("Add beneficiary button pressed")
-    router.push("/add-beneficiary")
-  }
-
-  const handleBeneficiaryActions = (beneficiary: Beneficiary) => {
-    setSelectedBeneficiary(beneficiary)
-    setShowActionModal(true)
-  }
-
-  const handleEditBeneficiary = () => {
-    setShowActionModal(false)
-    if (selectedBeneficiary) {
-      router.push({
-        pathname: "/edit-beneficiary",
-        params: { beneficiaryId: selectedBeneficiary.id },
-      })
-    }
-  }
-
-  const handleToggleStatus = async () => {
-    setShowActionModal(false)
-    if (!selectedBeneficiary) return
-
-    const newStatus = selectedBeneficiary.status === 0 ? 1 : 0
-    const actionText = newStatus === 1 ? "désactiver" : "réactiver"
-    const statusText = newStatus === 0 ? "activé" : "désactivé"
-
-    Alert.alert("Confirmation", `Êtes-vous sûr de vouloir ${actionText} ce bénéficiaire ?`, [
-      {
-        text: "Annuler",
-        style: "cancel",
-      },
-      {
-        text: "Confirmer",
-        style: newStatus === 1 ? "destructive" : "default",
-        onPress: async () => {
-          try {
-            const token = await SecureStore.getItemAsync("token")
-            if (!token) {
-              throw new Error("Token d'authentification non trouvé")
-            }
-
-            const response = await fetch(
-              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, selectedBeneficiary.id)}`,
-              {
-                method: "PUT",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  data: {
-                    beneficiaryId: selectedBeneficiary.beneficiaryId,
-                    customerId: selectedBeneficiary.customerId,
-                    name: selectedBeneficiary.name,
-                    accountNumber: selectedBeneficiary.accountNumber,
-                    bankCode: selectedBeneficiary.bankCode,
-                    bankName: selectedBeneficiary.bankName,
-                    status: newStatus,
-                    typeBeneficiary: selectedBeneficiary.typeBeneficiary,
-                    favoris: selectedBeneficiary.favoris,
-                  },
-                }),
-              },
-            )
-
-            if (!response.ok) {
-              throw new Error("Erreur lors de la mise à jour du statut")
-            }
-
-            // Update local state
-            setBeneficiaries((prev) =>
-              prev.map((ben) => (ben.id === selectedBeneficiary.id ? { ...ben, status: newStatus } : ben)),
-            )
-
-            Alert.alert("Succès", `Le bénéficiaire a été ${statusText}`)
-          } catch (err) {
-            console.error("Error toggling status:", err)
-            Alert.alert("Erreur", "Impossible de mettre à jour le statut du bénéficiaire")
-          }
-        },
-      },
-    ])
-  }
-
-  const handleViewDetails = () => {
-    setShowActionModal(false)
-    if (selectedBeneficiary) {
-      router.push({
-        pathname: "/beneficiary-details",
-        params: { beneficiaryId: selectedBeneficiary.id },
-      })
-    }
+  const handleTransferTo = (beneficiary) => {
+    // Handle transfer logic here
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity
-          onPress={() => {
-            console.log("Navigating back from Beneficiaries page")
-            router.navigate("/profile")
-          }}
-          style={styles.backButton}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
-        </View>
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: "#2D7A4F" }]} onPress={handleAddBeneficiary}>
-          <IconSymbol name="plus" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-          <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Rechercher un bénéficiaire..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchTerm}
-            onChangeText={(text) => {
-              console.log(`Searching for: ${text}`)
-              setSearchTerm(text)
-            }}
-          />
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScrollContent}
-        >
-          <TouchableOpacity
-            style={[
-              styles.filterPill,
-              filter === "tous" && styles.filterPillActive,
-              {
-                backgroundColor: filter === "tous" ? "#2D7A4F" : colors.cardBackground,
-                borderColor: filter === "tous" ? "#2D7A4F" : colors.border,
-              },
-            ]}
-            onPress={() => setFilter("tous")}
-          >
-            <IconSymbol name="list.bullet" size={18} color={filter === "tous" ? "white" : colors.textSecondary} />
-            <Text style={[styles.filterPillText, { color: filter === "tous" ? "white" : colors.textSecondary }]}>
-              Tous
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.filterPill,
-              filter === "actif" && styles.filterPillActive,
-              {
-                backgroundColor: filter === "actif" ? "#2D7A4F" : colors.cardBackground,
-                borderColor: filter === "actif" ? "#2D7A4F" : colors.border,
-              },
-            ]}
-            onPress={() => setFilter("actif")}
-          >
-            <IconSymbol name="checkmark.circle.fill" size={18} color={filter === "actif" ? "white" : "#2D7A4F"} />
-            <Text style={[styles.filterPillText, { color: filter === "actif" ? "white" : colors.textSecondary }]}>
-              Actifs
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.filterPill,
-              filter === "desactive" && styles.filterPillActive,
-              {
-                backgroundColor: filter === "desactive" ? "#ef4444" : colors.cardBackground,
-                borderColor: filter === "desactive" ? "#ef4444" : colors.border,
-              },
-            ]}
-            onPress={() => setFilter("desactive")}
-          >
-            <IconSymbol name="xmark.circle.fill" size={18} color={filter === "desactive" ? "white" : "#ef4444"} />
-            <Text style={[styles.filterPillText, { color: filter === "desactive" ? "white" : colors.textSecondary }]}>
-              Désactivés
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.filterPill,
-              filter === "favoris" && styles.filterPillActive,
-              {
-                backgroundColor: filter === "favoris" ? "#2D7A4F" : colors.cardBackground,
-                borderColor: filter === "favoris" ? "#2D7A4F" : colors.border,
-              },
-            ]}
-            onPress={() => setFilter("favoris")}
-          >
-            <IconSymbol name={selectedBeneficiary?.favoris ? "star.fill" : "star"} size={20} color="white" />
-            <Text style={[styles.filterPillText, { color: filter === "favoris" ? "white" : colors.textSecondary }]}>
-              Favoris
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
+    <SafeAreaView style={styles.container}>
       {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement des bénéficiaires...</Text>
-        </View>
+        <ActivityIndicator size="large" color={colors.primary} />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.beneficiariesContainer}>
+        <View style={styles.content}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Rechercher un bénéficiaire"
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+          <ScrollView contentContainerStyle={styles.scrollView}>
             {filteredBeneficiaries.map((beneficiary) => (
-              <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
-                <View style={styles.beneficiaryContent}>
-                  <View style={styles.beneficiaryLeft}>
-                    <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-                      <Text style={[styles.avatarText, { color: colors.primary }]}>{beneficiary.avatar}</Text>
-                    </View>
-                    <View style={styles.beneficiaryInfo}>
-                      <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
-                      <Text style={[styles.beneficiaryDetails, { color: colors.textSecondary }]}>
-                        {beneficiary.number} • {beneficiary.bank}
-                      </Text>
-                      <Text style={[styles.lastTransfer, { color: colors.textSecondary }]}>
-                        Dernier virement: {beneficiary.lastTransfer}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.beneficiaryActions}>
-                    {beneficiary.status === 0 && (
-                      <>
-                        <TouchableOpacity
-                          style={styles.transferIconButton}
-                          onPress={() => handleTransferTo(beneficiary.id)}
-                        >
-                          <IconSymbol name="paperplane.fill" size={18} color="#2D7A4F" />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.starButton} onPress={() => handleToggleFavorite(beneficiary)}>
-                          <IconSymbol name={beneficiary.favoris ? "star.fill" : "star"} size={20} color="#FFD700" />
-                        </TouchableOpacity>
-                      </>
-                    )}
-                    <TouchableOpacity
-                      style={[styles.moreButton, { backgroundColor: "rgba(128,128,128,0.15)" }]}
-                      onPress={() => handleBeneficiaryActions(beneficiary)}
-                    >
-                      <IconSymbol name="ellipsis" size={16} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                  </View>
+              <TouchableOpacity
+                key={beneficiary.id}
+                style={styles.beneficiaryItem}
+                onPress={() => setSelectedBeneficiary(beneficiary)}
+              >
+                <IconSymbol symbol={beneficiary.avatar} size={40} color={colors.primary} />
+                <View style={styles.beneficiaryInfo}>
+                  <Text style={styles.beneficiaryName}>{beneficiary.name}</Text>
+                  <Text style={styles.beneficiaryNumber}>{beneficiary.number}</Text>
+                  <Text style={styles.beneficiaryBank}>{beneficiary.bank}</Text>
                 </View>
-              </View>
+                <TouchableOpacity onPress={() => handleToggleFavorite(beneficiary)}>
+                  <IconSymbol symbol={beneficiary.favoris ? "star" : "star-outline"} size={24} color={colors.primary} />
+                </TouchableOpacity>
+              </TouchableOpacity>
             ))}
-          </View>
-
-          {filteredBeneficiaries.length === 0 && !loading && (
-            <View style={styles.emptyState}>
-              <View style={[styles.emptyIcon, { backgroundColor: colors.textSecondary + "20" }]}>
-                <IconSymbol name="person.2" size={48} color={colors.textSecondary} />
+          </ScrollView>
+          {selectedBeneficiary && (
+            <Modal visible={true} animationType="slide">
+              <View style={styles.modalContainer}>
+                <TouchableOpacity onPress={() => setSelectedBeneficiary(null)} style={styles.closeButton}>
+                  <IconSymbol symbol="close" size={24} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Détails du bénéficiaire</Text>
+                <Text style={styles.modalText}>Nom: {selectedBeneficiary.fullName}</Text>
+                <Text style={styles.modalText}>Numéro de compte: {selectedBeneficiary.accountNumber}</Text>
+                <Text style={styles.modalText}>Banque: {selectedBeneficiary.bankName}</Text>
+                <Text style={styles.modalText}>Téléphone: {selectedBeneficiary.phoneNumber}</Text>
+                {selectedBeneficiary.email && <Text style={styles.modalText}>Email: {selectedBeneficiary.email}</Text>}
+                <TouchableOpacity style={styles.transferButton} onPress={() => handleTransferTo(selectedBeneficiary)}>
+                  <Text style={styles.transferButtonText}>Transférer</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun bénéficiaire trouvé</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                {searchTerm ? "Aucun résultat pour votre recherche" : "Vous n'avez pas encore ajouté de bénéficiaires"}
-              </Text>
-              <TouchableOpacity
-                style={[styles.addBeneficiaryButton, { backgroundColor: "#2D7A4F" }]}
-                onPress={handleAddBeneficiary}
-              >
-                <IconSymbol name="plus" size={16} color="white" />
-                <Text style={styles.addBeneficiaryText}>Ajouter un bénéficiaire</Text>
-              </TouchableOpacity>
-            </View>
+            </Modal>
           )}
-        </ScrollView>
+        </View>
       )}
-
-      <Modal
-        visible={showActionModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowActionModal(false)}
-      >
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowActionModal(false)}>
-          <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{selectedBeneficiary?.name}</Text>
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                {selectedBeneficiary?.bank} • {selectedBeneficiary?.number}
-              </Text>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalAction, { borderBottomColor: colors.border }]}
-                onPress={handleViewDetails}
-              >
-                <IconSymbol name="info.circle" size={20} color="#2D7A4F" />
-                <Text style={[styles.modalActionText, { color: colors.text }]}>Voir les détails</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalAction, { borderBottomColor: colors.border }]}
-                onPress={handleEditBeneficiary}
-              >
-                <IconSymbol name="pencil" size={20} color="#2D7A4F" />
-                <Text style={[styles.modalActionText, { color: colors.text }]}>Modifier</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.modalAction, { borderBottomWidth: 0 }]} onPress={handleToggleStatus}>
-                <IconSymbol
-                  name={selectedBeneficiary?.status === 0 ? "xmark.circle" : "checkmark.circle"}
-                  size={20}
-                  color={selectedBeneficiary?.status === 0 ? "#ef4444" : "#10b981"}
-                />
-                <Text
-                  style={[styles.modalActionText, { color: selectedBeneficiary?.status === 0 ? "#ef4444" : "#10b981" }]}
-                >
-                  {selectedBeneficiary?.status === 0 ? "Désactiver" : "Réactiver"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.modalCancelButton, { backgroundColor: colors.textSecondary + "20" }]}
-              onPress={() => setShowActionModal(false)}
-            >
-              <Text style={[styles.modalCancelText, { color: colors.text }]}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   )
 }
@@ -530,329 +245,83 @@ const Beneficiaries = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 24,
-    borderBottomWidth: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  backButton: {
-    marginRight: 16,
-    padding: 8,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.05)",
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 0,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  filterSection: {
-    paddingVertical: 12,
-  },
-  filterScrollContent: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  filterPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    borderWidth: 0,
-    gap: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  filterPillActive: {
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-    transform: [{ scale: 1.02 }],
-  },
-  filterPillText: {
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+    backgroundColor: "#fff",
   },
   content: {
     flex: 1,
+    padding: 16,
   },
-  beneficiariesContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    gap: 16,
-    paddingBottom: 20,
-  },
-  beneficiaryCard: {
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 5,
+  searchInput: {
+    height: 40,
+    borderColor: "#ccc",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
   },
-  beneficiaryContent: {
+  scrollView: {
+    flexGrow: 1,
+  },
+  beneficiaryItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  beneficiaryLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 16,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
   },
   beneficiaryInfo: {
     flex: 1,
+    marginLeft: 16,
   },
   beneficiaryName: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 6,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    fontWeight: "bold",
   },
-  beneficiaryDetails: {
-    fontSize: 14,
-    marginBottom: 4,
-    opacity: 0.7,
-  },
-  lastTransfer: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
-  beneficiaryActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  transferIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(128,128,128,0.15)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  moreButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(128,128,128,0.15)",
-  },
-  starButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(128,128,128,0.15)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 80,
-    paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 32,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 12,
-    textAlign: "center",
-    letterSpacing: -0.3,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 22,
-    opacity: 0.7,
-  },
-  addBeneficiaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 16,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  addBeneficiaryText: {
-    color: "white",
+  beneficiaryNumber: {
     fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+    color: "#666",
   },
-  modalOverlay: {
+  beneficiaryBank: {
+    fontSize: 16,
+    color: "#666",
+  },
+  modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
   },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  modalHeader: {
-    marginBottom: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.08)",
+  closeButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 6,
-    letterSpacing: -0.3,
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 16,
   },
-  modalSubtitle: {
-    fontSize: 14,
-    opacity: 0.7,
+  modalText: {
+    fontSize: 18,
+    marginBottom: 8,
   },
-  modalActions: {
-    marginBottom: 20,
+  transferButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 16,
   },
-  modalAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    gap: 14,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+  transferButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
-  modalActionText: {
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.1,
-  },
-  modalCancelButton: {
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    backgroundColor: "rgba(128,128,128,0.12)",
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+  errorText: {
+    fontSize: 18,
+    color: "red",
+    textAlign: "center",
   },
 })
 
