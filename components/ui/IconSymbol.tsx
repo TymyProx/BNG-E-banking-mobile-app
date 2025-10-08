@@ -3,7 +3,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import type { SymbolWeight, SymbolViewProps } from "expo-symbols"
 import type { ComponentProps } from "react"
-import React from "react"
 import type { OpaqueColorValue, StyleProp, TextStyle } from "react-native"
 
 type IconMapping = Record<SymbolViewProps["name"], ComponentProps<typeof MaterialIcons>["name"]>
@@ -85,6 +84,20 @@ const MAPPING = {
   bus: "directions_bus",
   "lock.open": "lock_open",
   "document-text-outline": "description",
+  notifications: "notifications",
+  "swap-vertical": "swap-vert",
+  card: "credit-card",
+  menu: "menu",
+  "arrow-up-circle": "arrow-circle-up",
+  "arrow-down-circle": "arrow-circle-down",
+  "swap-horizontal": "swap-horiz",
+  cash: "payments",
+  wallet: "account-balance-wallet",
+  attach: "attach-file",
+  mic: "mic",
+  send: "send",
+  "close-circle": "cancel",
+  "document-text": "description",
 } as unknown as IconMapping
 
 /**
