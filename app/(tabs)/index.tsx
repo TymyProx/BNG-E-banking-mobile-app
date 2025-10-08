@@ -181,7 +181,7 @@ export default function Dashboard() {
         >
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes comptes</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}></Text>
               <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
                 <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
               </TouchableOpacity>
