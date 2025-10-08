@@ -781,7 +781,7 @@ export default function CardsScreen() {
             {/* Pending card requests section */}
             {pendingCards.length > 0 && (
               <View style={styles.pendingRequestsContainer}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Demandes en attente</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes demandes</Text>
                 {pendingCards.map((card) => {
                   const cardType = CARD_TYPES.find((type) => type.value === card.typCard)
                   return (
