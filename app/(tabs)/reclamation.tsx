@@ -30,7 +30,7 @@ const MOTIF_OPTIONS = [
 ]
 
 export default function ReclamationScreen() {
-  const { tenantId } = useAuth()
+  const { tenantId, user } = useAuth()
   const [email, setEmail] = useState("")
   const [motif, setMotif] = useState("")
   const [description, setDescription] = useState("")
@@ -71,11 +71,21 @@ export default function ReclamationScreen() {
         return
       }
 
+      if (!user || !user.id) {
+        Alert.alert("Erreur", "Impossible de récupérer les informations utilisateur")
+        setIsSubmitting(false)
+        return
+      }
+
       const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.CREATE(tenantId)}`
+
       const requestBody = {
+        customerId: user.id,
         email: email.trim(),
         motifRecl: motif,
         description: description.trim(),
+        dateRecl: new Date().toISOString(),
+        status: "En attente",
       }
 
       console.log("[v0] Submitting reclamation to:", url)
