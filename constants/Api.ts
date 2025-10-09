@@ -43,4 +43,9 @@ export const API_ENDPOINTS = {
     LIST: (tenantId: string) => `/tenant/${tenantId}/commande`,
     DETAILS: (tenantId: string, checkbookId: string) => `/tenant/${tenantId}/commande/${checkbookId}`,
   },
+  RECLAMATION: {
+    CREATE: (tenantId: string) => `/tenant/${tenantId}/reclamation`,
+    LIST: (tenantId: string) => `/tenant/${tenantId}/reclamation`,
+    DETAILS: (tenantId: string, claimId: string) => `/tenant/${tenantId}/reclamation/${claimId}`,
+  },
 }
