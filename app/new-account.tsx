@@ -183,7 +183,7 @@ export default function NewAccountScreen() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     } else {
-      router.back() // Use router.back() instead of router.push("/accounts")
+      router.push("/accounts")
     }
   }
 
@@ -257,7 +257,7 @@ export default function NewAccountScreen() {
           {
             text: "Continuer",
             onPress: () => {
-              router.back() // Use router.back() instead of router.replace("/(tabs)/accounts")
+              router.replace("/(tabs)/accounts")
             },
           },
         ],
