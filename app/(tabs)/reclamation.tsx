@@ -1,25 +1,41 @@
 "use client"
 
-import { useState } from "react"
+import { IconSymbol } from "@/components/ui/IconSymbol"
+import { Colors } from "@/constants/Colors"
+import { useColorScheme } from "@/hooks/useColorScheme"
+import { router } from "expo-router"
+import { useEffect, useState } from "react"
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  Animated,
+  RefreshControl,
+  SafeAreaView,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
+  Modal,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
-import { router } from "expo-router"
-import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import * as SecureStore from "expo-secure-store"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
+import * as SecureStore from "expo-secure-store"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+
+interface Reclamation {
+  id: string
+  claimId: string
+  customerId: string
+  description: string
+  dateRecl: string
+  status: string
+  email: string
+  motifRecl: string
+  createdAt: string
+}
 
 const MOTIF_OPTIONS = [
   { value: "virement_non_effectif", label: "Virement non effectif" },
@@ -31,15 +47,96 @@ const MOTIF_OPTIONS = [
 ]
 
 export default function ReclamationScreen() {
+  const colorScheme = useColorScheme() ?? "light"
+  const colors = Colors[colorScheme]
   const { tenantId, user } = useAuth()
+
+  // List state
+  const [reclamations, setReclamations] = useState<Reclamation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [fadeAnim] = useState(new Animated.Value(0))
+  const [slideAnim] = useState(new Animated.Value(50))
+
+  // Form state
+  const [showForm, setShowForm] = useState(false)
   const [email, setEmail] = useState("")
   const [motif, setMotif] = useState("")
   const [description, setDescription] = useState("")
   const [showMotifPicker, setShowMotifPicker] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const loadReclamations = async () => {
+    setIsLoading(true)
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        setReclamations([])
+        setIsLoading(false)
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      const mappedReclamations: Reclamation[] = data.rows.map((reclamation: any) => ({
+        id: reclamation.id,
+        claimId: reclamation.claimId || "N/A",
+        customerId: reclamation.customerId || "",
+        description: reclamation.description || "Aucune description",
+        dateRecl: reclamation.dateRecl || reclamation.createdAt,
+        status: reclamation.status || "En attente",
+        email: reclamation.email || "",
+        motifRecl: reclamation.motifRecl || "",
+        createdAt: reclamation.createdAt,
+      }))
+
+      setReclamations(mappedReclamations)
+
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]).start()
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des réclamations:", error)
+      Alert.alert("Erreur", "Impossible de charger les réclamations. Veuillez réessayer.")
+      setReclamations([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadReclamations()
+    setRefreshing(false)
+  }
+
+  useEffect(() => {
+    loadReclamations()
+  }, [])
+
   const handleSubmit = async () => {
-    // Validation
     if (!email.trim()) {
       Alert.alert("Erreur", "Veuillez entrer votre email")
       return
@@ -55,7 +152,6 @@ export default function ReclamationScreen() {
       return
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       Alert.alert("Erreur", "Veuillez entrer un email valide")
@@ -91,9 +187,6 @@ export default function ReclamationScreen() {
         },
       }
 
-      console.log("[v0] Submitting reclamation to:", url)
-      console.log("[v0] Request body:", JSON.stringify(requestBody, null, 2))
-
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -102,9 +195,6 @@ export default function ReclamationScreen() {
         },
         body: JSON.stringify(requestBody),
       })
-
-      console.log("[v0] Response status:", response.status)
-      console.log("[v0] Response headers:", JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2))
 
       const contentType = response.headers.get("content-type")
       const isJson = contentType && contentType.includes("application/json")
@@ -116,20 +206,14 @@ export default function ReclamationScreen() {
       }
 
       const data = await response.json()
-      console.log("[v0] Response data:", JSON.stringify(data, null, 2))
 
       if (response.ok) {
-        Alert.alert("Succès", "Votre réclamation a été envoyée avec succès", [
-          {
-            text: "OK",
-            onPress: () => {
-              setEmail("")
-              setMotif("")
-              setDescription("")
-              router.back()
-            },
-          },
-        ])
+        Alert.alert("Succès", "Votre réclamation a été envoyée avec succès")
+        setEmail("")
+        setMotif("")
+        setDescription("")
+        setShowForm(false)
+        await loadReclamations()
       } else {
         Alert.alert("Erreur", data.message || "Une erreur est survenue lors de l'envoi de votre réclamation")
       }
@@ -144,158 +228,294 @@ export default function ReclamationScreen() {
     }
   }
 
-  const handleCancel = () => {
-    if (email || motif || description) {
-      Alert.alert("Annuler", "Êtes-vous sûr de vouloir annuler ? Toutes les données seront perdues.", [
-        { text: "Non", style: "cancel" },
-        {
-          text: "Oui",
-          style: "destructive",
-          onPress: () => {
-            setEmail("")
-            setMotif("")
-            setDescription("")
-            router.back()
-          },
-        },
-      ])
-    } else {
-      router.back()
+  const getMotifLabel = (value: string) => {
+    const option = MOTIF_OPTIONS.find((opt) => opt.value === value)
+    return option ? option.label : value
+  }
+
+  const getStatusColor = (status: string) => {
+    const normalizedStatus = status.toLowerCase()
+    switch (normalizedStatus) {
+      case "en attente":
+      case "pending":
+        return {
+          background: "#FEF3C7",
+          color: "#F59E0B",
+        }
+      case "traité":
+      case "resolved":
+        return {
+          background: colors.successBackground,
+          color: colors.success,
+        }
+      case "rejeté":
+      case "rejected":
+        return {
+          background: colors.errorBackground,
+          color: colors.error,
+        }
+      default:
+        return {
+          background: colors.borderLight,
+          color: colors.textSecondary,
+        }
     }
   }
 
-  const getSelectedMotifLabel = () => {
-    const selected = MOTIF_OPTIONS.find((option) => option.value === motif)
-    return selected ? selected.label : "Sélectionner"
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+  }
+
+  const ReclamationCard = ({ reclamation }: { reclamation: Reclamation }) => {
+    return (
+      <Animated.View
+        style={[
+          styles.reclamationCard,
+          {
+            backgroundColor: colors.cardBackground,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+            <IconSymbol name="exclamationmark.triangle.fill" size={24} color="#FBBF24" />
+          </View>
+          <View style={styles.cardHeaderInfo}>
+            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+              {getMotifLabel(reclamation.motifRecl)}
+            </Text>
+            <Text style={[styles.cardDate, { color: colors.textSecondary }]}>{formatDate(reclamation.dateRecl)}</Text>
+          </View>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: getStatusColor(reclamation.status).background,
+              },
+            ]}
+          >
+            <Text style={[styles.statusText, { color: getStatusColor(reclamation.status).color }]}>
+              {reclamation.status}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={2}>
+          {reclamation.description}
+        </Text>
+
+        <View style={styles.cardFooter}>
+          <View style={styles.footerItem}>
+            <IconSymbol name="envelope.fill" size={14} color={colors.textSecondary} />
+            <Text style={[styles.footerText, { color: colors.textSecondary }]} numberOfLines={1}>
+              {reclamation.email}
+            </Text>
+          </View>
+        </View>
+      </Animated.View>
+    )
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Demande de réclamation</Text>
-          <View style={styles.placeholder} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={{ paddingBottom: Platform.OS === "ios" ? 120 : 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Informations personnelles */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Informations personnelles</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Email <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="exemple@email.com"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Réclamations</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos réclamations</Text>
           </View>
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: "#2D7A4F" }]}
+            onPress={() => setShowForm(true)}
+          >
+            <IconSymbol name="plus" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-          {/* Réclamation */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Réclamation</Text>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FBBF24" />}
+      >
+        {!isLoading && reclamations.length > 0 && (
+          <View style={styles.listContainer}>
+            {reclamations.map((reclamation) => (
+              <ReclamationCard key={reclamation.id} reclamation={reclamation} />
+            ))}
+          </View>
+        )}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Motif de réclamation <Text style={styles.required}>*</Text>
-              </Text>
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FBBF24" />
+          </View>
+        )}
+
+        {!isLoading && reclamations.length === 0 && (
+          <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={[styles.emptyIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+              <IconSymbol name="exclamationmark.triangle.fill" size={56} color="#FBBF24" />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune réclamation</Text>
+            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
+              Vous n'avez pas encore de réclamation. Créez-en une en appuyant sur le bouton +
+            </Text>
+            <TouchableOpacity
+              style={[styles.createButton, { backgroundColor: "#2D7A4F" }]}
+              onPress={() => setShowForm(true)}
+            >
+              <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
+              <Text style={styles.createButtonText}>Nouvelle réclamation</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            <View
+              style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
+            >
+              <TouchableOpacity onPress={() => setShowForm(false)} style={styles.modalCloseButton}>
+                <IconSymbol name="xmark" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Nouvelle réclamation</Text>
+              <View style={styles.placeholder} />
+            </View>
+
+            <ScrollView style={styles.formScrollView} showsVerticalScrollIndicator={false}>
+              <View style={[styles.formSection, { backgroundColor: colors.cardBackground }]}>
+                <Text style={[styles.sectionTitle, { color: "#1E40AF" }]}>Informations personnelles</Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.text }]}>
+                    Email <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
+                    ]}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="exemple@email.com"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.formSection, { backgroundColor: colors.cardBackground }]}>
+                <Text style={[styles.sectionTitle, { color: "#1E40AF" }]}>Réclamation</Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.text }]}>
+                    Motif de réclamation <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.pickerButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+                    onPress={() => setShowMotifPicker(!showMotifPicker)}
+                  >
+                    <Text style={[styles.pickerButtonText, { color: motif ? colors.text : colors.textSecondary }]}>
+                      {motif ? getMotifLabel(motif) : "Sélectionner"}
+                    </Text>
+                    <IconSymbol
+                      name={showMotifPicker ? "chevron.up" : "chevron.down"}
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+
+                  {showMotifPicker && (
+                    <View
+                      style={[
+                        styles.pickerContainer,
+                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
+                      ]}
+                    >
+                      {MOTIF_OPTIONS.map((option) => (
+                        <TouchableOpacity
+                          key={option.value}
+                          style={[styles.pickerOption, { borderBottomColor: colors.borderLight }]}
+                          onPress={() => {
+                            setMotif(option.value)
+                            setShowMotifPicker(false)
+                          }}
+                        >
+                          <Text style={[styles.pickerOptionText, { color: colors.text }]}>{option.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.text }]}>
+                    Commentaire <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.textArea,
+                      { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
+                    ]}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Commentaire"
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    numberOfLines={6}
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+            </ScrollView>
+
+            <View
+              style={[styles.actionButtons, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}
+            >
               <TouchableOpacity
-                style={styles.pickerButton}
-                onPress={() => setShowMotifPicker(!showMotifPicker)}
-                activeOpacity={0.7}
+                style={[styles.cancelButton, { borderColor: colors.border }]}
+                onPress={() => setShowForm(false)}
+                disabled={isSubmitting}
               >
-                <Text style={[styles.pickerButtonText, !motif && styles.placeholderText]}>
-                  {getSelectedMotifLabel()}
-                </Text>
-                <Ionicons name={showMotifPicker ? "chevron-up" : "chevron-down"} size={20} color="#6B7280" />
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Annuler</Text>
               </TouchableOpacity>
 
-              {showMotifPicker && (
-                <View style={styles.pickerContainer}>
-                  <View style={styles.searchContainer}>
-                    <Ionicons name="search" size={20} color="#6B7280" />
-                    <Text style={styles.searchPlaceholder}>Rechercher</Text>
-                  </View>
-                  {MOTIF_OPTIONS.map((option) => (
-                    <TouchableOpacity
-                      key={option.value}
-                      style={styles.pickerOption}
-                      onPress={() => {
-                        setMotif(option.value)
-                        setShowMotifPicker(false)
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.pickerOptionText}>{option.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+              <TouchableOpacity
+                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Valider</Text>
+                )}
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Commentaire <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Commentaire"
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-              />
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Action Buttons */}
-        <View style={[styles.actionButtons, { paddingBottom: Platform.OS === "ios" ? 40 : 20 }]}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancel}
-            activeOpacity={0.7}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.cancelButtonText}>Annuler</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            activeOpacity={0.7}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.submitButtonText}>Valider</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -303,37 +523,196 @@ export default function ReclamationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  listContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    gap: 16,
+  },
+  reclamationCard: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FBBF24",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 12,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardHeaderInfo: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  cardDate: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cardDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  footerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+  },
+  footerText: {
+    fontSize: 12,
+    fontWeight: "500",
+    flex: 1,
+  },
+  loadingContainer: {
+    paddingVertical: 80,
+    alignItems: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    marginBottom: 12,
+    textAlign: "center",
+    letterSpacing: -0.5,
+  },
+  emptyMessage: {
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 32,
+    fontWeight: "500",
+    lineHeight: 22,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 10,
+  },
+  createButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  bottomSpacing: {
+    height: 60,
+  },
+  modalContainer: {
+    flex: 1,
   },
   keyboardView: {
     flex: 1,
   },
-  header: {
+  modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
   },
-  backButton: {
+  modalCloseButton: {
     padding: 8,
   },
-  headerTitle: {
+  modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
   },
   placeholder: {
     width: 40,
   },
-  scrollView: {
+  formScrollView: {
     flex: 1,
   },
-  section: {
-    backgroundColor: "#FFFFFF",
+  formSection: {
     marginTop: 16,
     paddingHorizontal: 20,
     paddingVertical: 24,
@@ -341,7 +720,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1E40AF",
     marginBottom: 20,
   },
   inputGroup: {
@@ -350,7 +728,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#111827",
     marginBottom: 8,
   },
   required: {
@@ -358,13 +735,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 14,
-    color: "#111827",
-    backgroundColor: "#FFFFFF",
   },
   textArea: {
     minHeight: 120,
@@ -375,58 +749,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: "#FFFFFF",
   },
   pickerButtonText: {
     fontSize: 14,
-    color: "#111827",
     flex: 1,
-  },
-  placeholderText: {
-    color: "#9CA3AF",
   },
   pickerContainer: {
     marginTop: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
     maxHeight: 300,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    gap: 8,
-  },
-  searchPlaceholder: {
-    fontSize: 14,
-    color: "#9CA3AF",
   },
   pickerOption: {
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
   },
   pickerOptionText: {
     fontSize: 14,
-    color: "#111827",
   },
   actionButtons: {
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingTop: 16,
-    backgroundColor: "#FFFFFF",
+    paddingBottom: 20,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
     gap: 12,
   },
   cancelButton: {
@@ -434,15 +784,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
   },
   submitButton: {
     flex: 1,
