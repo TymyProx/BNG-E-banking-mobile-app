@@ -9,7 +9,6 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 interface CreditRequest {
   id: string
@@ -243,10 +242,18 @@ export default function EServicesScreen() {
         contentContainerStyle={{ paddingBottom: Platform.OS === "ios" ? 120 : 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>E-Services</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos demandes en ligne</Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(255, 193, 7, 0.15)" }]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#FFC107" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>E-Services</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos demandes en ligne</Text>
+          </View>
+          <View style={styles.headerPlaceholder} />
         </View>
 
         <View style={styles.section}>
@@ -590,18 +597,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 24,
-    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "800",
-    marginBottom: 6,
+    marginBottom: 4,
     letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "500",
+  },
+  headerPlaceholder: {
+    width: 48,
+    height: 48,
   },
   section: {
     padding: 24,
