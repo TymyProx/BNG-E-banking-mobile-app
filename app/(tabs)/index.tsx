@@ -434,9 +434,6 @@ export default function Dashboard() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
-                <Text style={[styles.sectionAction, { color: "#2D7A4F" }]}>Voir tout →</Text>
-              </TouchableOpacity>
             </View>
 
             {transactions.length > 0 ? (

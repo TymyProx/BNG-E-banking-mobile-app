@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import React from "react"
 
 interface Reclamation {
   id: string
