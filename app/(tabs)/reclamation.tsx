@@ -61,19 +61,39 @@ export default function ReclamationScreen() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.CREATE(API_CONFIG.TENANT_ID)}`, {
+      const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.CREATE(API_CONFIG.TENANT_ID)}`
+      const requestBody = {
+        email: email.trim(),
+        motifRecl: motif,
+        description: description.trim(),
+      }
+
+      console.log("[v0] Submitting reclamation to:", url)
+      console.log("[v0] Request body:", JSON.stringify(requestBody, null, 2))
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: email.trim(),
-          motifRecl: motif,
-          description: description.trim(),
-        }),
+        body: JSON.stringify(requestBody),
       })
 
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response headers:", JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2))
+
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type")
+      const isJson = contentType && contentType.includes("application/json")
+
+      if (!isJson) {
+        const textResponse = await response.text()
+        console.log("[v0] Non-JSON response:", textResponse)
+        throw new Error("Le serveur a renvoyé une réponse invalide")
+      }
+
       const data = await response.json()
+      console.log("[v0] Response data:", JSON.stringify(data, null, 2))
 
       if (response.ok) {
         Alert.alert("Succès", "Votre réclamation a été envoyée avec succès", [
@@ -92,8 +112,11 @@ export default function ReclamationScreen() {
         Alert.alert("Erreur", data.message || "Une erreur est survenue lors de l'envoi de votre réclamation")
       }
     } catch (error) {
-      console.error("Error submitting reclamation:", error)
-      Alert.alert("Erreur", "Impossible de soumettre votre réclamation. Veuillez réessayer.")
+      console.error("[v0] Error submitting reclamation:", error)
+      Alert.alert(
+        "Erreur",
+        error instanceof Error ? error.message : "Impossible de soumettre votre réclamation. Veuillez réessayer.",
+      )
     } finally {
       setIsSubmitting(false)
     }
