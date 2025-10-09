@@ -394,7 +394,7 @@ export default function ReclamationScreen() {
               style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
             >
               <TouchableOpacity onPress={() => setShowForm(false)} style={styles.modalCloseButton}>
-                <IconSymbol name="xmark" size={24} color={colors.text} />
+                <IconSymbol name="chevron.left" size={24} color={colors.text} />
               </TouchableOpacity>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Nouvelle réclamation</Text>
               <View style={styles.placeholder} />
