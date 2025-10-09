@@ -518,7 +518,7 @@ export default function CardsScreen() {
   }
 
   const filteredCards = cards.filter((card) => card.rawStatus === "ACTIF")
-  const pendingCards = cards.filter((card) => card.rawStatus === "EN ATTENTE")
+  const pendingCards = cards.filter((card) => card.rawStatus !== "ACTIF") // Show all non-active cards instead of just EN ATTENTE
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -781,9 +781,47 @@ export default function CardsScreen() {
             {/* Pending card requests section */}
             {pendingCards.length > 0 && (
               <View style={styles.pendingRequestsContainer}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes demandes</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes demandes</Text> {/* CHANGED */}
                 {pendingCards.map((card) => {
                   const cardType = CARD_TYPES.find((type) => type.value === card.typCard)
+                  // Get status config based on actual status
+                  const getStatusConfig = (status: string) => {
+                    switch (status) {
+                      case "EN ATTENTE":
+                        return {
+                          color: "#FF9500",
+                          backgroundColor: "#FFF3E0",
+                          icon: "clock.fill" as const,
+                          text: "EN ATTENTE",
+                        }
+                      case "REJETÉ":
+                      case "REJETE":
+                        return {
+                          color: "#FF4444",
+                          backgroundColor: "#FFE5E5",
+                          icon: "xmark.circle.fill" as const,
+                          text: "REJETÉ",
+                        }
+                      case "APPROUVÉ":
+                      case "APPROUVE":
+                        return {
+                          color: "#10B981",
+                          backgroundColor: "#E0F7EF",
+                          icon: "checkmark.circle.fill" as const,
+                          text: "APPROUVÉ",
+                        }
+                      default:
+                        return {
+                          color: "#6B7280",
+                          backgroundColor: "#F3F4F6",
+                          icon: "info.circle.fill" as const,
+                          text: status,
+                        }
+                    }
+                  }
+
+                  const statusConfig = getStatusConfig(card.rawStatus || card.status)
+
                   return (
                     <View key={card.id} style={[styles.pendingCard, { backgroundColor: colors.cardBackground }]}>
                       <LinearGradient
@@ -811,9 +849,13 @@ export default function CardsScreen() {
                         </Text>
                       </View>
                       <View style={styles.pendingCardStatus}>
-                        <View style={styles.statusBadge}>
-                          <IconSymbol name="clock.fill" size={12} color="#FF9500" />
-                          <Text style={styles.statusText}>EN ATTENTE</Text>
+                        <View
+                          style={[styles.statusBadgeWithBackground, { backgroundColor: statusConfig.backgroundColor }]}
+                        >
+                          <IconSymbol name={statusConfig.icon} size={14} color={statusConfig.color} />
+                          <Text style={[styles.statusTextColored, { color: statusConfig.color }]}>
+                            {statusConfig.text}
+                          </Text>
                         </View>
                       </View>
                     </View>
@@ -1348,7 +1390,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    alignSelf: "flex-start",
   },
   backBankLogoText: {
     fontSize: 14,
@@ -1617,6 +1658,18 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: "white",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  statusBadgeWithBackground: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusTextColored: {
     fontSize: 11,
     fontWeight: "700",
   },
