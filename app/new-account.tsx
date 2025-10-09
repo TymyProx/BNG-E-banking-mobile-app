@@ -183,7 +183,7 @@ export default function NewAccountScreen() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     } else {
-      router.push("/accounts")
+      router.back()
     }
   }
 

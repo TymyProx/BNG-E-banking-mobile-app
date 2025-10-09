@@ -736,10 +736,11 @@ export default function AccountDetailsScreen() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
-            onPress={() => router.push("/(tabs)/accounts")}
+            onPress={() => router.back()}
           >
             <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
+          {/* </CHANGE> */}
           <View style={styles.headerTitleContainer}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Détails du compte</Text>
           </View>
