@@ -19,7 +19,6 @@ import { useRouter, useLocalSearchParams } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 interface FormData {
   fullName: string
@@ -657,12 +656,18 @@ export default function EditBeneficiary() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Modifier le bénéficiaire</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Mettre à jour les informations</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Modifier le bénéficiaire</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Mettre à jour les informations</Text>
+          </View>
+          <View style={styles.placeholder} />
         </View>
       </View>
 
@@ -1035,28 +1040,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  backButton: {
-    marginRight: 16,
-    padding: 8,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitleContainer: {
     flex: 1,
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "800",
+    letterSpacing: -0.5,
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  placeholder: {
+    width: 44,
   },
   content: {
     flex: 1,
@@ -1110,9 +1125,6 @@ const styles = StyleSheet.create({
   },
   selectedBankCode: {
     fontSize: 14,
-  },
-  placeholder: {
-    fontSize: 16,
   },
   errorText: {
     color: "#ef4444",

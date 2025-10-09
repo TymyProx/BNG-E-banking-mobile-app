@@ -21,7 +21,6 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useAuth } from "@/contexts/AuthContext"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -184,7 +183,7 @@ export default function NewAccountScreen() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     } else {
-      router.push("/accounts")
+      router.back() // Use router.back() instead of router.push("/accounts")
     }
   }
 
@@ -258,7 +257,7 @@ export default function NewAccountScreen() {
           {
             text: "Continuer",
             onPress: () => {
-              router.replace("/(tabs)/accounts")
+              router.back() // Use router.back() instead of router.replace("/(tabs)/accounts")
             },
           },
         ],
@@ -469,11 +468,19 @@ export default function NewAccountScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Nouveau compte</Text>
-        <View style={styles.placeholder} />
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Nouveau compte</Text>
+          </View>
+          <View style={styles.placeholder} />
+        </View>
       </Animated.View>
 
       <Animated.View style={[styles.progressContainer, { opacity: fadeAnim }]}>
@@ -543,11 +550,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
   },
   backButton: {
     width: 44,
@@ -556,10 +566,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   placeholder: {
     width: 44,

@@ -24,7 +24,6 @@ import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
 import * as Print from "expo-print"
 import * as XLSX from "xlsx"
-import React from "react"
 
 interface Transaction {
   id: string
@@ -733,14 +732,19 @@ export default function AccountDetailsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push("/(tabs)/accounts")}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Détails du compte</Text>
-        <TouchableOpacity style={styles.moreButton}>
-          <IconSymbol name="ellipsis.circle" size={24} color={colors.text} />
-        </TouchableOpacity>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={() => router.back()} // Use router.back() instead of router.push("/(tabs)/accounts")
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Détails du compte</Text>
+          </View>
+          <View style={styles.placeholder} />
+        </View>
       </View>
 
       <ScrollView
@@ -1138,24 +1142,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
   },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+  },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  placeholder: {
+    width: 44,
   },
   moreButton: {
     width: 40,

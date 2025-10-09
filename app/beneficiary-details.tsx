@@ -285,13 +285,18 @@ export default function BeneficiaryDetails() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Détails du bénéficiaire</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Détails du bénéficiaire</Text>
+          </View>
+          <View style={styles.placeholder} />
         </View>
-        <View style={styles.headerRight} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -492,27 +497,33 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  backButton: {
-    marginRight: 16,
-    padding: 8,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitleContainer: {
     flex: 1,
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
-  headerRight: {
-    width: 40,
+  placeholder: {
+    width: 44,
   },
   content: {
     flex: 1,

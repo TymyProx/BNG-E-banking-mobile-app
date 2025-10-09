@@ -19,7 +19,7 @@ export default function AddBeneficiary() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.replace("/beneficiaries")} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="chevron.left" size={20} color="#F59E0B" />
         </TouchableOpacity>
 
