@@ -17,6 +17,8 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import * as SecureStore from "expo-secure-store"
+import { useAuth } from "@/contexts/AuthContext"
 
 const MOTIF_OPTIONS = [
   { value: "virement_non_effectif", label: "Virement non effectif" },
@@ -28,6 +30,7 @@ const MOTIF_OPTIONS = [
 ]
 
 export default function ReclamationScreen() {
+  const { tenantId } = useAuth()
   const [email, setEmail] = useState("")
   const [motif, setMotif] = useState("")
   const [description, setDescription] = useState("")
@@ -61,7 +64,14 @@ export default function ReclamationScreen() {
     setIsSubmitting(true)
 
     try {
-      const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.CREATE(API_CONFIG.TENANT_ID)}`
+      const token = await SecureStore.getItemAsync("token")
+      if (!token || !tenantId) {
+        Alert.alert("Erreur", "Vous devez être connecté pour soumettre une réclamation")
+        setIsSubmitting(false)
+        return
+      }
+
+      const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.CREATE(tenantId)}`
       const requestBody = {
         email: email.trim(),
         motifRecl: motif,
@@ -75,6 +85,7 @@ export default function ReclamationScreen() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       })
@@ -82,7 +93,6 @@ export default function ReclamationScreen() {
       console.log("[v0] Response status:", response.status)
       console.log("[v0] Response headers:", JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2))
 
-      // Check if response is JSON
       const contentType = response.headers.get("content-type")
       const isJson = contentType && contentType.includes("application/json")
 
@@ -100,7 +110,6 @@ export default function ReclamationScreen() {
           {
             text: "OK",
             onPress: () => {
-              // Reset form
               setEmail("")
               setMotif("")
               setDescription("")
