@@ -112,7 +112,7 @@ export default function CardsScreen() {
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const scrollX = useRef(new Animated.Value(0)).current
 
-  const colorScheme = (useColorScheme() ?? "light") as "light" | "dark"
+  const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
 
   const [showRequestModal, setShowRequestModal] = useState(false)
