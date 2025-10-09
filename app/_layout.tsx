@@ -11,7 +11,6 @@ import "react-native-reanimated"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { BankingProvider } from "@/contexts/BankingContext"
-import React from "react"
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
@@ -39,6 +38,16 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="account-details" options={{ headerShown: false }} />
+            <Stack.Screen name="add-beneficiary" options={{ headerShown: false }} />
+            <Stack.Screen name="beneficiary-details" options={{ headerShown: false }} />
+            <Stack.Screen name="checkbook-request" options={{ headerShown: false }} />
+            <Stack.Screen name="credit-request" options={{ headerShown: false }} />
+            <Stack.Screen name="edit-beneficiary" options={{ headerShown: false }} />
+            <Stack.Screen name="new-account" options={{ headerShown: false }} />
+            <Stack.Screen name="new-request" options={{ headerShown: false }} />
+            <Stack.Screen name="request-form" options={{ headerShown: false }} />
+            <Stack.Screen name="rib-request" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
