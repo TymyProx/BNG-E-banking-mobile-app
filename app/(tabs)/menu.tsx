@@ -34,6 +34,14 @@ export default function MenuScreen() {
       icon: "person-outline",
       route: "/profile",
     },
+     {
+      id: "e-services",
+      title: "E-Services",
+      subtitle: "Demandes",
+      icon: "document-text-outline",
+      route: "/(tabs)/e-services",
+      isNew: true,
+    },
     {
       id: "accounts",
       title: "Mes comptes",
@@ -54,14 +62,6 @@ export default function MenuScreen() {
       subtitle: "Transférer",
       icon: "swap-horizontal-outline",
       route: "/(tabs)/transfer",
-    },
-    {
-      id: "e-services",
-      title: "E-Services",
-      subtitle: "Demandes",
-      icon: "document-text-outline",
-      route: "/(tabs)/e-services",
-      isNew: true,
     },
     {
       id: "beneficiaries",
