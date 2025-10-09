@@ -287,15 +287,6 @@ const Beneficiaries = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
-            onPress={() => {
-              console.log("Navigating back from Beneficiaries page")
-              router.navigate("/profile")
-            }}
-          >
-            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
-          </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
@@ -552,16 +543,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 24,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   headerTitleContainer: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   headerTitle: {
     fontSize: 24,
