@@ -37,6 +37,15 @@ interface Reclamation {
   createdAt: string
 }
 
+interface ReclamationDetails extends Reclamation {
+  updatedAt?: string
+  deletedAt?: string
+  createdById?: string
+  updatedById?: string
+  importHash?: string
+  tenantId?: string
+}
+
 const MOTIF_OPTIONS = [
   { value: "virement_non_effectif", label: "Virement non effectif" },
   { value: "perception_indue_frais", label: "Perception indue de frais" },
@@ -65,6 +74,11 @@ export default function ReclamationScreen() {
   const [description, setDescription] = useState("")
   const [showMotifPicker, setShowMotifPicker] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Details modal state
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
+  const [selectedReclamation, setSelectedReclamation] = useState<ReclamationDetails | null>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   const loadReclamations = async () => {
     setIsLoading(true)
@@ -228,6 +242,59 @@ export default function ReclamationScreen() {
     }
   }
 
+  const fetchReclamationDetails = async (reclamationId: string) => {
+    console.log("[v0] fetchReclamationDetails called with ID:", reclamationId)
+    try {
+      setLoadingDetails(true)
+      console.log("[v0] Set loadingDetails to true")
+
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        console.log("[v0] Missing token or tenantId - token:", !!token, "tenantId:", !!tenantId)
+        return
+      }
+
+      const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.DETAILS(tenantId, reclamationId)}`
+      console.log("[v0] Fetching from URL:", url)
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log("[v0] Reclamation details received:", JSON.stringify(data, null, 2))
+        setSelectedReclamation(data)
+        console.log("[v0] Set selectedReclamation")
+        setDetailsModalVisible(true)
+        console.log("[v0] Set detailsModalVisible to true")
+      } else {
+        const errorText = await response.text()
+        console.log("[v0] Failed to fetch reclamation details. Status:", response.status, "Error:", errorText)
+        Alert.alert("Erreur", "Impossible de charger les détails de la réclamation")
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reclamation details:", error)
+      Alert.alert("Erreur", "Une erreur est survenue lors du chargement des détails")
+    } finally {
+      setLoadingDetails(false)
+      console.log("[v0] Set loadingDetails to false")
+    }
+  }
+
+  const handleReclamationPress = (reclamationId: string) => {
+    console.log("[v0] handleReclamationPress called with ID:", reclamationId)
+    fetchReclamationDetails(reclamationId)
+  }
+
   const getMotifLabel = (value: string) => {
     const option = MOTIF_OPTIONS.find((opt) => opt.value === value)
     return option ? option.label : value
@@ -271,55 +338,68 @@ export default function ReclamationScreen() {
     })
   }
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
   const ReclamationCard = ({ reclamation }: { reclamation: Reclamation }) => {
     return (
-      <Animated.View
-        style={[
-          styles.reclamationCard,
-          {
-            backgroundColor: colors.cardBackground,
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        <View style={styles.cardHeader}>
-          <View style={[styles.iconContainer, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-            <IconSymbol name="exclamationmark.triangle.fill" size={24} color="#FBBF24" />
+      <TouchableOpacity onPress={() => handleReclamationPress(reclamation.id)} activeOpacity={0.7}>
+        <Animated.View
+          style={[
+            styles.reclamationCard,
+            {
+              backgroundColor: colors.cardBackground,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconContainer, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+              <IconSymbol name="exclamationmark.triangle.fill" size={24} color="#FBBF24" />
+            </View>
+            <View style={styles.cardHeaderInfo}>
+              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+                {getMotifLabel(reclamation.motifRecl)}
+              </Text>
+              <Text style={[styles.cardDate, { color: colors.textSecondary }]}>{formatDate(reclamation.dateRecl)}</Text>
+            </View>
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: getStatusColor(reclamation.status).background,
+                },
+              ]}
+            >
+              <Text style={[styles.statusText, { color: getStatusColor(reclamation.status).color }]}>
+                {reclamation.status}
+              </Text>
+            </View>
           </View>
-          <View style={styles.cardHeaderInfo}>
-            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-              {getMotifLabel(reclamation.motifRecl)}
-            </Text>
-            <Text style={[styles.cardDate, { color: colors.textSecondary }]}>{formatDate(reclamation.dateRecl)}</Text>
-          </View>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor: getStatusColor(reclamation.status).background,
-              },
-            ]}
-          >
-            <Text style={[styles.statusText, { color: getStatusColor(reclamation.status).color }]}>
-              {reclamation.status}
-            </Text>
-          </View>
-        </View>
 
-        <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={2}>
-          {reclamation.description}
-        </Text>
+          <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={2}>
+            {reclamation.description}
+          </Text>
 
-        <View style={styles.cardFooter}>
-          <View style={styles.footerItem}>
-            <IconSymbol name="envelope.fill" size={14} color={colors.textSecondary} />
-            <Text style={[styles.footerText, { color: colors.textSecondary }]} numberOfLines={1}>
-              {reclamation.email}
-            </Text>
+          <View style={styles.cardFooter}>
+            <View style={styles.footerItem}>
+              <IconSymbol name="envelope.fill" size={14} color={colors.textSecondary} />
+              <Text style={[styles.footerText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {reclamation.email}
+              </Text>
+            </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </TouchableOpacity>
     )
   }
 
@@ -515,6 +595,106 @@ export default function ReclamationScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
+      </Modal>
+
+      {/* Details modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={detailsModalVisible}
+        onRequestClose={() => setDetailsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.detailsModalContent, { backgroundColor: colors.surface }]}>
+            <View style={styles.detailsModalHeader}>
+              <Text style={[styles.detailsModalTitle, { color: colors.text }]}>Détails de la réclamation</Text>
+              <TouchableOpacity onPress={() => setDetailsModalVisible(false)} style={styles.closeButton}>
+                <IconSymbol name="xmark.circle.fill" size={28} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {loadingDetails ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#FBBF24" />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement...</Text>
+              </View>
+            ) : selectedReclamation ? (
+              <ScrollView style={styles.detailsModalBody} showsVerticalScrollIndicator={false}>
+                <View style={[styles.detailsIconContainer, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
+                  <IconSymbol name="exclamationmark.triangle.fill" size={48} color="#FBBF24" />
+                </View>
+
+                <View
+                  style={[
+                    styles.detailsStatusBadge,
+                    { backgroundColor: getStatusColor(selectedReclamation.status).background },
+                  ]}
+                >
+                  <Text style={[styles.detailsStatusText, { color: getStatusColor(selectedReclamation.status).color }]}>
+                    {selectedReclamation.status}
+                  </Text>
+                </View>
+
+                <View style={styles.detailsContainer}>
+                  {selectedReclamation.claimId && selectedReclamation.claimId !== "N/A" && (
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>ID Réclamation</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedReclamation.claimId}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Motif</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={3}>
+                      {getMotifLabel(selectedReclamation.motifRecl)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Description</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={5}>
+                      {selectedReclamation.description || "N/A"}
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Email</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>{selectedReclamation.email}</Text>
+                  </View>
+
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date de réclamation</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>
+                      {formatDateTime(selectedReclamation.dateRecl)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Créé le</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>
+                      {formatDateTime(selectedReclamation.createdAt)}
+                    </Text>
+                  </View>
+
+                  {selectedReclamation.updatedAt && (
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Mis à jour le</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatDateTime(selectedReclamation.updatedAt)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={{ height: 20 }} />
+              </ScrollView>
+            ) : (
+              <View style={styles.loadingContainer}>
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Aucune donnée disponible</Text>
+              </View>
+            )}
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   )
@@ -806,5 +986,88 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  detailsModalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    height: "85%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  detailsModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  detailsModalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  detailsModalBody: {
+    flex: 1,
+  },
+  detailsIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  detailsStatusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: 32,
+  },
+  detailsStatusText: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  detailsContainer: {
+    gap: 20,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    flex: 1.5,
+    textAlign: "right",
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 16,
   },
 })
