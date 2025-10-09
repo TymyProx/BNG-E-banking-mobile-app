@@ -736,7 +736,7 @@ export default function AccountDetailsScreen() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
-            onPress={() => router.back()} // Use router.back() instead of router.push("/(tabs)/accounts")
+            onPress={() => router.push("/(tabs)/accounts")}
           >
             <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
