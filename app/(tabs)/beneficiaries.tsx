@@ -286,22 +286,24 @@ const Beneficiaries = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity
-          onPress={() => {
-            console.log("Navigating back from Beneficiaries page")
-            router.navigate("/profile")
-          }}
-          style={styles.backButton}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={() => {
+              console.log("Navigating back from Beneficiaries page")
+              router.navigate("/profile")
+            }}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
+          </View>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: "#2D7A4F" }]} onPress={handleAddBeneficiary}>
+            <IconSymbol name="plus" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: "#2D7A4F" }]} onPress={handleAddBeneficiary}>
-          <IconSymbol name="plus" size={20} color="white" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -541,50 +543,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 24,
-    borderBottomWidth: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  backButton: {
-    marginRight: 16,
-    padding: 8,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.05)",
   },
   headerContent: {
-    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
   },
   searchContainer: {
     paddingHorizontal: 20,
