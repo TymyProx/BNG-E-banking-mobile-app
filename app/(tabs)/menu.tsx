@@ -78,6 +78,13 @@ export default function MenuScreen() {
       route: "/(tabs)/bills",
     },
     {
+      id: "reclamation",
+      title: "Réclamation",
+      subtitle: "Signaler",
+      icon: "alert-circle-outline",
+      route: "/(tabs)/reclamation",
+    },
+    {
       id: "support",
       title: "Support",
       subtitle: "Aide",
