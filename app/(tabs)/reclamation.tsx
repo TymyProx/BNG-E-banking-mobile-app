@@ -19,6 +19,7 @@ import { router } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
 import * as DocumentPicker from "expo-document-picker"
+import React from "react"
 
 interface ReclamationMotif {
   id: string
