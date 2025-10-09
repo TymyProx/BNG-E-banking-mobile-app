@@ -32,7 +32,6 @@ export default function TabLayout() {
           <Stack.Screen name="support" options={{ headerShown: false }} />
           <Stack.Screen name="statements" options={{ headerShown: false }} />
           <Stack.Screen name="e-services" options={{ headerShown: false }} />
-          <Stack.Screen name="reclamation" options={{ headerShown: false }} />
           {/* <Stack.Screen name="new-account" options={{ headerShown: false }} /> */}
           <Stack.Screen
             name="menu"
