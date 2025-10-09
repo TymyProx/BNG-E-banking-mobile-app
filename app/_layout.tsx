@@ -12,8 +12,9 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { BankingProvider } from "@/contexts/BankingContext"
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync()
+SplashScreen.preventAutoHideAsync().catch((error) => {
+  console.warn("Error preventing splash screen auto-hide:", error)
+})
 
 export default function RootLayout() {
   const colorScheme = useColorScheme()
@@ -23,7 +24,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync()
+      const hideSplash = async () => {
+        try {
+          await SplashScreen.hideAsync()
+        } catch (error) {
+          console.warn("Error hiding splash screen:", error)
+        }
+      }
+
+      // Small delay to ensure splash screen is properly registered
+      setTimeout(hideSplash, 100)
     }
   }, [loaded])
 
