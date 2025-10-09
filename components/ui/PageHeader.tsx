@@ -2,6 +2,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
 import { useRouter } from "expo-router"
 import { IconSymbol } from "@/components/ui/IconSymbol"
+import React from "react"
 
 interface PageHeaderProps {
   title: string
