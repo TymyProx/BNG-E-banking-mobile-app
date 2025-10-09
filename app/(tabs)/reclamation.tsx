@@ -81,12 +81,14 @@ export default function ReclamationScreen() {
       const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RECLAMATION.CREATE(tenantId)}`
 
       const requestBody = {
-        customerId: user.id,
-        email: email.trim(),
-        motifRecl: motif,
-        description: description.trim(),
-        dateRecl: new Date().toISOString(),
-        status: "En attente",
+        data: {
+          customerId: user.id,
+          email: email.trim(),
+          motifRecl: motif,
+          description: description.trim(),
+          dateRecl: new Date().toISOString(),
+          status: "En attente",
+        },
       }
 
       console.log("[v0] Submitting reclamation to:", url)
