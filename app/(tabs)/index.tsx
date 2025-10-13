@@ -820,7 +820,8 @@ const styles = StyleSheet.create({
   },
   quickActionsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    gap: 24,
   },
   actionButton: {
     alignItems: "center",
