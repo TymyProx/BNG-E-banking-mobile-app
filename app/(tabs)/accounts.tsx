@@ -21,7 +21,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface Account {
   id: string
@@ -358,9 +357,9 @@ export default function AccountsScreen() {
 
     const getGradientColors = () => {
       if (account.type === "primary" || account.type === "checking") {
-        return ["#F59E0B", "#FBBF24", "#FCD34D", "#F59E0B"]
+        return ["#F59E0B", "#FBBF24", "#FCD34D", "#F59E0B"] as [string, string, ...string[]]
       }
-      return ["#059669", "#10B981", "#34D399", "#059669"]
+      return ["#059669", "#10B981", "#34D399", "#059669"] as [string, string, ...string[]]
     }
 
     return (
