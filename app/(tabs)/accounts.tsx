@@ -475,41 +475,14 @@ export default function AccountsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FBBF24" />}
       >
-        {!isLoading && accounts.length > 0 && (
-          <View style={styles.currencyCardsContainer}>
-            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => (
-              <Animated.View
-                key={currency}
-                style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-              >
-                <View
-                  style={[
-                    styles.currencyCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderLeftWidth: 4,
-                      borderLeftColor: index % 2 === 0 ? "#FBBF24" : "#2D7A4F",
-                    },
-                  ]}
-                >
-                  <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>{currency}</Text>
-                  <Text style={[styles.currencyAmount, { color: colors.text }]}>{formatAmount(total)}</Text>
-                </View>
-              </Animated.View>
-            ))}
-          </View>
-        )}
-
-        {/* Accounts Carousel */}
+         {/* Accounts Carousel */}
         {!isLoading && accounts.length > 0 && (
           <View style={styles.carouselContainer}>
-            <Text style={[styles.sectionTitleMain, { color: colors.text }]}>Vos Comptes</Text>
             <ScrollView
               ref={scrollViewRef}
               horizontal
@@ -545,6 +518,32 @@ export default function AccountsScreen() {
             )}
           </View>
         )}
+
+        {!isLoading && accounts.length > 0 && (
+          <View style={styles.currencyCardsContainer}>
+            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => (
+              <Animated.View
+                key={currency}
+                style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+              >
+                <View
+                  style={[
+                    styles.currencyCard,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderLeftWidth: 4,
+                      borderLeftColor: index % 2 === 0 ? "#FBBF24" : "#2D7A4F",
+                    },
+                  ]}
+                >
+                  <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>{currency}</Text>
+                  <Text style={[styles.currencyAmount, { color: colors.text }]}>{formatAmount(total)}</Text>
+                </View>
+              </Animated.View>
+            ))}
+          </View>
+        )}
+
 
         {/* Loading skeleton */}
         {isLoading && (
