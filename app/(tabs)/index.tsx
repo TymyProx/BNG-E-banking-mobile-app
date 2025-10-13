@@ -346,8 +346,8 @@ export default function Dashboard() {
                           >
                             <View style={styles.cardHeader}>
                               <View style={styles.cardTypeContainer}>
-                                <Text style={styles.cardTypeText}>VISA</Text>
-                                <Text style={styles.cardTierText}>token platinum</Text>
+                                <Text style={styles.cardTypeText}>{account.accountName}</Text>
+                                <Text style={styles.cardTierText}>{account.type}</Text>
                               </View>
                               <View style={styles.cardBrandLogo}>
                                 <View style={[styles.masterCardCircle, { backgroundColor: "#EB001B" }]} />
@@ -359,10 +359,10 @@ export default function Dashboard() {
                             <View style={styles.cardBody}>
                               <Text style={styles.cardNumber}>•••• •••• •••• {account.accountNumber.slice(-4)}</Text>
                               <View style={styles.balanceRow}>
-                                <Text style={styles.currencySymbol}>$</Text>
                                 <Text style={styles.balanceAmount}>
                                   {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
                                 </Text>
+                                 <Text style={styles.currencySymbol}>{account.currency}</Text>
                               </View>
                               <Text style={styles.cardExpiry}>12/24</Text>
                             </View>
