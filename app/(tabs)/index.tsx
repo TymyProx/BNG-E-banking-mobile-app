@@ -24,7 +24,6 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface Account {
   id: string
@@ -311,7 +310,6 @@ export default function Dashboard() {
                 <Text style={styles.headerHello}>Bonjour,</Text>
                 <Text style={styles.headerName}>{user?.firstName}</Text>
               </View>
-
             </View>
             <TouchableOpacity style={styles.menuButton}>
               <IconSymbol name="bell" size={24} color="#FFFFFF" />
@@ -333,7 +331,10 @@ export default function Dashboard() {
                     showsHorizontalScrollIndicator={false}
                     snapToInterval={CARD_WIDTH + CARD_SPACING}
                     decelerationRate="fast"
-                    contentContainerStyle={styles.accountCarouselContent}
+                    contentContainerStyle={[
+                      styles.accountCarouselContent,
+                      accounts.length === 1 && { justifyContent: "center", flexGrow: 1 },
+                    ]}
                     onScroll={handleScroll}
                     scrollEventThrottle={16}
                   >
@@ -366,7 +367,7 @@ export default function Dashboard() {
                                 <Text style={styles.balanceAmount}>
                                   {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
                                 </Text>
-                                 <Text style={styles.currencySymbol}>{account.currency}</Text>
+                                <Text style={styles.currencySymbol}>{account.currency}</Text>
                               </View>
                               <Text style={styles.cardExpiry}>12/24</Text>
                             </View>
@@ -688,39 +689,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
- headerCenter: {
-  flex: 1,
-  width: "100%",         // ✅ le conteneur occupe toute la largeur
-  alignItems: "stretch", // ✅ permet aux enfants (texte) de s’étirer sur toute la largeur
-  justifyContent: "center", // 🔹 centre verticalement le contenu
-},
- headerText: {
-  color: "#FFFFFF",
-  fontSize: 16,
-  fontWeight: "600",
-  width: "100%",         // ✅ prend toute la largeur du parent
-  marginLeft: 12,      // 🔹 espace à gauche pour éviter le collage avec l'avatar
-  textAlign: "left",   // 🔹 ou "left" / "right" selon ton besoin
-},
-
-headerHello: {
-  color: "#FFFFFF",
-  fontSize: 14,
-  fontWeight: "400",
-  width: "100%",         //prend toute la largeur du parent
-  marginLeft: 14,      //espace à gauche pour éviter le collage avec l'avatar
-  textAlign: "left",   //ou "left" / "right" selon ton besoin
-},
-
-headerName: {
-  color: "#FFFFFF",
-  fontSize: 16,
-  fontWeight: "800",
-  textTransform: "uppercase",
-  width: "100%",         //prend toute la largeur du parent
-  marginLeft: 14,      //espace à gauche pour éviter le collage avec l'avatar
-  textAlign: "left",   //ou "left" / "right" selon ton besoin
-},
+  headerCenter: {
+    flex: 1,
+    width: "100%", // ✅ le conteneur occupe toute la largeur
+    alignItems: "stretch", // ✅ permet aux enfants (texte) de s’étirer sur toute la largeur
+    justifyContent: "center", // 🔹 centre verticalement le contenu
+  },
+  headerText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    width: "100%", // ✅ prend toute la largeur du parent
+    marginLeft: 12, // 🔹 espace à gauche pour éviter le collage avec l'avatar
+    textAlign: "left", // 🔹 ou "left" / "right" selon ton besoin
+  },
+  headerHello: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "400",
+    width: "100%", //prend toute la largeur du parent
+    marginLeft: 14, //espace à gauche pour éviter le collage avec l'avatar
+    textAlign: "left", //ou "left" / "right" selon ton besoin
+  },
+  headerName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    width: "100%", //prend toute la largeur du parent
+    marginLeft: 14, //espace à gauche pour éviter le collage avec l'avatar
+    textAlign: "left", //ou "left" / "right" selon ton besoin
+  },
   menuButton: {
     width: 40,
     height: 40,
