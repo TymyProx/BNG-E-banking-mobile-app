@@ -144,6 +144,8 @@ export default function MenuScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
+            <Text style={styles.pageTitle}>Menu</Text>
+
             <View style={styles.gridContainer}>
               {menuItems.map((item) => (
                 <TouchableOpacity
@@ -204,6 +206,13 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 24,
+  },
+  pageTitle: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 24,
+    letterSpacing: -0.5,
   },
   gridContainer: {
     flexDirection: "row",
