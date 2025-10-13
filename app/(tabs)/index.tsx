@@ -303,15 +303,21 @@ export default function Dashboard() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           <View style={styles.header}>
-            <TouchableOpacity style={styles.profileAvatar}>
-              <Text style={styles.profileInitials}>{getUserInitials()}</Text>
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
-              <View style={{ alignItems: "center" }}>
-                <Text style={styles.headerHello}>Bonjour,</Text>
-                <Text style={styles.headerName}>{user?.firstName}</Text>
+            <TouchableOpacity
+              style={styles.profileSection}
+              onPress={() => router.push("/(tabs)/profile")}
+              activeOpacity={0.7}
+            >
+              <View style={styles.profileAvatar}>
+                <Text style={styles.profileInitials}>{getUserInitials()}</Text>
               </View>
-            </View>
+              <View style={styles.headerCenter}>
+                <View style={{ alignItems: "center" }}>
+                  <Text style={styles.headerHello}>Bonjour,</Text>
+                  <Text style={styles.headerName}>{user?.firstName}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.menuButton}>
               <IconSymbol name="bell" size={24} color="#FFFFFF" />
             </TouchableOpacity>
@@ -677,6 +683,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
   profileAvatar: {
     width: 40,
     height: 40,
@@ -692,34 +703,26 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    width: "100%", // ✅ le conteneur occupe toute la largeur
-    alignItems: "stretch", // ✅ permet aux enfants (texte) de s’étirer sur toute la largeur
-    justifyContent: "center", // 🔹 centre verticalement le contenu
-  },
-  headerText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    width: "100%", // ✅ prend toute la largeur du parent
-    marginLeft: 12, // 🔹 espace à gauche pour éviter le collage avec l'avatar
-    textAlign: "left", // 🔹 ou "left" / "right" selon ton besoin
+    width: "100%",
+    alignItems: "stretch",
+    justifyContent: "center",
   },
   headerHello: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "400",
-    width: "100%", //prend toute la largeur du parent
-    marginLeft: 14, //espace à gauche pour éviter le collage avec l'avatar
-    textAlign: "left", //ou "left" / "right" selon ton besoin
+    width: "100%",
+    marginLeft: 12,
+    textAlign: "left",
   },
   headerName: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "800",
     textTransform: "uppercase",
-    width: "100%", //prend toute la largeur du parent
-    marginLeft: 14, //espace à gauche pour éviter le collage avec l'avatar
-    textAlign: "left", //ou "left" / "right" selon ton besoin
+    width: "100%",
+    marginLeft: 14,
+    textAlign: "left",
   },
   menuButton: {
     width: 40,
