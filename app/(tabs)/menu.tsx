@@ -20,7 +20,7 @@ interface MenuItem {
 }
 
 const { width } = Dimensions.get("window")
-const cardWidth = (width - 60) / 2
+const cardWidth = (width - 64) / 2
 
 export default function MenuScreen() {
   const { logout, user } = useAuth()
@@ -160,7 +160,6 @@ export default function MenuScreen() {
           </View>
 
           <View style={styles.whiteSection}>
-
             <View style={styles.gridContainer}>
               {menuItems.map((item) => (
                 <TouchableOpacity
@@ -300,21 +299,21 @@ const styles = StyleSheet.create({
   },
   menuCard: {
     width: cardWidth,
-    marginBottom: 16,
-    borderRadius: 20,
+    marginBottom: 12,
+    borderRadius: 16,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardGradient: {
-    padding: 16,
-    minHeight: 120,
+    padding: 12,
+    minHeight: 100,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
@@ -322,12 +321,12 @@ const styles = StyleSheet.create({
   },
   newBadge: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 8,
+    right: 8,
     backgroundColor: "#111827",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -338,38 +337,38 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   newBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 1,
   },
   cardIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 8,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
   cardTitle: {
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 13,
+    fontWeight: "700",
     color: "#111827",
     textAlign: "center",
-    marginBottom: 4,
-    letterSpacing: -0.3,
+    marginBottom: 2,
+    letterSpacing: -0.2,
   },
   cardSubtitle: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "500",
     color: "#6B7280",
     textAlign: "center",
   },
