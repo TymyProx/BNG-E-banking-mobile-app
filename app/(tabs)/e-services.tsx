@@ -326,10 +326,6 @@ export default function EServicesScreen() {
                       <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Objet:</Text>
                       <Text style={[styles.detailValue, { color: colors.text }]}>{request.purpose}</Text>
                     </View>
-                    {/* <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Compte:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.accountNumber}</Text>
-                    </View> */}
                   </View>
                   <View style={styles.statusBadge}>
                     <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
