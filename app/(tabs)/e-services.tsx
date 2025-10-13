@@ -9,6 +9,7 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface CreditRequest {
   id: string
@@ -317,18 +318,18 @@ export default function EServicesScreen() {
                         {formatAmount(request.creditAmount)} GNF
                       </Text>
                     </View>
-                    <View style={styles.detailRow}>
+                    {/* <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Durée:</Text>
                       <Text style={[styles.detailValue, { color: colors.text }]}>{request.durationMonths} mois</Text>
-                    </View>
+                    </View> */}
                     <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Objet:</Text>
                       <Text style={[styles.detailValue, { color: colors.text }]}>{request.purpose}</Text>
                     </View>
-                    <View style={styles.detailRow}>
+                    {/* <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Compte:</Text>
                       <Text style={[styles.detailValue, { color: colors.text }]}>{request.accountNumber}</Text>
-                    </View>
+                    </View> */}
                   </View>
                   <View style={styles.statusBadge}>
                     <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
