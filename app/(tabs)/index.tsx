@@ -23,7 +23,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
+import { LinearGradient } from "expo-linear-gradient"
 
 interface Account {
   id: string
@@ -292,397 +292,430 @@ export default function Dashboard() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={["top"]}>
-      <KeyboardAvoidingView
-        style={styles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.profileContainer}>
-            <View style={[styles.profileAvatar, { backgroundColor: "#2D7A4F" }]}>
+    <View style={styles.container}>
+      <LinearGradient colors={["#667eea", "#764ba2", "#f093fb"]} style={styles.gradientBackground} />
+
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <KeyboardAvoidingView
+          style={styles.screen}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.profileAvatar}>
               <Text style={styles.profileInitials}>{getUserInitials()}</Text>
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerBalance}>€ {formatCurrency(totalBalance)}</Text>
             </View>
-            <View style={styles.userNameContainer}>
-              <Text style={[styles.userGreeting, { color: colors.tabIconDefault }]}>Bonjour,</Text>
-              <Text style={[styles.userName, { color: colors.text }]}>
-                {user?.firstName || user?.lastName || "Utilisateur"}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notificationButton}>
-              <IconSymbol name="bell" size={22} color="#2D7A4F" />
-              <View style={styles.notificationDot} />
+            <TouchableOpacity style={styles.menuButton}>
+              <IconSymbol name="line.3.horizontal" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-        </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.balanceCard}>
-            {accounts.length > 0 ? (
-              <>
-                <ScrollView
-                  ref={scrollViewRef}
-                  horizontal
-                  pagingEnabled={false}
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={CARD_WIDTH + CARD_SPACING}
-                  decelerationRate="fast"
-                  contentContainerStyle={styles.accountCarouselContent}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                >
-                  {accounts.map((account) => (
-                    <Animated.View key={account.id} style={[styles.accountInGreenCard, { opacity: fadeAnim }]}>
-                      <TouchableOpacity
-                        style={styles.individualAccountCard}
-                        onPress={() => router.push(`/account-details?id=${account.id}`)}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.accountInGreenCardHeader}>
-                          <View
-                            style={[styles.accountInGreenCardIcon, { backgroundColor: getAccountColor(account.type) }]}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.cardSection}>
+              {accounts.length > 0 ? (
+                <>
+                  <ScrollView
+                    ref={scrollViewRef}
+                    horizontal
+                    pagingEnabled={false}
+                    showsHorizontalScrollIndicator={false}
+                    snapToInterval={CARD_WIDTH + CARD_SPACING}
+                    decelerationRate="fast"
+                    contentContainerStyle={styles.accountCarouselContent}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
+                  >
+                    {accounts.map((account) => (
+                      <Animated.View key={account.id} style={[styles.cardWrapper, { opacity: fadeAnim }]}>
+                        <TouchableOpacity
+                          style={styles.glassCard}
+                          onPress={() => router.push(`/account-details?id=${account.id}`)}
+                          activeOpacity={0.8}
+                        >
+                          <LinearGradient
+                            colors={["rgba(139, 92, 246, 0.3)", "rgba(236, 72, 153, 0.3)"]}
+                            style={styles.cardGradient}
                           >
-                            <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#FFFFFF" />
-                          </View>
-                          <View style={styles.accountInGreenCardInfo}>
-                            <Text style={styles.accountInGreenCardName}>{account.accountName || account.type}</Text>
-                            <Text style={styles.accountInGreenCardNumber}>•••• {account.accountNumber.slice(-4)}</Text>
-                          </View>
-                        </View>
-                        <View style={styles.accountInGreenCardBalanceSection}>
-                          <Text style={styles.accountInGreenCardBalanceLabel}>Solde disponible</Text>
-                          <View style={styles.accountInGreenCardBalanceRow}>
-                            <Text style={styles.accountInGreenCardBalance}>
-                              {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
-                            </Text>
-                            <Text style={styles.accountInGreenCardCurrency}>{account.currency}</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  ))}
-                </ScrollView>
-
-                {accounts.length > 1 && (
-                  <View style={styles.paginationContainer}>
-                    {accounts.map((_, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => handleDotPress(index)}
-                        style={[
-                          styles.paginationDot,
-                          {
-                            backgroundColor: index === activeIndex ? "#FFFFFF" : "rgba(255,255,255,0.4)",
-                            width: index === activeIndex ? 32 : 8,
-                          },
-                        ]}
-                      />
+                            <View style={styles.cardHeader}>
+                              <View style={styles.cardTypeContainer}>
+                                <Text style={styles.cardTypeText}>VISA</Text>
+                                <Text style={styles.cardTierText}>token platinum</Text>
+                              </View>
+                              <View style={styles.cardBrandLogo}>
+                                <View style={[styles.masterCardCircle, { backgroundColor: "#EB001B" }]} />
+                                <View
+                                  style={[styles.masterCardCircle, { backgroundColor: "#F79E1B", marginLeft: -8 }]}
+                                />
+                              </View>
+                            </View>
+                            <View style={styles.cardBody}>
+                              <Text style={styles.cardNumber}>•••• •••• •••• {account.accountNumber.slice(-4)}</Text>
+                              <View style={styles.balanceRow}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <Text style={styles.balanceAmount}>
+                                  {formatCurrency(Number.parseFloat(account.availableBalance) || 0)}
+                                </Text>
+                              </View>
+                              <Text style={styles.cardExpiry}>12/24</Text>
+                            </View>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </Animated.View>
                     ))}
-                  </View>
-                )}
-              </>
-            ) : (
-              <View style={styles.emptyInGreenCard}>
-                <IconSymbol name="creditcard.fill" size={48} color="rgba(255,255,255,0.5)" />
-                <Text style={styles.emptyInGreenCardText}>Aucun compte actif trouvé</Text>
-              </View>
-            )}
-          </View>
+                  </ScrollView>
 
-          {/* Quick Actions */}
-          <View style={styles.section}>
-            <View style={styles.quickActionsGrid}>
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/transfer")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="arrow.up.arrow.down" size={24} color="#2D7A4F" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Virement</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/cards")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="creditcard" size={24} color="#2D7A4F" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Cartes</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCard, { backgroundColor: colors.surface }]}
-                onPress={() => router.push("/(tabs)/menu")}
-              >
-                <View style={styles.actionIcon}>
-                  <IconSymbol name="ellipsis.circle.fill" size={24} color="#2D7A4F" />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>Menu</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions récentes</Text>
-            </View>
-
-            {transactions.length > 0 ? (
-              <View style={styles.transactionsContainer}>
-                {transactions.map((transaction) => (
-                  <TouchableOpacity
-                    key={transaction.id}
-                    style={[styles.transactionCard, { backgroundColor: colors.surface }]}
-                    onPress={() => handleTransactionPress(transaction.id)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.transactionLeft}>
-                      <View
-                        style={[
-                          styles.transactionIcon,
-                          { backgroundColor: `${getTransactionColor(transaction.txnType)}15` },
-                        ]}
-                      >
-                        <IconSymbol
-                          name={getTransactionIcon(transaction.txnType) as any}
-                          size={24}
-                          color={getTransactionColor(transaction.txnType)}
+                  {accounts.length > 1 && (
+                    <View style={styles.paginationContainer}>
+                      {accounts.map((_, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => handleDotPress(index)}
+                          style={[
+                            styles.paginationDot,
+                            {
+                              backgroundColor: index === activeIndex ? "#FFFFFF" : "rgba(255,255,255,0.4)",
+                              width: index === activeIndex ? 24 : 8,
+                            },
+                          ]}
                         />
-                      </View>
-                      <View style={styles.transactionInfo}>
-                        <Text style={[styles.transactionDescription, { color: colors.text }]}>
-                          {transaction.description || transaction.txnType}
-                        </Text>
-                        <Text style={[styles.transactionDate, { color: colors.tabIconDefault }]}>
-                          {formatDate(transaction.valueDate)}
-                        </Text>
-                      </View>
+                      ))}
                     </View>
-                    <View style={styles.transactionRight}>
-                      <Text
-                        style={[
-                          styles.transactionAmount,
-                          {
-                            color: transaction.txnType?.toLowerCase().includes("depot")
-                              ? "#10B981"
-                              : transaction.txnType?.toLowerCase().includes("retrait")
-                                ? "#EF4444"
-                                : colors.text,
-                          },
-                        ]}
-                      >
-                        {transaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
-                        {formatCurrency(Number.parseFloat(transaction.amount))}
-                      </Text>
-                      <View
-                        style={[
-                          styles.transactionStatus,
-                          { backgroundColor: `${getStatusColor(transaction.status)}15` },
-                        ]}
-                      >
-                        <Text style={[styles.transactionStatusText, { color: getStatusColor(transaction.status) }]}>
-                          {transaction.status}
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
-                <IconSymbol name="list.bullet" size={48} color={colors.tabIconDefault} />
-                <Text style={[styles.emptyCardText, { color: colors.tabIconDefault }]}>Aucune transaction récente</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={{ height: 100 }} />
-        </ScrollView>
-
-        {/* Chat Input */}
-        <View style={[styles.chatContainer, { backgroundColor: colors.surface }]}>
-          <View style={styles.chatContent}>
-            <View style={styles.inputRow}>
-              <TouchableOpacity style={styles.attachButton}>
-                <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
-              </TouchableOpacity>
-              <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <TextInput
-                  style={[styles.textInput, { color: colors.text }]}
-                  placeholder="Posez votre question sur votre compte..."
-                  placeholderTextColor={colors.tabIconDefault}
-                  value={chatInput}
-                  onChangeText={setChatInput}
-                  multiline
-                  maxLength={500}
-                />
-                <TouchableOpacity style={styles.voiceButton}>
-                  <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
-                <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                  <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
-                </TouchableOpacity>
-              </View>
-
-              {loadingDetails ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#2D7A4F" />
-                  <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
-                </View>
-              ) : selectedTransaction ? (
-                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                  <View
-                    style={[
-                      styles.modalIconContainer,
-                      { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
-                    ]}
-                  >
-                    <IconSymbol
-                      name={getTransactionIcon(selectedTransaction.txnType) as any}
-                      size={48}
-                      color={getTransactionColor(selectedTransaction.txnType)}
-                    />
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.modalAmount,
-                      {
-                        color: selectedTransaction.txnType?.toLowerCase().includes("depot")
-                          ? "#10B981"
-                          : selectedTransaction.txnType?.toLowerCase().includes("retrait")
-                            ? "#EF4444"
-                            : colors.text,
-                      },
-                    ]}
-                  >
-                    {selectedTransaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
-                    {formatCurrency(Number.parseFloat(selectedTransaction.amount))} GNF
-                  </Text>
-
-                  <View
-                    style={[styles.modalStatus, { backgroundColor: `${getStatusColor(selectedTransaction.status)}15` }]}
-                  >
-                    <Text style={[styles.modalStatusText, { color: getStatusColor(selectedTransaction.status) }]}>
-                      {selectedTransaction.status}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailsContainer}>
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnId}</Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnType}</Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={3}>
-                        {selectedTransaction.description || "N/A"}
-                      </Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date de valeur</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {formatDateTime(selectedTransaction.valueDate)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {selectedTransaction.creditAccount || "N/A"}
-                      </Text>
-                    </View>
-
-                    {selectedTransaction.commentNotes && (
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={4}>
-                          {selectedTransaction.commentNotes}
-                        </Text>
-                      </View>
-                    )}
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Créé le</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {formatDateTime(selectedTransaction.createdAt)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Mis à jour le</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {formatDateTime(selectedTransaction.updatedAt)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={{ height: 20 }} />
-                </ScrollView>
+                  )}
+                </>
               ) : (
-                <View style={styles.loadingContainer}>
-                  <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Aucune donnée disponible</Text>
+                <View style={styles.emptyCard}>
+                  <IconSymbol name="creditcard.fill" size={48} color="rgba(255,255,255,0.5)" />
+                  <Text style={styles.emptyCardText}>Aucun compte actif trouvé</Text>
                 </View>
               )}
             </View>
+
+            <View style={styles.quickActionsSection}>
+              <View style={styles.quickActionsGrid}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/transfer")}>
+                  <View style={[styles.actionCircle, { backgroundColor: "#10B981" }]}>
+                    <IconSymbol name="arrow.up" size={24} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.actionLabel}>Top Up{"\n"}Payment</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/cards")}>
+                  <View style={[styles.actionCircle, { backgroundColor: "#F97316" }]}>
+                    <IconSymbol name="creditcard" size={24} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.actionLabel}>Mobile{"\n"}Payment</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/transfer")}>
+                  <View style={[styles.actionCircle, { backgroundColor: "#3B82F6" }]}>
+                    <IconSymbol name="arrow.left.arrow.right" size={24} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.actionLabel}>Money{"\n"}Transfer</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/menu")}>
+                  <View style={[styles.actionCircle, { backgroundColor: "#FBBF24" }]}>
+                    <IconSymbol name="dollarsign.circle" size={24} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.actionLabel}>Make a{"\n"}Payment</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.whiteSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Latest transactions</Text>
+                <TouchableOpacity onPress={() => router.push("/(tabs)/statements")}>
+                  <Text style={styles.viewAllText}>View all</Text>
+                </TouchableOpacity>
+              </View>
+
+              {transactions.length > 0 ? (
+                <View style={styles.transactionsContainer}>
+                  {transactions.map((transaction) => (
+                    <TouchableOpacity
+                      key={transaction.id}
+                      style={styles.transactionCard}
+                      onPress={() => handleTransactionPress(transaction.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.transactionLeft}>
+                        <View
+                          style={[
+                            styles.transactionIcon,
+                            { backgroundColor: `${getTransactionColor(transaction.txnType)}15` },
+                          ]}
+                        >
+                          <IconSymbol
+                            name={getTransactionIcon(transaction.txnType) as any}
+                            size={24}
+                            color={getTransactionColor(transaction.txnType)}
+                          />
+                        </View>
+                        <View style={styles.transactionInfo}>
+                          <Text style={styles.transactionDescription}>
+                            {transaction.description || transaction.txnType}
+                          </Text>
+                          <Text style={styles.transactionDate}>{formatDate(transaction.valueDate)}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.transactionRight}>
+                        <Text
+                          style={[
+                            styles.transactionAmount,
+                            {
+                              color: transaction.txnType?.toLowerCase().includes("depot") ? "#10B981" : "#EF4444",
+                            },
+                          ]}
+                        >
+                          {transaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
+                          {formatCurrency(Number.parseFloat(transaction.amount))}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyTransactions}>
+                  <IconSymbol name="list.bullet" size={48} color="#9CA3AF" />
+                  <Text style={styles.emptyTransactionsText}>Aucune transaction récente</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={{ height: 100 }} />
+          </ScrollView>
+
+          {/* Chat Input */}
+          <View style={[styles.chatContainer, { backgroundColor: colors.surface }]}>
+            <View style={styles.chatContent}>
+              <View style={styles.inputRow}>
+                <TouchableOpacity style={styles.attachButton}>
+                  <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
+                </TouchableOpacity>
+                <View
+                  style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}
+                >
+                  <TextInput
+                    style={[styles.textInput, { color: colors.text }]}
+                    placeholder="Posez votre question sur votre compte..."
+                    placeholderTextColor={colors.tabIconDefault}
+                    value={chatInput}
+                    onChangeText={setChatInput}
+                    multiline
+                    maxLength={500}
+                  />
+                  <TouchableOpacity style={styles.voiceButton}>
+                    <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
+                  <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </Modal>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
+                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                    <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
+                  </TouchableOpacity>
+                </View>
+
+                {loadingDetails ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2D7A4F" />
+                    <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
+                  </View>
+                ) : selectedTransaction ? (
+                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                    <View
+                      style={[
+                        styles.modalIconContainer,
+                        { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
+                      ]}
+                    >
+                      <IconSymbol
+                        name={getTransactionIcon(selectedTransaction.txnType) as any}
+                        size={48}
+                        color={getTransactionColor(selectedTransaction.txnType)}
+                      />
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.modalAmount,
+                        {
+                          color: selectedTransaction.txnType?.toLowerCase().includes("depot")
+                            ? "#10B981"
+                            : selectedTransaction.txnType?.toLowerCase().includes("retrait")
+                              ? "#EF4444"
+                              : colors.text,
+                        },
+                      ]}
+                    >
+                      {selectedTransaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
+                      {formatCurrency(Number.parseFloat(selectedTransaction.amount))} GNF
+                    </Text>
+
+                    <View
+                      style={[
+                        styles.modalStatus,
+                        { backgroundColor: `${getStatusColor(selectedTransaction.status)}15` },
+                      ]}
+                    >
+                      <Text style={[styles.modalStatusText, { color: getStatusColor(selectedTransaction.status) }]}>
+                        {selectedTransaction.status}
+                      </Text>
+                    </View>
+
+                    <View style={styles.detailsContainer}>
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnId}</Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnType}</Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={3}>
+                          {selectedTransaction.description || "N/A"}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date de valeur</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>
+                          {formatDateTime(selectedTransaction.valueDate)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>
+                          {selectedTransaction.creditAccount || "N/A"}
+                        </Text>
+                      </View>
+
+                      {selectedTransaction.commentNotes && (
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={4}>
+                            {selectedTransaction.commentNotes}
+                          </Text>
+                        </View>
+                      )}
+
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Créé le</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>
+                          {formatDateTime(selectedTransaction.createdAt)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Mis à jour le</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>
+                          {formatDateTime(selectedTransaction.updatedAt)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={{ height: 20 }} />
+                  </ScrollView>
+                ) : (
+                  <View style={styles.loadingContainer}>
+                    <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Aucune donnée disponible</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </Modal>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingBottom: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: "#667eea", // Set solid color matching gradient start to prevent any gray showing
+  },
+  gradientBackground: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: "75%", // Increased from 60% to 75% to cover quick actions area
+  },
+  screen: { flex: 1, backgroundColor: "transparent" }, // Make screen transparent
+  safeArea: { flex: 1, backgroundColor: "transparent" }, // Make safe area transparent
+  scrollView: { flex: 1, backgroundColor: "transparent" }, // Make scroll view transparent
+  scrollContent: { paddingBottom: 24, backgroundColor: "transparent" }, // Make scroll content transparent
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  profileAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileInitials: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerBalance: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
   balanceCard: {
     marginHorizontal: 16,
     marginBottom: 24,
-    padding: 24,
+    padding: 0,
     borderRadius: 24,
-    backgroundColor: "transparent", // Changed from #2D7A4F to transparent
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
+    backgroundColor: "transparent",
   },
 
   balanceValue: {
@@ -698,171 +731,139 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  sectionTitle: {
-    fontSize: 20,
+  cardSection: {
+    marginTop: 20,
+    marginBottom: 32,
+  },
+  cardWrapper: {
+    width: CARD_WIDTH,
+  },
+  glassCard: {
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  cardGradient: {
+    padding: 20,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 40,
+  },
+  cardTypeContainer: {
+    gap: 4,
+  },
+  cardTypeText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  cardTierText: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  cardBrandLogo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  masterCardCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  cardBody: {
+    gap: 12,
+  },
+  cardNumber: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 2,
+  },
+  balanceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+  },
+  currencySymbol: {
+    color: "#FFFFFF",
+    fontSize: 28,
     fontWeight: "800",
-    color: "#111827",
-    marginBottom: 16,
+  },
+  balanceAmount: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "800",
     letterSpacing: -0.5,
   },
-
-  actionCard: {
-    width: "30%",
-    paddingVertical: 20,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
+  cardExpiry: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    fontWeight: "600",
   },
 
-  accountCard: {
-    borderRadius: 24,
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  profileContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    paddingRight: 16,
-    paddingBottom: 16,
-  },
-  profileAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  profileInitials: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 18,
-  },
-  userNameContainer: {
-    flex: 1,
-  },
-  userGreeting: {
-    fontSize: 13,
-    marginBottom: 2,
-    fontWeight: "500",
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  notificationButton: {
-    padding: 8,
-    position: "relative",
-    backgroundColor: "rgba(45, 122, 79, 0.1)",
-    borderRadius: 12,
-  },
-  notificationDot: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 10,
-    height: 10,
-    backgroundColor: "#EF4444",
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-
-  balanceHeader: { marginBottom: 16 },
-  balanceLeft: { flex: 1 },
-  balanceTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  balanceTitleText: { color: "#111827", fontSize: 16, fontWeight: "700" }, // Changed from white to dark
-
-  balanceAmount: { flexDirection: "row", alignItems: "center", gap: 10 },
-  eyeButton: { padding: 6 },
-  balanceRight: { alignItems: "flex-end", justifyContent: "center" },
-  trendContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  trendSubtext: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4, fontWeight: "500" },
-
-  chartContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
-    marginTop: 20,
-    height: 56,
-    paddingHorizontal: 4,
-  },
-  chartBar: {
-    flex: 1,
-    borderRadius: 6,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    minWidth: 8,
-  },
-  chartLabel: { color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 12, fontWeight: "500" },
-
-  section: { marginBottom: 28, paddingHorizontal: 16 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
   },
-  sectionAction: { fontSize: 14, fontWeight: "600" },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  sectionAction: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
 
+  quickActionsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+    backgroundColor: "transparent", // Ensure quick actions section is transparent
+  },
   quickActionsGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 16,
   },
-  actionIcon: {
+  actionButton: {
+    alignItems: "center",
+    gap: 12,
+  },
+  actionCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: "rgba(45, 122, 79, 0.08)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  actionLabel: { fontSize: 13, textAlign: "center", fontWeight: "600", marginTop: 4 },
+  actionLabel: {
+    fontSize: 11,
+    textAlign: "center",
+    fontWeight: "600",
+    color: "#FFFFFF",
+    lineHeight: 14,
+  },
+
+  whiteSection: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    minHeight: 400,
+  },
 
   accountsContainer: { gap: 16 },
   accountHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
@@ -1005,80 +1006,53 @@ const styles = StyleSheet.create({
   },
   accountCarouselContent: {
     gap: CARD_SPACING,
-    paddingRight: 24,
+    paddingHorizontal: 20,
   },
   accountInGreenCard: {
     width: CARD_WIDTH,
   },
   individualAccountCard: {
-    backgroundColor: "#2D7A4F", // Changed from white to green
+    backgroundColor: "#8B5CF6",
     borderRadius: 20,
     padding: 20,
-    shadowColor: "#2D7A4F",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: "hidden",
   },
   accountInGreenCardHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  accountInGreenCardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.2)", // Semi-transparent white for icon background
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  accountInGreenCardInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  accountInGreenCardName: {
-    color: "#FFFFFF", // Changed from dark to white
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  accountInGreenCardNumber: {
-    color: "rgba(255,255,255,0.8)", // Changed from gray to semi-transparent white
-    fontSize: 13,
-    fontWeight: "600",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 32,
   },
   accountInGreenCardBalanceSection: {
     marginTop: 8,
   },
-  accountInGreenCardBalanceLabel: {
-    color: "rgba(255,255,255,0.8)", // Changed from gray to semi-transparent white
-    fontSize: 11,
+  accountInGreenCardNumber: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 14,
     fontWeight: "600",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    marginBottom: 16,
+    letterSpacing: 2,
   },
   accountInGreenCardBalanceRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 8,
+    gap: 4,
   },
   accountInGreenCardBalance: {
-    color: "#FFFFFF", // Changed from dark to white
-    fontSize: 28,
+    color: "#FFFFFF",
+    fontSize: 32,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
   accountInGreenCardCurrency: {
-    color: "#10B981", // Keep the accent green color
-    fontSize: 16,
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "800",
   },
   emptyInGreenCard: {
     padding: 40,
@@ -1093,29 +1067,24 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     padding: 40,
-    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 20,
   },
   emptyCardText: {
+    color: "rgba(255,255,255,0.8)",
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
   },
   transactionsContainer: {
-    gap: 12,
+    gap: 16,
   },
   transactionCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    paddingVertical: 12,
   },
   transactionLeft: {
     flexDirection: "row",
@@ -1126,7 +1095,7 @@ const styles = StyleSheet.create({
   transactionIcon: {
     width: 48,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1135,21 +1104,21 @@ const styles = StyleSheet.create({
   },
   transactionDescription: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 4,
   },
   transactionDate: {
     fontSize: 13,
     fontWeight: "500",
+    color: "#6B7280",
   },
   transactionRight: {
     alignItems: "flex-end",
-    gap: 6,
   },
   transactionAmount: {
     fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 4,
+    fontWeight: "700",
   },
   transactionStatus: {
     paddingHorizontal: 10,
@@ -1160,6 +1129,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
+  },
+  emptyTransactions: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTransactionsText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginTop: 12,
   },
   modalOverlay: {
     flex: 1,
