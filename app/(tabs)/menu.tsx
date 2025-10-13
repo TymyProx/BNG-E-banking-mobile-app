@@ -137,29 +137,13 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={["#10b981", "#059669", "#34d399"]} style={styles.gradientBackground} />
-
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={{ paddingBottom: Platform.OS === "ios" ? 120 : 100 }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <View style={styles.glassHeader}>
-              <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{getUserInitials()}</Text>
-                </View>
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>{user?.firstName.toLocaleUpperCase() || "Utilisateur"}</Text>
-                  <Text style={styles.userEmail}>{user?.email || "user@example.com"}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.whiteSection}>
+          <View style={styles.content}>
             <View style={styles.gridContainer}>
               {menuItems.map((item) => (
                 <TouchableOpacity
@@ -208,89 +192,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  gradientBackground: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    height: "40%",
-  },
   safeArea: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
-    backgroundColor: "transparent",
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-  glassHeader: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-    borderWidth: 3,
-    borderColor: "rgba(255, 255, 255, 0.5)",
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  userDetails: {
-    flex: 1,
-  },
-  greeting: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.9)",
-    marginBottom: 2,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  userEmail: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  whiteSection: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 32,
-    paddingHorizontal: 20,
-    minHeight: 600,
-    paddingBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 24,
-    letterSpacing: -0.5,
+  content: {
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   gridContainer: {
     flexDirection: "row",
