@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { LinearGradient } from "expo-linear-gradient"
+import React from "react"
 
 interface Account {
   id: string
@@ -545,30 +546,6 @@ export default function AccountsScreen() {
                 ))}
               </View>
             )}
-          </View>
-        )}
-        {!isLoading && accounts.length > 0 && (
-          <View style={styles.currencyCardsContainer}>
-            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => (
-              <Animated.View
-                key={currency}
-                style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-              >
-                <View
-                  style={[
-                    styles.currencyCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderLeftWidth: 4,
-                      borderLeftColor: index % 2 === 0 ? "#FBBF24" : "#2D7A4F",
-                    },
-                  ]}
-                >
-                  <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>{currency}</Text>
-                  <Text style={[styles.currencyAmount, { color: colors.text }]}>{formatAmount(total)}</Text>
-                </View>
-              </Animated.View>
-            ))}
           </View>
         )}
         {!isLoading && pendingAccounts.length > 0 && (
