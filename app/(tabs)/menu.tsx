@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface MenuItem {
   id: string
@@ -27,21 +28,7 @@ export default function MenuScreen() {
   }
 
   const menuItems: MenuItem[] = [
-    {
-      id: "profile",
-      title: "Mon profil",
-      subtitle: "Informations",
-      icon: "person-outline",
-      route: "/profile",
-    },
-     {
-      id: "e-services",
-      title: "E-Services",
-      subtitle: "Demandes",
-      icon: "document-text-outline",
-      route: "/(tabs)/e-services",
-      isNew: true,
-    },
+   
     {
       id: "accounts",
       title: "Mes comptes",
@@ -83,6 +70,21 @@ export default function MenuScreen() {
       subtitle: "Signaler",
       icon: "alert-circle-outline",
       route: "/(tabs)/reclamation",
+    },
+     {
+      id: "profile",
+      title: "Mon profil",
+      subtitle: "Informations",
+      icon: "person-outline",
+      route: "/profile",
+    },
+     {
+      id: "e-services",
+      title: "E-Services",
+      subtitle: "Demandes",
+      icon: "document-text-outline",
+      route: "/(tabs)/e-services",
+      isNew: true,
     },
     {
       id: "support",
