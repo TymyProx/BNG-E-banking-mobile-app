@@ -293,7 +293,7 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={["#667eea", "#764ba2", "#f093fb"]} style={styles.gradientBackground} />
+      <LinearGradient colors={["#10b981", "#059669", "#34d399"]} style={styles.gradientBackground} />
 
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <KeyboardAvoidingView
@@ -340,7 +340,7 @@ export default function Dashboard() {
                           activeOpacity={0.8}
                         >
                           <LinearGradient
-                            colors={["rgba(139, 92, 246, 0.3)", "rgba(236, 72, 153, 0.3)"]}
+                            colors={["rgba(16, 185, 129, 0.3)", "rgba(52, 211, 153, 0.3)"]}
                             style={styles.cardGradient}
                           >
                             <View style={styles.cardHeader}>
