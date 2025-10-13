@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface MenuItem {
   id: string

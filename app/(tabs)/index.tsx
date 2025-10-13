@@ -24,6 +24,7 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
+import React from "react"
 
 interface Account {
   id: string
@@ -490,167 +491,169 @@ export default function Dashboard() {
               )}
             </View>
 
-            <View style={{ height: 100 }} />
-          </ScrollView>
-
-          {/* Chat Input */}
-          <View style={[styles.chatContainer, { backgroundColor: colors.surface }]}>
-            <View style={styles.chatContent}>
-              <View style={styles.inputRow}>
-                <TouchableOpacity style={styles.attachButton}>
-                  <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
-                </TouchableOpacity>
-                <View
-                  style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}
-                >
-                  <TextInput
-                    style={[styles.textInput, { color: colors.text }]}
-                    placeholder="Posez votre question sur votre compte..."
-                    placeholderTextColor={colors.tabIconDefault}
-                    value={chatInput}
-                    onChangeText={setChatInput}
-                    multiline
-                    maxLength={500}
-                  />
-                  <TouchableOpacity style={styles.voiceButton}>
-                    <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
+            {/* Chat Input */}
+            <View style={[styles.chatContainer, { backgroundColor: colors.surface }]}>
+              <View style={styles.chatContent}>
+                <View style={styles.inputRow}>
+                  <TouchableOpacity style={styles.attachButton}>
+                    <IconSymbol name="paperclip" size={20} color="#2D7A4F" />
+                  </TouchableOpacity>
+                  <View
+                    style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}
+                  >
+                    <TextInput
+                      style={[styles.textInput, { color: colors.text }]}
+                      placeholder="Posez votre question sur votre compte..."
+                      placeholderTextColor={colors.tabIconDefault}
+                      value={chatInput}
+                      onChangeText={setChatInput}
+                      multiline
+                      maxLength={500}
+                    />
+                    <TouchableOpacity style={styles.voiceButton}>
+                      <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
+                    <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#2D7A4F" }]}>
-                  <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
-                </TouchableOpacity>
               </View>
             </View>
-          </View>
 
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-                <View style={styles.modalHeader}>
-                  <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
-                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                    <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
-                  </TouchableOpacity>
-                </View>
-
-                {loadingDetails ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#2D7A4F" />
-                    <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                  <View style={styles.modalHeader}>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Détails de la transaction</Text>
+                    <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                      <IconSymbol name="xmark.circle.fill" size={28} color={colors.tabIconDefault} />
+                    </TouchableOpacity>
                   </View>
-                ) : selectedTransaction ? (
-                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                    <View
-                      style={[
-                        styles.modalIconContainer,
-                        { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
-                      ]}
-                    >
-                      <IconSymbol
-                        name={getTransactionIcon(selectedTransaction.txnType) as any}
-                        size={48}
-                        color={getTransactionColor(selectedTransaction.txnType)}
-                      />
+
+                  {loadingDetails ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color="#2D7A4F" />
+                      <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Chargement...</Text>
                     </View>
+                  ) : selectedTransaction ? (
+                    <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                      <View
+                        style={[
+                          styles.modalIconContainer,
+                          { backgroundColor: `${getTransactionColor(selectedTransaction.txnType)}15` },
+                        ]}
+                      >
+                        <IconSymbol
+                          name={getTransactionIcon(selectedTransaction.txnType) as any}
+                          size={48}
+                          color={getTransactionColor(selectedTransaction.txnType)}
+                        />
+                      </View>
 
-                    <Text
-                      style={[
-                        styles.modalAmount,
-                        {
-                          color: selectedTransaction.txnType?.toLowerCase().includes("depot")
-                            ? "#10B981"
-                            : selectedTransaction.txnType?.toLowerCase().includes("retrait")
-                              ? "#EF4444"
-                              : colors.text,
-                        },
-                      ]}
-                    >
-                      {selectedTransaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
-                      {formatCurrency(Number.parseFloat(selectedTransaction.amount))} GNF
-                    </Text>
-
-                    <View
-                      style={[
-                        styles.modalStatus,
-                        { backgroundColor: `${getStatusColor(selectedTransaction.status)}15` },
-                      ]}
-                    >
-                      <Text style={[styles.modalStatusText, { color: getStatusColor(selectedTransaction.status) }]}>
-                        {selectedTransaction.status}
+                      <Text
+                        style={[
+                          styles.modalAmount,
+                          {
+                            color: selectedTransaction.txnType?.toLowerCase().includes("depot")
+                              ? "#10B981"
+                              : selectedTransaction.txnType?.toLowerCase().includes("retrait")
+                                ? "#EF4444"
+                                : colors.text,
+                          },
+                        ]}
+                      >
+                        {selectedTransaction.txnType?.toLowerCase().includes("depot") ? "+" : "-"}
+                        {formatCurrency(Number.parseFloat(selectedTransaction.amount))} GNF
                       </Text>
-                    </View>
 
-                    <View style={styles.detailsContainer}>
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnId}</Text>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnType}</Text>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={3}>
-                          {selectedTransaction.description || "N/A"}
+                      <View
+                        style={[
+                          styles.modalStatus,
+                          { backgroundColor: `${getStatusColor(selectedTransaction.status)}15` },
+                        ]}
+                      >
+                        <Text style={[styles.modalStatusText, { color: getStatusColor(selectedTransaction.status) }]}>
+                          {selectedTransaction.status}
                         </Text>
                       </View>
 
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date de valeur</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                          {formatDateTime(selectedTransaction.valueDate)}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                          {selectedTransaction.creditAccount || "N/A"}
-                        </Text>
-                      </View>
-
-                      {selectedTransaction.commentNotes && (
+                      <View style={styles.detailsContainer}>
                         <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={4}>
-                            {selectedTransaction.commentNotes}
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>ID Transaction</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>{selectedTransaction.txnId}</Text>
+                        </View>
+
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Type</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {selectedTransaction.txnType}
                           </Text>
                         </View>
-                      )}
 
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Créé le</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                          {formatDateTime(selectedTransaction.createdAt)}
-                        </Text>
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Description</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={3}>
+                            {selectedTransaction.description || "N/A"}
+                          </Text>
+                        </View>
+
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Date de valeur</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {formatDateTime(selectedTransaction.valueDate)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Compte créditeur</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {selectedTransaction.creditAccount || "N/A"}
+                          </Text>
+                        </View>
+
+                        {selectedTransaction.commentNotes && (
+                          <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Notes</Text>
+                            <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={4}>
+                              {selectedTransaction.commentNotes}
+                            </Text>
+                          </View>
+                        )}
+
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Créé le</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {formatDateTime(selectedTransaction.createdAt)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Mis à jour le</Text>
+                          <Text style={[styles.detailValue, { color: colors.text }]}>
+                            {formatDateTime(selectedTransaction.updatedAt)}
+                          </Text>
+                        </View>
                       </View>
 
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.tabIconDefault }]}>Mis à jour le</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                          {formatDateTime(selectedTransaction.updatedAt)}
-                        </Text>
-                      </View>
+                      <View style={{ height: 20 }} />
+                    </ScrollView>
+                  ) : (
+                    <View style={styles.loadingContainer}>
+                      <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>
+                        Aucune donnée disponible
+                      </Text>
                     </View>
-
-                    <View style={{ height: 20 }} />
-                  </ScrollView>
-                ) : (
-                  <View style={styles.loadingContainer}>
-                    <Text style={[styles.loadingText, { color: colors.tabIconDefault }]}>Aucune donnée disponible</Text>
-                  </View>
-                )}
+                  )}
+                </View>
               </View>
-            </View>
-          </Modal>
+            </Modal>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -660,7 +663,7 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#667eea", // Set solid color matching gradient start to prevent any gray showing
+    backgroundColor: "#FFFFFF", // Changed from gradient color to white so bottom is white
   },
   gradientBackground: {
     position: "absolute",
@@ -863,6 +866,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 20,
     minHeight: 400,
+    paddingBottom: 24, // Reduced from 40 to 24 to minimize scroll area
   },
 
   accountsContainer: { gap: 16 },
