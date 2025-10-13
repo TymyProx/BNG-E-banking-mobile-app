@@ -21,7 +21,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface Account {
   id: string
@@ -125,6 +124,13 @@ export default function AccountsScreen() {
 
   const activeAccounts = accounts.filter(
     (account) => account.status.toLowerCase() === "actif" || account.status.toLowerCase() === "active",
+  )
+
+  const pendingAccounts = accounts.filter(
+    (account) =>
+      account.status.toLowerCase() === "en attente" ||
+      account.status.toLowerCase() === "pending" ||
+      account.status.toLowerCase() === "attente",
   )
 
   useEffect(() => {
@@ -541,6 +547,83 @@ export default function AccountsScreen() {
             )}
           </View>
         )}
+        {!isLoading && accounts.length > 0 && (
+          <View style={styles.currencyCardsContainer}>
+            {Object.entries(getTotalsByCurrency()).map(([currency, total], index) => (
+              <Animated.View
+                key={currency}
+                style={[styles.currencyCardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+              >
+                <View
+                  style={[
+                    styles.currencyCard,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderLeftWidth: 4,
+                      borderLeftColor: index % 2 === 0 ? "#FBBF24" : "#2D7A4F",
+                    },
+                  ]}
+                >
+                  <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>{currency}</Text>
+                  <Text style={[styles.currencyAmount, { color: colors.text }]}>{formatAmount(total)}</Text>
+                </View>
+              </Animated.View>
+            ))}
+          </View>
+        )}
+        {!isLoading && pendingAccounts.length > 0 && (
+          <Animated.View style={[styles.pendingSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={styles.pendingSectionHeader}>
+              <View style={styles.pendingHeaderLeft}>
+                <View style={styles.pendingIconContainer}>
+                  <IconSymbol name="clock.fill" size={20} color="#F59E0B" />
+                </View>
+                <View>
+                  <Text style={[styles.pendingSectionTitle, { color: colors.text }]}>Comptes en attente</Text>
+                  <Text style={[styles.pendingSectionSubtitle, { color: colors.textSecondary }]}>
+                    {pendingAccounts.length} compte{pendingAccounts.length > 1 ? "s" : ""} en cours de validation
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.pendingAccountsList}>
+              {pendingAccounts.map((account) => (
+                <TouchableOpacity
+                  key={account.id}
+                  style={[styles.pendingAccountCard, { backgroundColor: colors.cardBackground }]}
+                  onPress={() => handleAccountPress(account)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.pendingCardLeft}>
+                    <View style={[styles.pendingAccountIcon, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
+                      <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#F59E0B" />
+                    </View>
+                    <View style={styles.pendingAccountInfo}>
+                      <Text style={[styles.pendingAccountName, { color: colors.text }]}>{account.name}</Text>
+                      <Text style={[styles.pendingAccountNumber, { color: colors.textSecondary }]}>
+                        •••• {account.number.slice(-4)}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.pendingCardRight}>
+                    <View style={styles.pendingStatusBadge}>
+                      <View style={styles.pendingDot} />
+                      <Text style={styles.pendingStatusText}>En attente</Text>
+                    </View>
+                    <IconSymbol name="chevron.right" size={18} color={colors.textSecondary} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={[styles.pendingInfoBox, { backgroundColor: "rgba(245, 158, 11, 0.1)" }]}>
+              <IconSymbol name="info.circle.fill" size={16} color="#F59E0B" />
+              <Text style={[styles.pendingInfoText, { color: "#F59E0B" }]}>
+                Ces comptes seront activés après validation par notre équipe
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
         {isLoading && (
           <View style={styles.loadingContainer}>
             <Animated.View style={[styles.skeletonCard, { opacity: fadeAnim, backgroundColor: colors.borderLight }]}>
@@ -1175,5 +1258,121 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 60,
+  },
+  pendingSection: {
+    marginHorizontal: 24,
+    marginBottom: 32,
+  },
+  pendingSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  pendingHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  pendingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pendingSectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  pendingSectionSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  pendingAccountsList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  pendingAccountCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  pendingCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  pendingAccountIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pendingAccountInfo: {
+    flex: 1,
+  },
+  pendingAccountName: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+    letterSpacing: -0.2,
+  },
+  pendingAccountNumber: {
+    fontSize: 13,
+    fontWeight: "500",
+    letterSpacing: 0.5,
+  },
+  pendingCardRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  pendingStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+  },
+  pendingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#F59E0B",
+  },
+  pendingStatusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#F59E0B",
+  },
+  pendingInfoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 14,
+    borderRadius: 12,
+  },
+  pendingInfoText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
   },
 })
