@@ -24,6 +24,7 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
+import React from "react"
 
 interface Account {
   id: string
@@ -403,37 +404,29 @@ export default function Dashboard() {
                   <View style={[styles.actionCircle, { backgroundColor: "#10B981" }]}>
                     <IconSymbol name="arrow.up" size={24} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.actionLabel}>Top Up{"\n"}Payment</Text>
+                  <Text style={styles.actionLabel}>Faire{"\n"}Virement</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/cards")}>
                   <View style={[styles.actionCircle, { backgroundColor: "#F97316" }]}>
                     <IconSymbol name="creditcard" size={24} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.actionLabel}>Mobile{"\n"}Payment</Text>
+                  <Text style={styles.actionLabel}>Mes{"\n"}Cartes</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/transfer")}>
-                  <View style={[styles.actionCircle, { backgroundColor: "#3B82F6" }]}>
-                    <IconSymbol name="arrow.left.arrow.right" size={24} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.actionLabel}>Money{"\n"}Transfer</Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/menu")}>
                   <View style={[styles.actionCircle, { backgroundColor: "#FBBF24" }]}>
                     <IconSymbol name="dollarsign.circle" size={24} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.actionLabel}>Make a{"\n"}Payment</Text>
+                  <Text style={styles.actionLabel}>Menu</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.whiteSection}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Latest transactions</Text>
+                <Text style={styles.sectionTitle}>Transactions récentes</Text>
                 <TouchableOpacity onPress={() => router.push("/(tabs)/statements")}>
-                  <Text style={styles.viewAllText}>View all</Text>
+                  <Text style={styles.viewAllText}>Voir tout</Text>
                 </TouchableOpacity>
               </View>
 
