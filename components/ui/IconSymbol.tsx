@@ -109,6 +109,19 @@ const MAPPING = {
   "xmark.circle": "cancel",
   "checkmark.circle": "check-circle",
   "info.circle.fill": "info",
+
+  ///// Virement
+
+"arrow.left.arrow.right": "compare-arrows",
+"arrow.right.arrow.left": "compare-arrows",
+"bank.transfer": "compare-arrows",
+
+
+/////Menu
+
+"line.3.horizontal": "menu",
+"square.grid.2x2": "apps",
+
 } as unknown as IconMapping
 
 /**

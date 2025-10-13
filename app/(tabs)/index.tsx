@@ -307,10 +307,14 @@ export default function Dashboard() {
               <Text style={styles.profileInitials}>{getUserInitials()}</Text>
             </TouchableOpacity>
             <View style={styles.headerCenter}>
-              <Text style={styles.headerBalance}>€ {formatCurrency(totalBalance)}</Text>
+              <View style={{ alignItems: "center" }}>
+                <Text style={styles.headerHello}>Bonjour,</Text>
+                <Text style={styles.headerName}>{user?.firstName}</Text>
+              </View>
+
             </View>
             <TouchableOpacity style={styles.menuButton}>
-              <IconSymbol name="line.3.horizontal" size={24} color="#FFFFFF" />
+              <IconSymbol name="bell" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
@@ -402,7 +406,7 @@ export default function Dashboard() {
               <View style={styles.quickActionsGrid}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/transfer")}>
                   <View style={[styles.actionCircle, { backgroundColor: "#10B981" }]}>
-                    <IconSymbol name="arrow.up" size={24} color="#FFFFFF" />
+                    <IconSymbol name="arrow.right.arrow.left" size={24} color="#FFFFFF" />
                   </View>
                   <Text style={styles.actionLabel}>Virement</Text>
                 </TouchableOpacity>
@@ -415,7 +419,7 @@ export default function Dashboard() {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/menu")}>
                   <View style={[styles.actionCircle, { backgroundColor: "#FBBF24" }]}>
-                    <IconSymbol name="dollarsign.circle" size={24} color="#FFFFFF" />
+                    <IconSymbol name="line.3.horizontal" size={24} color="#FFFFFF" />
                   </View>
                   <Text style={styles.actionLabel}>Menu</Text>
                 </TouchableOpacity>
@@ -684,15 +688,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerBalance: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+ headerCenter: {
+  flex: 1,
+  width: "100%",         // ✅ le conteneur occupe toute la largeur
+  alignItems: "stretch", // ✅ permet aux enfants (texte) de s’étirer sur toute la largeur
+  justifyContent: "center", // 🔹 centre verticalement le contenu
+},
+ headerText: {
+  color: "#FFFFFF",
+  fontSize: 16,
+  fontWeight: "600",
+  width: "100%",         // ✅ prend toute la largeur du parent
+  marginLeft: 12,      // 🔹 espace à gauche pour éviter le collage avec l'avatar
+  textAlign: "left",   // 🔹 ou "left" / "right" selon ton besoin
+},
+
+headerHello: {
+  color: "#FFFFFF",
+  fontSize: 14,
+  fontWeight: "400",
+  width: "100%",         //prend toute la largeur du parent
+  marginLeft: 14,      //espace à gauche pour éviter le collage avec l'avatar
+  textAlign: "left",   //ou "left" / "right" selon ton besoin
+},
+
+headerName: {
+  color: "#FFFFFF",
+  fontSize: 16,
+  fontWeight: "800",
+  textTransform: "uppercase",
+  width: "100%",         //prend toute la largeur du parent
+  marginLeft: 14,      //espace à gauche pour éviter le collage avec l'avatar
+  textAlign: "left",   //ou "left" / "right" selon ton besoin
+},
   menuButton: {
     width: 40,
     height: 40,
