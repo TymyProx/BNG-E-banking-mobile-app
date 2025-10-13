@@ -556,7 +556,7 @@ export default function AccountsScreen() {
                   <IconSymbol name="clock.fill" size={20} color="#F59E0B" />
                 </View>
                 <View>
-                  <Text style={[styles.pendingSectionTitle, { color: colors.text }]}>Comptes en attente</Text>
+                  <Text style={[styles.pendingSectionTitle, { color: colors.text }]}>Mes demandes</Text>
                   <Text style={[styles.pendingSectionSubtitle, { color: colors.textSecondary }]}>
                     {pendingAccounts.length} compte{pendingAccounts.length > 1 ? "s" : ""} en cours de validation
                   </Text>
