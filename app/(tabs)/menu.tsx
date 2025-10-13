@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
 import { LinearGradient } from "expo-linear-gradient"
+import React from "react"
 
 interface MenuItem {
   id: string
