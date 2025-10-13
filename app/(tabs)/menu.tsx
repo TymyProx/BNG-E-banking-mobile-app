@@ -6,7 +6,6 @@ import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface MenuItem {
   id: string
@@ -174,9 +173,9 @@ export default function MenuScreen() {
 
             <View style={styles.logoutContainer}>
               <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-                <LinearGradient colors={["#FEE2E2", "#FECACA"]} style={styles.logoutGradient}>
+                <LinearGradient colors={["#F3F4F6", "#E5E7EB"]} style={styles.logoutGradient}>
                   <View style={styles.logoutIconContainer}>
-                    <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+                    <Ionicons name="log-out-outline" size={24} color="#6B7280" />
                   </View>
                   <Text style={styles.logoutText}>Déconnexion</Text>
                 </LinearGradient>
@@ -300,7 +299,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     borderRadius: 20,
     overflow: "hidden",
-    shadowColor: "#EF4444",
+    shadowColor: "#6B7280",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -323,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#EF4444",
+    shadowColor: "#6B7280",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -335,7 +334,7 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#EF4444",
+    color: "#6B7280",
     letterSpacing: -0.3,
   },
 })
