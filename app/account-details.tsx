@@ -66,64 +66,6 @@ export default function AccountDetailsScreen() {
   const [showBalance, setShowBalance] = useState(true)
   const { tenantId } = useAuth()
 
-  const mockTransactions: Transaction[] = [
-    {
-      id: "1",
-      type: "credit",
-      amount: 250000,
-      description: "Virement reçu - Salaire",
-      date: "2024-01-15",
-      time: "09:30",
-      balance: 2400000,
-      category: "Salaire",
-      reference: "VIR240115001",
-    },
-    {
-      id: "2",
-      type: "debit",
-      amount: 75000,
-      description: "Retrait DAB - Agence Kaloum",
-      date: "2024-01-14",
-      time: "14:20",
-      balance: 2150000,
-      category: "Retrait",
-      reference: "RET240114002",
-    },
-    {
-      id: "3",
-      type: "debit",
-      amount: 45000,
-      description: "Paiement - Orange Money",
-      date: "2024-01-14",
-      time: "11:15",
-      balance: 2225000,
-      category: "Mobile Money",
-      reference: "PAY240114003",
-    },
-    {
-      id: "4",
-      type: "credit",
-      amount: 120000,
-      description: "Virement reçu - Remboursement",
-      date: "2024-01-13",
-      time: "16:45",
-      balance: 2270000,
-      category: "Virement",
-      reference: "VIR240113004",
-    },
-    {
-      id: "5",
-      type: "debit",
-      amount: 25000,
-      description: "Frais de tenue de compte",
-      date: "2024-01-12",
-      time: "00:01",
-      balance: 2150000,
-      category: "Frais bancaires",
-      reference: "FRA240112005",
-    },
-  ]
-
   const loadAccountDetails = async () => {
     setIsLoading(true)
     try {
@@ -151,12 +93,61 @@ export default function AccountDetailsScreen() {
 
       const data = await response.json()
       console.log("[v0] Account details loaded:", data)
-
       setAccount(data)
-      setTransactions(mockTransactions)
+
+      const transactionsResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.TRANSACTION.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (transactionsResponse.ok) {
+        const transactionsData = await transactionsResponse.json()
+        console.log("[v0] Transactions response:", transactionsData)
+
+        let allTransactions: any[] = []
+        if (Array.isArray(transactionsData)) {
+          allTransactions = transactionsData
+        } else if (transactionsData && Array.isArray(transactionsData.data)) {
+          allTransactions = transactionsData.data
+        } else if (transactionsData && Array.isArray(transactionsData.rows)) {
+          allTransactions = transactionsData.rows
+        } else if (transactionsData && Array.isArray(transactionsData.transactions)) {
+          allTransactions = transactionsData.transactions
+        }
+
+        const accountTransactions = allTransactions
+          .filter(
+            (transaction: any) =>
+              transaction.accountId === accountId ||
+              transaction.accountNumber === data.accountNumber ||
+              transaction.compteId === accountId,
+          )
+          .map((transaction: any) => ({
+            id: transaction.id || transaction.transactionId || String(Math.random()),
+            type: transaction.type === "credit" || transaction.type === "CREDIT" ? "credit" : "debit",
+            amount: Number.parseFloat(transaction.amount || transaction.montant || "0"),
+            description: transaction.description || transaction.label || transaction.libelle || "Transaction",
+            date: transaction.date || transaction.createdAt || new Date().toISOString(),
+            time: transaction.time || new Date(transaction.date || transaction.createdAt).toLocaleTimeString("fr-FR"),
+            balance: Number.parseFloat(transaction.balance || transaction.solde || "0"),
+            category: transaction.category || transaction.categorie || "Autre",
+            reference: transaction.reference || transaction.id || "N/A",
+          }))
+          .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Sort by date descending
+
+        console.log("[v0] Filtered account transactions:", accountTransactions.length)
+        setTransactions(accountTransactions)
+      } else {
+        console.log("[v0] Failed to fetch transactions, using empty array")
+        setTransactions([])
+      }
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des détails:", error)
       Alert.alert("Erreur", "Impossible de charger les détails du compte. Veuillez réessayer.")
+      setTransactions([])
     } finally {
       setIsLoading(false)
     }
@@ -915,47 +906,59 @@ export default function AccountDetailsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.transactionsList}>
-            {transactions.slice(0, 5).map((transaction) => (
-              <View key={transaction.id} style={styles.transactionItem}>
-                <View style={styles.transactionLeft}>
-                  <View
-                    style={[
-                      styles.transactionIcon,
-                      {
-                        backgroundColor: transaction.type === "credit" ? "#059669" + "15" : "#DC2626" + "15",
-                      },
-                    ]}
-                  >
-                    <IconSymbol
-                      name={getTransactionIcon(transaction.category) as any}
-                      size={16}
-                      color={transaction.type === "credit" ? "#059669" : "#DC2626"}
-                    />
+          {transactions.length === 0 ? (
+            <View style={{ paddingVertical: 32, alignItems: "center" }}>
+              <IconSymbol name="tray" size={48} color={colors.textSecondary} />
+              <Text style={[{ color: colors.textSecondary, marginTop: 12, fontSize: 14 }]}>
+                Aucune transaction disponible
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.transactionsList}>
+              {transactions.slice(0, 5).map((transaction) => (
+                <View key={transaction.id} style={styles.transactionItem}>
+                  <View style={styles.transactionLeft}>
+                    <View
+                      style={[
+                        styles.transactionIcon,
+                        {
+                          backgroundColor: transaction.type === "credit" ? "#059669" + "15" : "#DC2626" + "15",
+                        },
+                      ]}
+                    >
+                      <IconSymbol
+                        name={getTransactionIcon(transaction.category) as any}
+                        size={16}
+                        color={transaction.type === "credit" ? "#059669" : "#DC2626"}
+                      />
+                    </View>
+                    <View style={styles.transactionInfo}>
+                      <Text style={[styles.transactionDescription, { color: colors.text }]}>
+                        {transaction.description}
+                      </Text>
+                      <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>
+                        {formatDate(transaction.date)} • {transaction.time}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.transactionInfo}>
-                    <Text style={[styles.transactionDescription, { color: colors.text }]}>
-                      {transaction.description}
+                  <View style={styles.transactionRight}>
+                    <Text
+                      style={[
+                        styles.transactionAmount,
+                        { color: transaction.type === "credit" ? "#059669" : "#DC2626" },
+                      ]}
+                    >
+                      {transaction.type === "credit" ? "+" : "-"}
+                      {formatAmount(transaction.amount)} {account?.currency || "GNF"}
                     </Text>
-                    <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>
-                      {formatDate(transaction.date)} • {transaction.time}
+                    <Text style={[styles.transactionBalance, { color: colors.textSecondary }]}>
+                      Solde: {formatAmount(transaction.balance)} {account?.currency || "GNF"}
                     </Text>
                   </View>
                 </View>
-                <View style={styles.transactionRight}>
-                  <Text
-                    style={[styles.transactionAmount, { color: transaction.type === "credit" ? "#059669" : "#DC2626" }]}
-                  >
-                    {transaction.type === "credit" ? "+" : "-"}
-                    {formatAmount(transaction.amount)} GNF
-                  </Text>
-                  <Text style={[styles.transactionBalance, { color: colors.textSecondary }]}>
-                    Solde: {formatAmount(transaction.balance)} GNF
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
