@@ -26,7 +26,6 @@ import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -362,10 +361,12 @@ export default function TransferScreen() {
 
       const transferAmount = Number.parseFloat(amount.replace(/\s/g, ""))
 
+      // Update local state immediately for instant feedback
       setAccounts((prevAccounts) => {
         return prevAccounts.map((account) => {
           // Debit the source account
           if (account.id === selectedAccount.id) {
+            console.log("[v0] Debiting account:", account.id, "Amount:", transferAmount)
             return {
               ...account,
               availableBalance: account.availableBalance - transferAmount,
@@ -378,6 +379,7 @@ export default function TransferScreen() {
             selectedDestinationAccount &&
             account.id === selectedDestinationAccount.id
           ) {
+            console.log("[v0] Crediting account:", account.id, "Amount:", transferAmount)
             return {
               ...account,
               availableBalance: account.availableBalance + transferAmount,
@@ -388,8 +390,30 @@ export default function TransferScreen() {
         })
       })
 
-      console.log("[v0] Account balances updated locally")
-      // </CHANGE>
+      // Refetch accounts from API to ensure data consistency
+      console.log("[v0] Refetching accounts from API...")
+      const accountsResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json()
+        const mappedAccounts: Account[] = (accountsData.rows || [])
+          .filter((acc: any) => acc.status === "ACTIF")
+          .map((acc: any) => ({
+            id: acc.id,
+            name: acc.accountName || "Compte sans nom",
+            number: acc.accountNumber || "Non attribué",
+            availableBalance: Number.parseFloat(acc.availableBalance || "0"),
+            type: acc.type?.toLowerCase() || "courant",
+            currency: acc.currency || "GNF",
+          }))
+
+        setAccounts(mappedAccounts)
+        console.log("[v0] Accounts refreshed from API:", mappedAccounts)
+      }
 
       setIsLoading(false)
       setShowOtpModal(false)
