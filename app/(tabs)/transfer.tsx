@@ -34,7 +34,7 @@ interface Account {
   id: string
   name: string
   number: string
-  balance: number
+  availableBalance: number
   type: "courant" | "epargne" | "terme"
   currency: string
 }
@@ -118,7 +118,7 @@ export default function TransferScreen() {
             id: acc.id,
             name: acc.accountName || "Compte sans nom",
             number: acc.accountNumber || "Non attribué",
-            balance: Number.parseFloat(acc.availableBalance || "0"),
+            availableBalance: Number.parseFloat(acc.availableBalance || "0"),
             type: acc.type?.toLowerCase() || "courant",
             currency: acc.currency || "GNF",
           }))
@@ -227,7 +227,7 @@ export default function TransferScreen() {
   const validateAmount = (): boolean => {
     const numAmount = Number.parseFloat(amount.replace(/\s/g, ""))
     if (!numAmount || numAmount <= 0) return false
-    if (selectedAccount && numAmount > selectedAccount.balance) return false
+    if (selectedAccount && numAmount > selectedAccount.availableBalance) return false
     return true
   }
 
@@ -368,7 +368,7 @@ export default function TransferScreen() {
           if (account.id === selectedAccount.id) {
             return {
               ...account,
-              balance: account.balance - transferAmount,
+              availableBalance: account.availableBalance - transferAmount,
             }
           }
 
@@ -380,7 +380,7 @@ export default function TransferScreen() {
           ) {
             return {
               ...account,
-              balance: account.balance + transferAmount,
+              availableBalance: account.availableBalance + transferAmount,
             }
           }
 
@@ -639,7 +639,7 @@ export default function TransferScreen() {
                         <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
                         <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>{account.number}</Text>
                         <Text style={[styles.accountBalance, { color: colors.text }]}>
-                          Solde: {account.balance.toLocaleString()} {account.currency}
+                          Solde: {account.availableBalance.toLocaleString()} {account.currency}
                         </Text>
                       </View>
                     </View>
@@ -746,7 +746,7 @@ export default function TransferScreen() {
                         <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
                         <Text style={[styles.accountNumber, { color: colors.textSecondary }]}>{account.number}</Text>
                         <Text style={[styles.accountBalance, { color: colors.text }]}>
-                          Solde: {account.balance.toLocaleString()} {account.currency}
+                          Solde: {account.availableBalance.toLocaleString()} {account.currency}
                         </Text>
                       </View>
                     </View>
@@ -795,7 +795,7 @@ export default function TransferScreen() {
                 </View>
                 {selectedAccount && (
                   <Text style={[styles.balanceInfo, { color: colors.textSecondary }]}>
-                    Solde disponible: {selectedAccount.balance.toLocaleString()} GNF
+                    Solde disponible: {selectedAccount.availableBalance.toLocaleString()} GNF
                   </Text>
                 )}
               </View>
