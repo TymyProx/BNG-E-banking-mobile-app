@@ -408,21 +408,20 @@ export default function ReclamationScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
       <View style={[styles.header, { backgroundColor: "#F9FAFB" }]}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color="#111827" />
+        <View style={styles.headerContent}>
+           <TouchableOpacity
+              style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+              onPress={() => router.back()}
+            >
+              <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Réclamations</Text>
-          <View style={styles.placeholder} />
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Liste de réclamations</Text>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={[styles.actionButton, styles.addActionButton]} onPress={() => setShowForm(true)}>
-              <IconSymbol name="plus" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: "#2D7A4F" }]}
+            onPress={() => setShowForm(true)}
+          >
+            <IconSymbol name="plus" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.statusLegend}>
@@ -470,7 +469,7 @@ export default function ReclamationScreen() {
               Vous n'avez pas encore de réclamation. Créez-en une en appuyant sur le bouton +
             </Text>
             <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: "#10B981" }]}
+              style={[styles.createButton, { backgroundColor: "#2D7A4F" }]}
               onPress={() => setShowForm(true)}
             >
               <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
@@ -733,9 +732,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  backButton: {
-    width: 40,
-    height: 40,
+   backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -745,6 +745,13 @@ const styles = StyleSheet.create({
     color: "#111827",
     flex: 1,
     textAlign: "center",
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
   },
   placeholder: {
     width: 40,
@@ -791,7 +798,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     marginBottom: 16,
-    marginTop:16,
+    marginTop: 16,
   },
   sectionTitle: {
     fontSize: 18,
@@ -958,10 +965,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 20,
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
   },
   inputGroup: {
     marginBottom: 20,
@@ -1011,6 +1019,40 @@ const styles = StyleSheet.create({
   },
   pickerOptionText: {
     fontSize: 14,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: "#10B981",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   detailsModalContent: {
     borderTopLeftRadius: 24,
