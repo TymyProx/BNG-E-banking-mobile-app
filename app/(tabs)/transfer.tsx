@@ -26,6 +26,7 @@ import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -463,7 +464,7 @@ export default function TransferScreen() {
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <View style={styles.headerTitleContainer}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>Nouveau Transfert</Text>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>Virement</Text>
             </View>
             <View style={styles.headerSpacer} />
           </View>

@@ -70,7 +70,7 @@ const CARD_TYPES = [
     id: "OPEN",
     name: "OPEN",
     value: "OPEN",
-    fee: "5 500 XOF/An",
+    //fee: "5 500 XOF/An",
     colors: ["#8B9556", "#A8B566"],
     description: "Carte idéale pour les transactions quotidiennes",
   },
@@ -78,7 +78,7 @@ const CARD_TYPES = [
     id: "CHALLENGE",
     name: "CHALLENGE",
     value: "CHALLENGE",
-    fee: "8 250 XOF/An",
+   // fee: "8 250 XOF/An",
     colors: ["#4A90E2", "#5BA3F5"],
     description: "Carte pour les clients actifs",
   },
@@ -86,7 +86,7 @@ const CARD_TYPES = [
     id: "VISA_LEADER",
     name: "VISA LEADER",
     value: "VISA_LEADER",
-    fee: "16 500 XOF/An",
+    //fee: "16 500 XOF/An",
     colors: ["#1E3A5F", "#2C5282"],
     description: "Carte premium avec avantages exclusifs",
   },
@@ -94,7 +94,7 @@ const CARD_TYPES = [
     id: "VISA_GOLD",
     name: "VISA GOLD",
     value: "VISA_GOLD",
-    fee: "55 290 XOF/An",
+    //fee: "55 290 XOF/An",
     colors: ["#F4D03F", "#F9E79F"],
     description: "Carte haut de gamme avec services privilégiés",
   },
@@ -1081,7 +1081,7 @@ export default function CardsScreen() {
                 style={[
                   styles.nextButton,
                   {
-                    backgroundColor: selectedCardType ? "#0066FF" : colors.border,
+                    backgroundColor: selectedCardType ? "#2D7A4F" : colors.border,
                   },
                 ]}
                 onPress={handleNextStep}
@@ -1094,7 +1094,7 @@ export default function CardsScreen() {
                 style={[
                   styles.nextButton,
                   {
-                    backgroundColor: selectedAccountId && !isSubmitting ? "#10B981" : colors.border,
+                    backgroundColor: selectedAccountId && !isSubmitting ? "#2D7A4F" : colors.border,
                   },
                 ]}
                 onPress={handleSubmitCardRequest}
@@ -1790,7 +1790,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#0066FF",
+    backgroundColor: "#2D7A4F",
     justifyContent: "center",
     alignItems: "center",
   },

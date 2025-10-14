@@ -299,7 +299,7 @@ const Beneficiaries = () => {
             <Text style={[styles.headerTitle, { color: colors.text }]}>Bénéficiaires</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérer vos contacts de virement</Text>
           </View>
-          <TouchableOpacity style={[styles.addButton, { backgroundColor: "#10B981" }]} onPress={handleAddBeneficiary}>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: "#2D7A4F" }]} onPress={handleAddBeneficiary}>
             <IconSymbol name="plus" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -575,8 +575,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#10B981",
-    shadowColor: "#10B981",
+    backgroundColor: "#2D7A4F",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -626,7 +625,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   filterPillActive: {
-    shadowColor: "#10B981",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
@@ -649,7 +647,6 @@ const styles = StyleSheet.create({
   beneficiaryCard: {
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -677,7 +674,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16, 185, 129, 0.15)",
     borderWidth: 2,
     borderColor: "rgba(16, 185, 129, 0.3)",
-    shadowColor: "#10B981",
+    shadowColor: "#2D7A4F",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
