@@ -26,7 +26,6 @@ import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -362,36 +361,127 @@ export default function TransferScreen() {
 
       const transferAmount = Number.parseFloat(amount.replace(/\s/g, ""))
 
-      // Update local state immediately for instant feedback
-      setAccounts((prevAccounts) => {
-        return prevAccounts.map((account) => {
-          // Debit the source account
-          if (account.id === selectedAccount.id) {
-            console.log("[v0] Debiting account:", account.id, "Amount:", transferAmount)
-            return {
-              ...account,
-              availableBalance: account.availableBalance - transferAmount,
-            }
-          }
+      try {
+        // 1. Fetch and update source account (debit)
+        console.log("[v0] Fetching source account details...")
+        const sourceAccountResponse = await fetch(
+          `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.DETAILS(tenantId, selectedAccount.id)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
 
-          // Credit the destination account (only for account-to-account transfers)
-          if (
-            transferType === "account" &&
-            selectedDestinationAccount &&
-            account.id === selectedDestinationAccount.id
-          ) {
-            console.log("[v0] Crediting account:", account.id, "Amount:", transferAmount)
-            return {
-              ...account,
-              availableBalance: account.availableBalance + transferAmount,
-            }
-          }
+        if (!sourceAccountResponse.ok) {
+          throw new Error("Failed to fetch source account")
+        }
 
-          return account
+        const sourceAccountData = await sourceAccountResponse.json()
+        const sourceAccount = sourceAccountData.data || sourceAccountData
+
+        const currentSourceBalance = Number.parseFloat(sourceAccount.availableBalance || "0")
+        const newSourceBalance = currentSourceBalance - transferAmount
+
+        console.log("[v0] Updating source account balance:", {
+          accountId: selectedAccount.id,
+          currentBalance: currentSourceBalance,
+          newBalance: newSourceBalance,
+          amount: transferAmount,
         })
-      })
 
-      // Refetch accounts from API to ensure data consistency
+        // Verify sufficient balance
+        if (newSourceBalance < 0) {
+          throw new Error(`Solde insuffisant. Solde disponible: ${currentSourceBalance}, Montant: ${transferAmount}`)
+        }
+
+        // Update source account balance
+        const updateSourceData = {
+          data: {
+            ...sourceAccount,
+            availableBalance: newSourceBalance.toString(),
+          },
+        }
+
+        const updateSourceResponse = await fetch(
+          `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.UPDATE(tenantId, selectedAccount.id)}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updateSourceData),
+          },
+        )
+
+        if (!updateSourceResponse.ok) {
+          throw new Error("Failed to update source account balance")
+        }
+
+        console.log("[v0] Source account balance updated successfully")
+
+        // 2. If account-to-account transfer, fetch and update destination account (credit)
+        if (transferType === "account" && selectedDestinationAccount) {
+          console.log("[v0] Fetching destination account details...")
+          const destAccountResponse = await fetch(
+            `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.DETAILS(tenantId, selectedDestinationAccount.id)}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          )
+
+          if (!destAccountResponse.ok) {
+            throw new Error("Failed to fetch destination account")
+          }
+
+          const destAccountData = await destAccountResponse.json()
+          const destAccount = destAccountData.data || destAccountData
+
+          const currentDestBalance = Number.parseFloat(destAccount.availableBalance || "0")
+          const newDestBalance = currentDestBalance + transferAmount
+
+          console.log("[v0] Updating destination account balance:", {
+            accountId: selectedDestinationAccount.id,
+            currentBalance: currentDestBalance,
+            newBalance: newDestBalance,
+            amount: transferAmount,
+          })
+
+          // Update destination account balance
+          const updateDestData = {
+            data: {
+              ...destAccount,
+              availableBalance: newDestBalance.toString(),
+            },
+          }
+
+          const updateDestResponse = await fetch(
+            `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.UPDATE(tenantId, selectedDestinationAccount.id)}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.JSON.stringify(updateDestData),
+            },
+          )
+
+          if (!updateDestResponse.ok) {
+            throw new Error("Failed to update destination account balance")
+          }
+
+          console.log("[v0] Destination account balance updated successfully")
+        }
+      } catch (balanceError) {
+        console.error("[v0] Error updating account balances:", balanceError)
+        // Continue even if balance update fails - transaction was created
+      }
+
+      // Refetch accounts from API to update UI with latest balances
       console.log("[v0] Refetching accounts from API...")
       const accountsResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
         headers: {
@@ -413,7 +503,7 @@ export default function TransferScreen() {
           }))
 
         setAccounts(mappedAccounts)
-        console.log("[v0] Accounts refreshed from API:", mappedAccounts)
+        console.log("[v0] Accounts refreshed from API")
       }
 
       setIsLoading(false)
