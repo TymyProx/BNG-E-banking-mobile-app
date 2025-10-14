@@ -81,6 +81,9 @@ export default function ReclamationScreen() {
   const [selectedReclamation, setSelectedReclamation] = useState<ReclamationDetails | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
 
+  // Tab state for segmented control
+  const [activeTab, setActiveTab] = useState<"demandes" | "reclamations">("reclamations")
+
   const loadReclamations = async () => {
     setIsLoading(true)
     try {
@@ -351,6 +354,23 @@ export default function ReclamationScreen() {
   }
 
   const ReclamationCard = ({ reclamation }: { reclamation: Reclamation }) => {
+    const getStatusDotColor = (status: string) => {
+      const normalizedStatus = status.toLowerCase()
+      switch (normalizedStatus) {
+        case "traité":
+        case "resolved":
+          return "#10B981" // Green
+        case "en attente":
+        case "pending":
+          return "#FBBF24" // Yellow
+        case "rejeté":
+        case "rejected":
+          return "#EF4444" // Red
+        default:
+          return "#9CA3AF" // Gray
+      }
+    }
+
     return (
       <TouchableOpacity onPress={() => handleReclamationPress(reclamation.id)} activeOpacity={0.7}>
         <Animated.View
@@ -363,40 +383,21 @@ export default function ReclamationScreen() {
             },
           ]}
         >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-              <IconSymbol name="info.circle" size={24} color="#FBBF24" />
-            </View>
-            <View style={styles.cardHeaderInfo}>
-              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-                {getMotifLabel(reclamation.motifRecl)}
-              </Text>
-              <Text style={[styles.cardDate, { color: colors.textSecondary }]}>{formatDate(reclamation.dateRecl)}</Text>
-            </View>
-            <View
-              style={[
-                styles.statusBadge,
-                {
-                  backgroundColor: getStatusColor(reclamation.status).background,
-                },
-              ]}
-            >
-              <Text style={[styles.statusText, { color: getStatusColor(reclamation.status).color }]}>
-                {reclamation.status}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={2}>
-            {reclamation.description}
-          </Text>
-
-          <View style={styles.cardFooter}>
-            <View style={styles.footerItem}>
-              <IconSymbol name="envelope.fill" size={14} color={colors.textSecondary} />
-              <Text style={[styles.footerText, { color: colors.textSecondary }]} numberOfLines={1}>
-                {reclamation.email}
-              </Text>
+          <View style={styles.cardContent}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(reclamation.status) }]} />
+            <View style={styles.cardInfo}>
+              <View style={styles.cardRow}>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Référence</Text>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Motif de réclamation</Text>
+              </View>
+              <View style={styles.cardRow}>
+                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                  {reclamation.claimId}
+                </Text>
+                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={2}>
+                  {getMotifLabel(reclamation.motifRecl)}
+                </Text>
+              </View>
             </View>
           </View>
         </Animated.View>
@@ -405,32 +406,45 @@ export default function ReclamationScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+    <SafeAreaView style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
+      <View style={[styles.header, { backgroundColor: "#F9FAFB" }]}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <IconSymbol name="chevron.left" size={24} color="#111827" />
           </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Réclamations</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Gérez vos réclamations</Text>
+          <Text style={styles.headerTitle}>Réclamations</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Liste de réclamations</Text>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={[styles.actionButton, styles.addActionButton]} onPress={() => setShowForm(true)}>
+              <IconSymbol name="plus" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: "#2D7A4F" }]}
-            onPress={() => setShowForm(true)}
-          >
-            <IconSymbol name="plus" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+        </View>
+
+        <View style={styles.statusLegend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: "#10B981" }]} />
+            <Text style={styles.legendText}>Traitée</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: "#FBBF24" }]} />
+            <Text style={styles.legendText}>En cours</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: "#EF4444" }]} />
+            <Text style={styles.legendText}>Rejetée</Text>
+          </View>
         </View>
       </View>
 
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FBBF24" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />}
       >
         {!isLoading && reclamations.length > 0 && (
           <View style={styles.listContainer}>
@@ -442,21 +456,21 @@ export default function ReclamationScreen() {
 
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FBBF24" />
+            <ActivityIndicator size="large" color="#10B981" />
           </View>
         )}
 
         {!isLoading && reclamations.length === 0 && (
           <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View style={[styles.emptyIcon, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-              <IconSymbol name="exclamationmark.triangle.fill" size={56} color="#FBBF24" />
+            <View style={[styles.emptyIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
+              <IconSymbol name="exclamationmark.triangle.fill" size={56} color="#10B981" />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune réclamation</Text>
             <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
               Vous n'avez pas encore de réclamation. Créez-en une en appuyant sur le bouton +
             </Text>
             <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: "#2D7A4F" }]}
+              style={[styles.createButton, { backgroundColor: "#10B981" }]}
               onPress={() => setShowForm(true)}
             >
               <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
@@ -709,114 +723,163 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  headerContent: {
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
     justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitleContainer: {
-    flex: 1,
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    flex: 1,
+    textAlign: "center",
   },
-  headerSubtitle: {
-    fontSize: 13,
-    fontWeight: "500",
+  placeholder: {
+    width: 40,
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
+  segmentedControl: {
+    flexDirection: "row",
+    backgroundColor: "#E5E7EB",
+    borderRadius: 24,
+    padding: 4,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 20,
     alignItems: "center",
   },
-  listContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    gap: 16,
-  },
-  reclamationCard: {
-    borderRadius: 20,
-    padding: 20,
+  segmentButtonActive: {
+    backgroundColor: "#FFFFFF",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: "#FBBF24",
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cardHeader: {
+  segmentButtonInactive: {
+    backgroundColor: "transparent",
+  },
+  segmentText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  segmentTextActive: {
+    color: "#111827",
+  },
+  segmentTextInactive: {
+    color: "#9CA3AF",
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-    gap: 12,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    marginTop:16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButton: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
+    backgroundColor: "#E5E7EB",
     justifyContent: "center",
     alignItems: "center",
   },
-  cardHeaderInfo: {
-    flex: 1,
+  addActionButton: {
+    backgroundColor: "#10B981",
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  cardDate: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  cardDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  cardFooter: {
+  statusLegend: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#F3F4F6",
+    marginHorizontal: 16,
+    borderRadius: 12,
     gap: 16,
   },
-  footerItem: {
+  legendItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#111827",
+  },
+  listContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 12,
+  },
+  reclamationCard: {
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  cardInfo: {
+    flex: 1,
+    gap: 8,
+  },
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: "500",
     flex: 1,
   },
-  footerText: {
-    fontSize: 12,
-    fontWeight: "500",
+  cardValue: {
+    fontSize: 14,
+    fontWeight: "600",
     flex: 1,
   },
   loadingContainer: {
@@ -887,9 +950,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
-  placeholder: {
-    width: 40,
-  },
   formScrollView: {
     flex: 1,
   },
@@ -951,47 +1011,6 @@ const styles = StyleSheet.create({
   },
   pickerOptionText: {
     fontSize: 14,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  submitButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#1E3A8A",
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
   },
   detailsModalContent: {
     borderTopLeftRadius: 24,
