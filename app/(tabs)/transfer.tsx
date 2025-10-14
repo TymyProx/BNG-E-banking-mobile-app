@@ -454,14 +454,11 @@ export default function TransferScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.headerContent}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => {
-                router.back()
-              }}
-              activeOpacity={0.7}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+             <TouchableOpacity
+                style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+                onPress={() => router.back()}
+              >
+              <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
             </TouchableOpacity>
             <View style={styles.headerTitleContainer}>
               <Text style={[styles.headerTitle, { color: colors.text }]}>Virement</Text>
@@ -577,7 +574,7 @@ export default function TransferScreen() {
 
           {transferType && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte débiteur *</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte à débiter *</Text>
               {isLoadingAccounts ? (
                 <View style={styles.loadingSection}>
                   <ActivityIndicator size="large" color={colors.primary} />
@@ -687,7 +684,7 @@ export default function TransferScreen() {
 
           {transferType === "account" && selectedAccount && (
             <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte créditeur *</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Compte à créditer *</Text>
               {getAvailableDestinationAccounts().length === 0 ? (
                 <View style={styles.emptySection}>
                   <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
