@@ -15,6 +15,7 @@ import {
   Dimensions,
   Modal,
   ActivityIndicator,
+  RefreshControl, // Added RefreshControl import
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -24,7 +25,6 @@ import { Colors } from "@/constants/Colors"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
 import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
 
 interface Account {
   id: string
@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [modalVisible, setModalVisible] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetails | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
+  const [refreshing, setRefreshing] = useState(false) // Added refreshing state
 
   useEffect(() => {
     fetchAccounts()
@@ -292,6 +293,12 @@ export default function Dashboard() {
     setActiveIndex(index)
   }
 
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await Promise.all([fetchAccounts(), fetchTransactions()])
+    setRefreshing(false)
+  }
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#10b981", "#059669", "#34d399"]} style={styles.gradientBackground} />
@@ -327,6 +334,9 @@ export default function Dashboard() {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" colors={["#10B981"]} />
+            }
           >
             <View style={styles.cardSection}>
               {accounts.length > 0 ? (

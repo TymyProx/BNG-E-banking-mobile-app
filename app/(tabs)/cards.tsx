@@ -13,6 +13,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  RefreshControl, // Added RefreshControl import
 } from "react-native"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -78,7 +79,7 @@ const CARD_TYPES = [
     id: "CHALLENGE",
     name: "CHALLENGE",
     value: "CHALLENGE",
-   // fee: "8 250 XOF/An",
+    // fee: "8 250 XOF/An",
     colors: ["#4A90E2", "#5BA3F5"],
     description: "Carte pour les clients actifs",
   },
@@ -135,6 +136,8 @@ export default function CardsScreen() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [selectedCardDetails, setSelectedCardDetails] = useState<CardDetails | null>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+
+  const [refreshing, setRefreshing] = useState(false) // Added refreshing state
 
   const getFlipAnimation = (cardId: string) => {
     if (!flipAnimations[cardId]) {
@@ -520,6 +523,12 @@ export default function CardsScreen() {
   const filteredCards = cards.filter((card) => card.rawStatus === "ACTIF")
   const pendingCards = cards.filter((card) => card.rawStatus !== "ACTIF") // Show all non-active cards instead of just EN ATTENTE
 
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await fetchCards()
+    setRefreshing(false)
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <PageHeader
@@ -531,7 +540,13 @@ export default function CardsScreen() {
         addButtonColor="#2D7A4F"
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" colors={["#10B981"]} />
+        }
+      >
         {isLoadingCards ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#0066FF" />

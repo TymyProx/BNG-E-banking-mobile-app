@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  RefreshControl, // Added RefreshControl import
 } from "react-native"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
@@ -19,7 +20,6 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter, useFocusEffect } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
-import React from "react"
 
 interface Beneficiary {
   id: string
@@ -50,6 +50,7 @@ const Beneficiaries = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<FilterType>("actif")
+  const [refreshing, setRefreshing] = useState(false) // Added refreshing state
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
@@ -115,6 +116,12 @@ const Beneficiaries = () => {
       fetchBeneficiaries()
     }, [fetchBeneficiaries]),
   )
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await fetchBeneficiaries()
+    setRefreshing(false)
+  }
 
   const filteredBeneficiaries = beneficiaries.filter((ben) => {
     const matchesSearch =
@@ -403,7 +410,13 @@ const Beneficiaries = () => {
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement des bénéficiaires...</Text>
         </View>
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" colors={["#10B981"]} />
+          }
+        >
           <View style={styles.beneficiariesContainer}>
             {filteredBeneficiaries.map((beneficiary) => (
               <View key={beneficiary.id} style={[styles.beneficiaryCard, { backgroundColor: colors.cardBackground }]}>
