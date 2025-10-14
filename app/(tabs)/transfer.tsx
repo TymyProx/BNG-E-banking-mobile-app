@@ -26,7 +26,6 @@ import AddBeneficiaryForm from "@/components/AddBeneficiaryForm"
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import React from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -360,6 +359,37 @@ export default function TransferScreen() {
       const result = await response.json()
       console.log("[v0] Transaction created successfully:", result)
 
+      const transferAmount = Number.parseFloat(amount.replace(/\s/g, ""))
+
+      setAccounts((prevAccounts) => {
+        return prevAccounts.map((account) => {
+          // Debit the source account
+          if (account.id === selectedAccount.id) {
+            return {
+              ...account,
+              balance: account.balance - transferAmount,
+            }
+          }
+
+          // Credit the destination account (only for account-to-account transfers)
+          if (
+            transferType === "account" &&
+            selectedDestinationAccount &&
+            account.id === selectedDestinationAccount.id
+          ) {
+            return {
+              ...account,
+              balance: account.balance + transferAmount,
+            }
+          }
+
+          return account
+        })
+      })
+
+      console.log("[v0] Account balances updated locally")
+      // </CHANGE>
+
       setIsLoading(false)
       setShowOtpModal(false)
 
@@ -454,10 +484,10 @@ export default function TransferScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.headerContent}>
-             <TouchableOpacity
-                style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
-                onPress={() => router.back()}
-              >
+            <TouchableOpacity
+              style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+              onPress={() => router.back()}
+            >
               <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
             </TouchableOpacity>
             <View style={styles.headerTitleContainer}>
