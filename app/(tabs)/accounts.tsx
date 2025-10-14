@@ -594,7 +594,7 @@ export default function AccountsScreen() {
             </View>
             <View style={[styles.pendingInfoBox, { backgroundColor: "rgba(245, 158, 11, 0.1)" }]}>
               <IconSymbol name="info.circle.fill" size={16} color="#F59E0B" />
-              <Text style={[styles.pendingInfoText, { color: "#F59E0B" }]}>
+              <Text style={[styles.pendingInfoText, { color: "#000000" }]}>
                 Ces comptes seront activés après validation par notre équipe
               </Text>
             </View>

@@ -365,7 +365,7 @@ export default function ReclamationScreen() {
         >
           <View style={styles.cardHeader}>
             <View style={[styles.iconContainer, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}>
-              <IconSymbol name="exclamationmark.triangle.fill" size={24} color="#FBBF24" />
+              <IconSymbol name="info.circle" size={24} color="#FBBF24" />
             </View>
             <View style={styles.cardHeaderInfo}>
               <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
