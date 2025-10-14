@@ -466,7 +466,7 @@ export default function TransferScreen() {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.JSON.stringify(updateDestData),
+              body: JSON.stringify(updateDestData),
             },
           )
 
