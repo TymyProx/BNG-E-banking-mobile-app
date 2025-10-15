@@ -9,6 +9,7 @@ import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface FormData {
   fullName: string
@@ -714,7 +715,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: isLoading ? colors.textSecondary : colors.primary }]}
+          style={[styles.submitButton, { backgroundColor: isLoading ? colors.textSecondary : "#2D7A4F" }]}
           onPress={handleSubmit}
           disabled={isLoading}
         >

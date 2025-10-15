@@ -51,7 +51,7 @@ const MOTIF_OPTIONS = [
   { value: "virement_non_effectif", label: "Virement non effectif" },
   { value: "perception_indue_frais", label: "Perception indue de frais" },
   { value: "operation_contestee", label: "Opération contestatée / Non traitée / Non effective" },
-  { value: "debit_tort", label: "Débit à tort GAB /TPE/ B2W/ Autres" },
+  { value: "debit_tort", label: "Débit à tort GAB /TPE/ B2W/Autres" },
   { value: "produit_non_fonctionnel", label: "Produit ou Service non fonctionnel" },
   { value: "souscription_non_effectif", label: "Souscription non effectif aux Produits et Services" },
 ]
@@ -409,11 +409,11 @@ export default function ReclamationScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
       <View style={[styles.header, { backgroundColor: "#F9FAFB" }]}>
         <View style={styles.headerContent}>
-           <TouchableOpacity
-              style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Réclamations</Text>
           <TouchableOpacity
@@ -473,7 +473,7 @@ export default function ReclamationScreen() {
               onPress={() => setShowForm(true)}
             >
               <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
-              <Text style={styles.createButtonText}>Nouvelle réclamation</Text>
+              <Text style={styles.createButtonText}>Réclamation</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -482,128 +482,152 @@ export default function ReclamationScreen() {
       </ScrollView>
 
       <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: "#F9FAFB" }]}>
           <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-            <View
-              style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
-            >
-              <TouchableOpacity onPress={() => setShowForm(false)} style={styles.modalCloseButton}>
-                <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            <View style={styles.modernModalHeader}>
+              <TouchableOpacity onPress={() => setShowForm(false)} style={styles.modernCloseButton}>
+                <IconSymbol name="xmark" size={20} color="#6B7280" />
               </TouchableOpacity>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Nouvelle réclamation</Text>
-              <View style={styles.placeholder} />
+              <View style={styles.modalHeaderContent}>
+                <Text style={styles.modernModalTitle}>Réclamation</Text>
+                <Text style={styles.modernModalSubtitle}>Décrivez votre problème en détail</Text>
+              </View>
             </View>
 
-            <ScrollView style={styles.formScrollView} showsVerticalScrollIndicator={false}>
-              <View style={[styles.formSection, { backgroundColor: colors.cardBackground }]}>
-                <Text style={[styles.sectionTitle, { color: "#1E40AF" }]}>Informations personnelles</Text>
+            <ScrollView style={styles.modernFormScrollView} showsVerticalScrollIndicator={false}>
+              <View style={styles.modernFormSection}>
+                <View style={styles.sectionHeaderContainer}>
+                  <Text style={styles.modernSectionTitle}>Informations de contact</Text>
+                </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: colors.text }]}>
-                    Email <Text style={styles.required}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
-                    ]}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="exemple@email.com"
-                    placeholderTextColor={colors.textSecondary}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+                <View style={styles.modernInputGroup}>
+                  <View style={styles.inputLabelRow}>
+                    <IconSymbol name="envelope.fill" size={16} color="#6B7280" />
+                    <Text style={styles.modernLabel}>Adresse email</Text>
+                    <Text style={styles.required}>*</Text>
+                  </View>
+                  <View style={[styles.modernInputWrapper, email ? styles.inputFocused : null]}>
+                    <TextInput
+                      style={styles.modernInput}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="exemple@email.com"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
                 </View>
               </View>
 
-              <View style={[styles.formSection, { backgroundColor: colors.cardBackground }]}>
-                <Text style={[styles.sectionTitle, { color: "#1E40AF" }]}>Réclamation</Text>
+              <View style={styles.modernFormSection}>
+                <View style={styles.sectionHeaderContainer}>
+                  <Text style={styles.modernSectionTitle}>Détails de la réclamation</Text>
+                </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: colors.text }]}>
-                    Motif de réclamation <Text style={styles.required}>*</Text>
-                  </Text>
+                <View style={styles.modernInputGroup}>
+                  <View style={styles.inputLabelRow}>
+                    <IconSymbol name="list.bullet.circle.fill" size={16} color="#6B7280" />
+                    <Text style={styles.modernLabel}>Motif de réclamation</Text>
+                    <Text style={styles.required}>*</Text>
+                  </View>
                   <TouchableOpacity
-                    style={[styles.pickerButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+                    style={[styles.modernPickerButton, motif ? styles.inputFocused : null]}
                     onPress={() => setShowMotifPicker(!showMotifPicker)}
                   >
-                    <Text style={[styles.pickerButtonText, { color: motif ? colors.text : colors.textSecondary }]}>
-                      {motif ? getMotifLabel(motif) : "Sélectionner"}
+                    <Text style={[styles.modernPickerText, { color: motif ? "#111827" : "#9CA3AF" }]}>
+                      {motif ? getMotifLabel(motif) : "Sélectionner un motif"}
                     </Text>
-                    <IconSymbol
-                      name={showMotifPicker ? "chevron.up" : "chevron.down"}
-                      size={20}
-                      color={colors.textSecondary}
-                    />
+                    <View style={styles.pickerIconWrapper}>
+                      <IconSymbol name={showMotifPicker ? "chevron.up" : "chevron.down"} size={18} color="#6B7280" />
+                    </View>
                   </TouchableOpacity>
 
                   {showMotifPicker && (
-                    <View
-                      style={[
-                        styles.pickerContainer,
-                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                      ]}
-                    >
-                      {MOTIF_OPTIONS.map((option) => (
+                    <View style={styles.modernPickerContainer}>
+                      {MOTIF_OPTIONS.map((option, index) => (
                         <TouchableOpacity
                           key={option.value}
-                          style={[styles.pickerOption, { borderBottomColor: colors.borderLight }]}
+                          style={[
+                            styles.modernPickerOption,
+                            index !== MOTIF_OPTIONS.length - 1 && styles.pickerOptionBorder,
+                            motif === option.value && styles.pickerOptionSelected,
+                          ]}
                           onPress={() => {
                             setMotif(option.value)
                             setShowMotifPicker(false)
                           }}
                         >
-                          <Text style={[styles.pickerOptionText, { color: colors.text }]}>{option.label}</Text>
+                          <Text
+                            style={[
+                              styles.modernPickerOptionText,
+                              motif === option.value && styles.pickerOptionTextSelected,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                          {motif === option.value && (
+                            <IconSymbol name="checkmark.circle.fill" size={20} color="#10B981" />
+                          )}
                         </TouchableOpacity>
                       ))}
                     </View>
                   )}
                 </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: colors.text }]}>
-                    Commentaire <Text style={styles.required}>*</Text>
-                  </Text>
-                  <TextInput
+                <View style={styles.modernInputGroup}>
+                  <View style={styles.inputLabelRow}>
+                    <IconSymbol name="text.alignleft" size={16} color="#6B7280" />
+                    <Text style={styles.modernLabel}>Description détaillée</Text>
+                    <Text style={styles.required}>*</Text>
+                  </View>
+                  <View
                     style={[
-                      styles.input,
-                      styles.textArea,
-                      { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
+                      styles.modernInputWrapper,
+                      styles.textAreaWrapper,
+                      description ? styles.inputFocused : null,
                     ]}
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Commentaire"
-                    placeholderTextColor={colors.textSecondary}
-                    multiline
-                    numberOfLines={6}
-                    textAlignVertical="top"
-                  />
+                  >
+                    <TextInput
+                      style={[styles.modernInput, styles.modernTextArea]}
+                      value={description}
+                      onChangeText={setDescription}
+                      placeholder="Décrivez votre réclamation en détail..."
+                      placeholderTextColor="#9CA3AF"
+                      multiline
+                      numberOfLines={6}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                  <Text style={styles.characterCount}>{description.length} caractères</Text>
                 </View>
               </View>
+
+              <View style={styles.formFooterSpacing} />
             </ScrollView>
 
-            <View
-              style={[styles.actionButtons, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}
-            >
+            <View style={styles.modernActionButtons}>
               <TouchableOpacity
-                style={[styles.cancelButton, { borderColor: colors.border }]}
+                style={styles.modernCancelButton}
                 onPress={() => setShowForm(false)}
                 disabled={isSubmitting}
               >
-                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Annuler</Text>
+                <Text style={styles.modernCancelButtonText}>Annuler</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                style={[styles.modernSubmitButton, isSubmitting && styles.modernSubmitButtonDisabled]}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Valider</Text>
+                  <>
+                    <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
+                    <Text style={styles.modernSubmitButtonText}>Envoyer</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
@@ -732,7 +756,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-   backButton: {
+  backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -1131,5 +1155,250 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 16,
+  },
+  modernModalHeader: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 16,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  modernCloseButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  modalHeaderContent: {
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  modernModalTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  modernModalSubtitle: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+
+  modernFormScrollView: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
+  modernFormSection: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionHeaderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 12,
+  },
+  sectionIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modernSectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: -0.3,
+  },
+
+  modernInputGroup: {
+    marginBottom: 20,
+  },
+  inputLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  modernLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+    flex: 1,
+  },
+  modernInputWrapper: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    overflow: "hidden",
+  },
+  inputFocused: {
+    borderColor: "#10B981",
+    backgroundColor: "#FFFFFF",
+  },
+  modernInput: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: "#111827",
+    fontWeight: "500",
+  },
+  textAreaWrapper: {
+    minHeight: 140,
+  },
+  modernTextArea: {
+    minHeight: 140,
+    paddingTop: 14,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 6,
+    textAlign: "right",
+    fontWeight: "500",
+  },
+
+  modernPickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  modernPickerText: {
+    fontSize: 15,
+    fontWeight: "500",
+    flex: 1,
+  },
+  pickerIconWrapper: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modernPickerContainer: {
+    marginTop: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  modernPickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  pickerOptionBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  pickerOptionSelected: {
+    backgroundColor: "rgba(16, 185, 129, 0.05)",
+  },
+  modernPickerOptionText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
+    flex: 1,
+  },
+  pickerOptionTextSelected: {
+    color: "#10B981",
+    fontWeight: "600",
+  },
+
+  formFooterSpacing: {
+    height: 24,
+  },
+  modernActionButtons: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modernCancelButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modernCancelButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#6B7280",
+  },
+  modernSubmitButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: "#2D7A4F",
+    gap: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modernSubmitButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+    opacity: 0.6,
+  },
+  modernSubmitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
 })
