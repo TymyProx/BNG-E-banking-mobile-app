@@ -9,7 +9,6 @@ import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 interface FormData {
   fullName: string
@@ -347,7 +346,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                   styles.selectInput,
                   {
                     backgroundColor: colors.cardBackground,
-                    borderColor: errors.agencyCode ? "#ef4444" : colors.border,
+                    borderColor: errors.agencyCode ? "#ef4444" : "#E5E7EB",
                   },
                 ]}
                 onPress={() => !isLoading && setShowBNGAgencyModal(true)}
@@ -364,62 +363,83 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                       </Text>
                     </View>
                   ) : (
-                    <Text style={[styles.placeholder, { color: colors.textSecondary }]}>
-                      Sélectionnez une agence BNG
-                    </Text>
+                    <Text style={[styles.placeholder, { color: "#9CA3AF" }]}>Sélectionnez une agence BNG</Text>
                   )}
                 </View>
-                <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+                <IconSymbol name="chevron.down" size={20} color="#6B7280" />
               </TouchableOpacity>
-              {errors.agencyCode && <Text style={styles.errorText}>{errors.agencyCode}</Text>}
+              {errors.agencyCode && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.agencyCode}</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
                 Numéro de compte <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.cardBackground,
-                    borderColor: errors.accountNumber ? "#ef4444" : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Entrez le numéro de compte"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.accountNumber}
-                onChangeText={(text) => updateFormData("accountNumber", text.replace(/\D/g, ""))}
-                keyboardType="numeric"
-                maxLength={20}
-                editable={!isLoading}
-              />
-              {errors.accountNumber && <Text style={styles.errorText}>{errors.accountNumber}</Text>}
+              <View style={styles.inputWrapper}>
+                <IconSymbol name="number" size={18} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputWithIcon,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderColor: errors.accountNumber ? "#ef4444" : "#E5E7EB",
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="Entrez le numéro de compte"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.accountNumber}
+                  onChangeText={(text) => updateFormData("accountNumber", text.replace(/\D/g, ""))}
+                  keyboardType="numeric"
+                  maxLength={20}
+                  editable={!isLoading}
+                />
+              </View>
+              {errors.accountNumber && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.accountNumber}</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
                 Clé RIB <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.cardBackground,
-                    borderColor: errors.ribKey ? "#ef4444" : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Ex: 97"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.ribKey}
-                onChangeText={(text) => updateFormData("ribKey", text.replace(/\D/g, ""))}
-                keyboardType="numeric"
-                maxLength={2}
-                editable={!isLoading}
-              />
-              {errors.ribKey && <Text style={styles.errorText}>{errors.ribKey}</Text>}
+              <View style={styles.inputWrapper}>
+                <IconSymbol name="key" size={18} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputWithIcon,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderColor: errors.ribKey ? "#ef4444" : "#E5E7EB",
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="Ex: 97"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.ribKey}
+                  onChangeText={(text) => updateFormData("ribKey", text.replace(/\D/g, ""))}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  editable={!isLoading}
+                />
+              </View>
+              {errors.ribKey && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.ribKey}</Text>
+                </View>
+              )}
             </View>
           </>
         )
@@ -436,7 +456,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                   styles.selectInput,
                   {
                     backgroundColor: colors.cardBackground,
-                    borderColor: errors.bank ? "#ef4444" : colors.border,
+                    borderColor: errors.bank ? "#ef4444" : "#E5E7EB",
                   },
                 ]}
                 onPress={() => !isLoading && setShowBankModal(true)}
@@ -451,12 +471,17 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                       </Text>
                     </View>
                   ) : (
-                    <Text style={[styles.placeholder, { color: colors.textSecondary }]}>Sélectionnez une banque</Text>
+                    <Text style={[styles.placeholder, { color: "#9CA3AF" }]}>Sélectionnez une banque</Text>
                   )}
                 </View>
-                <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+                <IconSymbol name="chevron.down" size={20} color="#6B7280" />
               </TouchableOpacity>
-              {errors.bank && <Text style={styles.errorText}>{errors.bank}</Text>}
+              {errors.bank && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.bank}</Text>
+                </View>
+              )}
             </View>
 
             {formData.bank && (
@@ -469,7 +494,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                     styles.selectInput,
                     {
                       backgroundColor: colors.cardBackground,
-                      borderColor: errors.selectedAgencyCode ? "#ef4444" : colors.border,
+                      borderColor: errors.selectedAgencyCode ? "#ef4444" : "#E5E7EB",
                     },
                   ]}
                   onPress={() => !isLoading && setShowAgencyModal(true)}
@@ -486,12 +511,17 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                         </Text>
                       </View>
                     ) : (
-                      <Text style={[styles.placeholder, { color: colors.textSecondary }]}>Sélectionnez une agence</Text>
+                      <Text style={[styles.placeholder, { color: "#9CA3AF" }]}>Sélectionnez une agence</Text>
                     )}
                   </View>
-                  <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+                  <IconSymbol name="chevron.down" size={20} color="#6B7280" />
                 </TouchableOpacity>
-                {errors.selectedAgencyCode && <Text style={styles.errorText}>{errors.selectedAgencyCode}</Text>}
+                {errors.selectedAgencyCode && (
+                  <View style={styles.errorContainer}>
+                    <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                    <Text style={styles.errorText}>{errors.selectedAgencyCode}</Text>
+                  </View>
+                )}
               </View>
             )}
 
@@ -499,24 +529,33 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
               <Text style={[styles.label, { color: colors.text }]}>
                 Numéro de compte <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.cardBackground,
-                    borderColor: errors.accountNumber ? "#ef4444" : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Entrez le numéro de compte"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.accountNumber}
-                onChangeText={(text) => updateFormData("accountNumber", text.replace(/\D/g, ""))}
-                keyboardType="numeric"
-                maxLength={20}
-                editable={!isLoading}
-              />
-              {errors.accountNumber && <Text style={styles.errorText}>{errors.accountNumber}</Text>}
+              <View style={styles.inputWrapper}>
+                <IconSymbol name="number" size={18} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputWithIcon,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderColor: errors.accountNumber ? "#ef4444" : "#E5E7EB",
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="Entrez le numéro de compte"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.accountNumber}
+                  onChangeText={(text) => updateFormData("accountNumber", text.replace(/\D/g, ""))}
+                  keyboardType="numeric"
+                  maxLength={20}
+                  editable={!isLoading}
+                />
+              </View>
+              {errors.accountNumber && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.accountNumber}</Text>
+                </View>
+              )}
             </View>
           </>
         )
@@ -528,47 +567,65 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
               <Text style={[styles.label, { color: colors.text }]}>
                 IBAN <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.cardBackground,
-                    borderColor: errors.iban ? "#ef4444" : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Ex: FR1420041010050500013M02606"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.iban}
-                onChangeText={(text) => updateFormData("iban", text.toUpperCase())}
-                autoCapitalize="characters"
-                editable={!isLoading}
-              />
-              {errors.iban && <Text style={styles.errorText}>{errors.iban}</Text>}
+              <View style={styles.inputWrapper}>
+                <IconSymbol name="textformat" size={18} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputWithIcon,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderColor: errors.iban ? "#ef4444" : "#E5E7EB",
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="Ex: FR1420041010050500013M02606"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.iban}
+                  onChangeText={(text) => updateFormData("iban", text.toUpperCase())}
+                  autoCapitalize="characters"
+                  editable={!isLoading}
+                />
+              </View>
+              {errors.iban && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.iban}</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
                 Code SWIFT <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.cardBackground,
-                    borderColor: errors.swiftCode ? "#ef4444" : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Ex: BNPAFRPP"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.swiftCode}
-                onChangeText={(text) => updateFormData("swiftCode", text.toUpperCase())}
-                autoCapitalize="characters"
-                maxLength={11}
-                editable={!isLoading}
-              />
-              {errors.swiftCode && <Text style={styles.errorText}>{errors.swiftCode}</Text>}
+              <View style={styles.inputWrapper}>
+                <IconSymbol name="airplane" size={18} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputWithIcon,
+                    {
+                      backgroundColor: colors.cardBackground,
+                      borderColor: errors.swiftCode ? "#ef4444" : "#E5E7EB",
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="Ex: BNPAFRPP"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.swiftCode}
+                  onChangeText={(text) => updateFormData("swiftCode", text.toUpperCase())}
+                  autoCapitalize="characters"
+                  maxLength={11}
+                  editable={!isLoading}
+                />
+              </View>
+              {errors.swiftCode && (
+                <View style={styles.errorContainer}>
+                  <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                  <Text style={styles.errorText}>{errors.swiftCode}</Text>
+                </View>
+              )}
             </View>
           </>
         )
@@ -582,36 +639,55 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
     <View style={styles.container}>
       <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
         {/* Informations personnelles */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations personnelles</Text>
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.iconContainer}>
+              <IconSymbol name="person.fill" size={20} color="#10B981" />
+            </View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations personnelles</Text>
+          </View>
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
               Nom et Prénoms <Text style={styles.required}>*</Text>
             </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.cardBackground,
-                  borderColor: errors.fullName ? "#ef4444" : colors.border,
-                  color: colors.text,
-                },
-              ]}
-              placeholder="Entrez le nom et prénoms"
-              placeholderTextColor={colors.textSecondary}
-              value={formData.fullName}
-              onChangeText={(text) => updateFormData("fullName", text)}
-              autoCapitalize="words"
-              editable={!isLoading}
-            />
-            {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+            <View style={styles.inputWrapper}>
+              <IconSymbol name="person" size={18} color="#6B7280" style={styles.inputIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputWithIcon,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: errors.fullName ? "#ef4444" : "#E5E7EB",
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="Entrez le nom et prénoms"
+                placeholderTextColor="#9CA3AF"
+                value={formData.fullName}
+                onChangeText={(text) => updateFormData("fullName", text)}
+                autoCapitalize="words"
+                editable={!isLoading}
+              />
+            </View>
+            {errors.fullName && (
+              <View style={styles.errorContainer}>
+                <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                <Text style={styles.errorText}>{errors.fullName}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Type de bénéficiaire */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Type de bénéficiaire</Text>
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.iconContainer}>
+              <IconSymbol name="building.2.fill" size={20} color="#F59E0B" />
+            </View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Type de bénéficiaire</Text>
+          </View>
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
@@ -622,7 +698,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
                 styles.selectInput,
                 {
                   backgroundColor: colors.cardBackground,
-                  borderColor: errors.beneficiaryType ? "#ef4444" : colors.border,
+                  borderColor: errors.beneficiaryType ? "#ef4444" : "#E5E7EB",
                 },
               ]}
               onPress={() => !isLoading && setShowBeneficiaryTypeModal(true)}
@@ -630,92 +706,132 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
             >
               <View style={styles.selectContent}>
                 {formData.beneficiaryType ? (
-                  <Text style={[styles.selectedBankName, { color: colors.text }]}>
-                    {getBeneficiaryTypeLabel(formData.beneficiaryType)}
-                  </Text>
+                  <View style={styles.selectedValueContainer}>
+                    <IconSymbol name="checkmark.circle.fill" size={18} color="#10B981" />
+                    <Text style={[styles.selectedValue, { color: colors.text }]}>
+                      {getBeneficiaryTypeLabel(formData.beneficiaryType)}
+                    </Text>
+                  </View>
                 ) : (
-                  <Text style={[styles.placeholder, { color: colors.textSecondary }]}>
-                    Sélectionnez le type de bénéficiaire
-                  </Text>
+                  <Text style={[styles.placeholder, { color: "#9CA3AF" }]}>Sélectionnez le type de bénéficiaire</Text>
                 )}
               </View>
-              <IconSymbol name="chevron.down" size={20} color={colors.textSecondary} />
+              <IconSymbol name="chevron.down" size={20} color="#6B7280" />
             </TouchableOpacity>
-            {errors.beneficiaryType && <Text style={styles.errorText}>{errors.beneficiaryType}</Text>}
+            {errors.beneficiaryType && (
+              <View style={styles.errorContainer}>
+                <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                <Text style={styles.errorText}>{errors.beneficiaryType}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Informations du compte */}
         {formData.beneficiaryType && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations du compte</Text>
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.iconContainer}>
+                <IconSymbol name="creditcard.fill" size={20} color="#3B82F6" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations du compte</Text>
+            </View>
             {renderAccountFields()}
           </View>
         )}
 
         {/* Informations de contact */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations de contact</Text>
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.iconContainer}>
+              <IconSymbol name="phone.fill" size={20} color="#8B5CF6" />
+            </View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations de contact</Text>
+          </View>
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
               Numéro de téléphone <Text style={styles.required}>*</Text>
             </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.cardBackground,
-                  borderColor: errors.phoneNumber ? "#ef4444" : colors.border,
-                  color: colors.text,
-                },
-              ]}
-              placeholder="+224 123 456 789"
-              placeholderTextColor={colors.textSecondary}
-              value={formData.phoneNumber}
-              onChangeText={(text) => updateFormData("phoneNumber", text)}
-              keyboardType="phone-pad"
-              editable={!isLoading}
-            />
-            {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber}</Text>}
+            <View style={styles.inputWrapper}>
+              <IconSymbol name="phone" size={18} color="#6B7280" style={styles.inputIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputWithIcon,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: errors.phoneNumber ? "#ef4444" : "#E5E7EB",
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="+224 123 456 789"
+                placeholderTextColor="#9CA3AF"
+                value={formData.phoneNumber}
+                onChangeText={(text) => updateFormData("phoneNumber", text)}
+                keyboardType="phone-pad"
+                editable={!isLoading}
+              />
+            </View>
+            {errors.phoneNumber && (
+              <View style={styles.errorContainer}>
+                <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                <Text style={styles.errorText}>{errors.phoneNumber}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Email (optionnel)</Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.cardBackground,
-                  borderColor: errors.email ? "#ef4444" : colors.border,
-                  color: colors.text,
-                },
-              ]}
-              placeholder="exemple@email.com"
-              placeholderTextColor={colors.textSecondary}
-              value={formData.email}
-              onChangeText={(text) => updateFormData("email", text)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!isLoading}
-            />
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            <View style={styles.inputWrapper}>
+              <IconSymbol name="envelope" size={18} color="#6B7280" style={styles.inputIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputWithIcon,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: errors.email ? "#ef4444" : "#E5E7EB",
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="exemple@email.com"
+                placeholderTextColor="#9CA3AF"
+                value={formData.email}
+                onChangeText={(text) => updateFormData("email", text)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!isLoading}
+              />
+            </View>
+            {errors.email && (
+              <View style={styles.errorContainer}>
+                <IconSymbol name="exclamationmark.circle.fill" size={14} color="#ef4444" />
+                <Text style={styles.errorText}>{errors.email}</Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
 
       {/* Footer avec boutons */}
-      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: "#E5E7EB" }]}>
         <TouchableOpacity
-          style={[styles.cancelButton, { borderColor: colors.border }]}
+          style={[styles.cancelButton, { borderColor: "#E5E7EB" }]}
           onPress={() => router.push("/beneficiaries")}
           disabled={isLoading}
         >
-          <Text style={[styles.cancelButtonText, { color: colors.text }]}>Annuler</Text>
+          <Text style={[styles.cancelButtonText, { color: "#6B7280" }]}>Annuler</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: isLoading ? colors.textSecondary : "#2D7A4F" }]}
+          style={[
+            styles.submitButton,
+            {
+              backgroundColor: isLoading ? "#9CA3AF" : "#10B981",
+              opacity: isLoading ? 0.7 : 1,
+            },
+          ]}
           onPress={handleSubmit}
           disabled={isLoading}
         >
@@ -723,7 +839,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
             <Text style={styles.submitButtonText}>Ajout en cours...</Text>
           ) : (
             <>
-              <IconSymbol name="plus" size={16} color="white" />
+              <IconSymbol name="checkmark.circle.fill" size={20} color="white" />
               <Text style={styles.submitButtonText}>Ajouter le bénéficiaire</Text>
             </>
           )}
@@ -959,44 +1075,90 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  section: {
-    marginBottom: 32,
+  sectionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 12,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
+    fontWeight: "700",
+    flex: 1,
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
     marginBottom: 8,
+    color: "#374151",
   },
   required: {
     color: "#ef4444",
   },
+  inputWrapper: {
+    position: "relative",
+  },
+  inputIcon: {
+    position: "absolute",
+    left: 16,
+    top: 14,
+    zIndex: 1,
+  },
   input: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
+    backgroundColor: "#FFFFFF",
+  },
+  inputWithIcon: {
+    paddingLeft: 44,
   },
   selectInput: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 48,
+    minHeight: 52,
+    backgroundColor: "#FFFFFF",
   },
   selectContent: {
     flex: 1,
+  },
+  selectedValueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  selectedValue: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   selectedBankName: {
     fontSize: 16,
@@ -1005,32 +1167,46 @@ const styles = StyleSheet.create({
   },
   selectedBankCode: {
     fontSize: 14,
+    color: "#6B7280",
   },
   placeholder: {
     fontSize: 16,
+    color: "#9CA3AF",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
   },
   errorText: {
     color: "#ef4444",
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: "500",
   },
   footer: {
     flexDirection: "row",
     padding: 20,
     gap: 12,
     borderTopWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cancelButton: {
     flex: 1,
     paddingVertical: 16,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#FFFFFF",
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   submitButton: {
     flex: 2,
@@ -1040,11 +1216,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitButtonText: {
     color: "white",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   modalOverlay: {
     flex: 1,
@@ -1052,9 +1233,14 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalHeader: {
     flexDirection: "row",
@@ -1064,11 +1250,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
   },
   modalBody: {
     maxHeight: 400,
@@ -1086,9 +1274,10 @@ const styles = StyleSheet.create({
   bankName: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   bankFullName: {
     fontSize: 14,
+    color: "#6B7280",
   },
 })
