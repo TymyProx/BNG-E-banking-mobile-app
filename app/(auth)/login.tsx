@@ -24,6 +24,7 @@ import {
   View,
 } from "react-native"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
@@ -164,7 +165,7 @@ export default function LoginScreen() {
 
   return (
     <ImageBackground
-      source={require("../../assets/images/guinea-background.jpg")}
+      source={require("../../assets/images/welcom.png")}
       style={styles.container}
       resizeMode="cover"
     >
@@ -185,7 +186,7 @@ export default function LoginScreen() {
               },
             ]}
           >
-            <Image source={require("../../assets/images/logo-bng.png")} style={styles.logo} resizeMode="contain" />
+            {/* <Image source={require("../../assets/images/logo-bng.png")} style={styles.logo} resizeMode="contain" /> */}
             <Text style={styles.welcomeTitle}>Bienvenue sur</Text>
             <Text style={styles.bankName}>BNG E-Banking</Text>
           </Animated.View>
@@ -217,7 +218,7 @@ export default function LoginScreen() {
                   ref={emailRef}
                   style={styles.modernInput}
                   placeholder="Saisissez votre email"
-                  placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                  placeholderTextColor="#2D7A4F"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -249,7 +250,7 @@ export default function LoginScreen() {
                   ref={passwordRef}
                   style={styles.modernInput}
                   placeholder="Saisissez votre mot de passe"
-                  placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                  placeholderTextColor="#2D7A4F"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 120,
     height: 120,
-    marginBottom: 16,
+    marginTop: 16,
   },
   welcomeTitle: {
     fontSize: 24,
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-    backgroundColor: "rgba(59, 130, 246, 0.8)",
+    backgroundColor: "#2D7A4F",
   },
   modernInput: {
     flex: 1,
