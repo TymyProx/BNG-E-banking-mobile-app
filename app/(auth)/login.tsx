@@ -11,7 +11,7 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,10 +22,7 @@ import {
   Vibration,
   View,
 } from "react-native"
-
-import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
@@ -165,8 +162,12 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient colors={[colors.primary + "15", colors.background]} style={styles.gradientBackground} />
+    <ImageBackground
+      source={require("../../assets/images/guinea-background.jpg")}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
@@ -183,50 +184,42 @@ export default function LoginScreen() {
               },
             ]}
           >
-            <View style={[styles.logoContainer]}>
-              <Image
-                source={require("../../assets/images/logo-bng.png")}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </View>
+            <Text style={styles.welcomeTitle}>Bienvenue sur</Text>
+            <Text style={styles.bankName}>BNG E-Banking</Text>
           </Animated.View>
 
           <Animated.View
             style={[
               styles.modernForm,
               {
-                backgroundColor: colors.cardBackground,
-                shadowColor: colors.shadow,
                 opacity: fadeAnim,
                 transform: [{ translateY: cardSlideAnim }, { translateX: shakeAnim }],
               },
             ]}
           >
             <View style={styles.modernInputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
+              <Text style={styles.inputLabel}>Email</Text>
               <View
                 style={[
                   styles.modernInputContainer,
                   {
-                    backgroundColor: colors.inputBackground,
-                    borderColor: errors.email ? colors.error : email ? colors.success : colors.border,
+                    borderColor: errors.email ? "#EF4444" : email ? "#10B981" : "rgba(255, 255, 255, 0.3)",
                     borderWidth: email ? 2 : 1,
                   },
                 ]}
               >
-                <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + "15" }]}>
+                <View style={styles.inputIconContainer}>
                   <Ionicons
                     name="mail-outline"
                     size={22}
-                    color={errors.email ? colors.error : email ? colors.success : colors.primary}
+                    color={errors.email ? "#EF4444" : email ? "#10B981" : "#10B981"}
                   />
                 </View>
                 <TextInput
                   ref={emailRef}
-                  style={[styles.modernInput, { color: colors.text }]}
+                  style={styles.modernInput}
                   placeholder="Saisissez votre email"
-                  placeholderTextColor={colors.icon}
+                  placeholderTextColor="rgba(255, 255, 255, 0.6)"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -235,37 +228,34 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                 />
-                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color={colors.success} />}
+                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color="#10B981" />}
               </View>
-              {errors.email && (
-                <Animated.Text style={[styles.modernErrorText, { color: colors.error }]}>{errors.email}</Animated.Text>
-              )}
+              {errors.email && <Animated.Text style={styles.modernErrorText}>{errors.email}</Animated.Text>}
             </View>
 
             <View style={styles.modernInputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Mot de Passe</Text>
+              <Text style={styles.inputLabel}>Mot de Passe</Text>
               <View
                 style={[
                   styles.modernInputContainer,
                   {
-                    backgroundColor: colors.inputBackground,
-                    borderColor: errors.password ? colors.error : password ? colors.success : colors.border,
+                    borderColor: errors.password ? "#EF4444" : password ? "#10B981" : "rgba(255, 255, 255, 0.3)",
                     borderWidth: password ? 2 : 1,
                   },
                 ]}
               >
-                <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + "15" }]}>
+                <View style={styles.inputIconContainer}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={22}
-                    color={errors.password ? colors.error : password ? colors.success : colors.primary}
+                    color={errors.password ? "#EF4444" : password ? "#10B981" : "#10B981"}
                   />
                 </View>
                 <TextInput
                   ref={passwordRef}
-                  style={[styles.modernInput, { color: colors.text }]}
+                  style={styles.modernInput}
                   placeholder="Saisissez votre mot de passe"
-                  placeholderTextColor={colors.icon}
+                  placeholderTextColor="rgba(255, 255, 255, 0.6)"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -278,14 +268,10 @@ export default function LoginScreen() {
                   style={styles.modernEyeIcon}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color={colors.icon} />
+                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
-              {errors.password && (
-                <Animated.Text style={[styles.modernErrorText, { color: colors.error }]}>
-                  {errors.password}
-                </Animated.Text>
-              )}
+              {errors.password && <Animated.Text style={styles.modernErrorText}>{errors.password}</Animated.Text>}
             </View>
 
             <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
@@ -293,8 +279,7 @@ export default function LoginScreen() {
                 style={[
                   styles.modernButton,
                   {
-                    backgroundColor: isFormValid ? colors.primary : colors.border,
-                    shadowColor: colors.shadow,
+                    backgroundColor: isFormValid ? "#10B981" : "rgba(255, 255, 255, 0.2)",
                   },
                   isLoading && styles.buttonDisabled,
                 ]}
@@ -306,10 +291,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color="white" size="small" />
                 ) : (
                   <>
-                    <Ionicons name="log-in-outline" size={20} color={isFormValid ? "#FFFFFF" : colors.icon} />
-                    <Text style={[styles.modernButtonText, { color: isFormValid ? "#FFFFFF" : colors.icon }]}>
-                      Se Connecter
-                    </Text>
+                    <Text style={styles.modernButtonText}>Se Connecter</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -319,32 +301,28 @@ export default function LoginScreen() {
               <TouchableOpacity
                 onPress={() => router.push("/(auth)/forgot-password")}
                 activeOpacity={0.7}
-                style={[styles.linkButton, { backgroundColor: colors.primary + "08" }]}
+                style={styles.linkButton}
               >
-                <Ionicons name="help-circle-outline" size={18} color={colors.primary} />
-                <Text style={[styles.modernLinkText, { color: colors.primary }]}>Mot de passe oublié ?</Text>
+                <Text style={styles.modernLinkText}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => router.push("/(auth)/register")}
                 activeOpacity={0.7}
-                style={[styles.linkButton, { backgroundColor: colors.primary + "08" }]}
+                style={styles.linkButton}
               >
-                <Ionicons name="person-add-outline" size={18} color={colors.primary} />
-                <Text style={[styles.modernLinkText, { color: colors.primary }]}>Créer un compte</Text>
+                <Text style={styles.modernLinkText}>Créer un compte</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
 
           <Animated.View style={[styles.securityNotice, { opacity: fadeAnim }]}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-              Vos données sont protégées par un chiffrement de niveau bancaire
-            </Text>
+            <Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.securityText}>Vos données sont protégées par un chiffrement de niveau bancaire</Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </ImageBackground>
   )
 }
 
@@ -352,15 +330,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
   flex: {
     flex: 1,
-  },
-  gradientBackground: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    height: height * 0.6,
   },
   scrollContent: {
     flexGrow: 1,
@@ -372,46 +347,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 48,
   },
-  logoContainer: {
-    width: 160,
-    height: 120,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 6,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-    padding: 10,
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: "400",
+    color: "#FFFFFF",
+    marginBottom: 8,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  logoImage: {
-    width: 160,
-    height: 120,
-  },
-  modernWelcome: {
-    fontSize: 18,
-    fontWeight: "500",
-    letterSpacing: -0.2,
-    textAlign: "center",
+  bankName: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   modernForm: {
     borderRadius: 24,
     padding: 32,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 32,
-    elevation: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backdropFilter: "blur(10px)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
     marginBottom: 24,
   },
   modernInputGroup: {
-    marginBottom: 4,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 8,
     marginLeft: 4,
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   modernInputContainer: {
     flexDirection: "row",
@@ -419,6 +392,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 60,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 1,
   },
   inputIconContainer: {
@@ -428,16 +402,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
   },
   modernInput: {
     flex: 1,
     fontSize: 16,
     fontWeight: "500",
-  },
-  modernLinkText: {
-    fontSize: 15,
-    fontWeight: "600",
-    textDecorationLine: "underline",
+    color: "#1F2937",
   },
   modernEyeIcon: {
     padding: 8,
@@ -446,7 +417,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     marginLeft: 8,
-    fontWeight: "500",
+    fontWeight: "600",
+    color: "#FEE2E2",
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   modernButton: {
     borderRadius: 16,
@@ -454,9 +429,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 8,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 8,
     gap: 8,
@@ -465,22 +441,26 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   modernButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     letterSpacing: 0.5,
+    color: "#FFFFFF",
   },
   modernLinks: {
-    marginTop: 20,
-    gap: 10,
+    marginTop: 24,
+    gap: 12,
+    alignItems: "center",
   },
   linkButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 12,
-    borderRadius: 12,
-    flex: 1,
+    padding: 8,
+  },
+  modernLinkText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   securityNotice: {
     flexDirection: "row",
@@ -494,5 +474,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     flex: 1,
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 })
