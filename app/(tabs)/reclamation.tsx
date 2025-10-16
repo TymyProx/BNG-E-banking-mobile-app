@@ -48,28 +48,26 @@ interface ReclamationDetails extends Reclamation {
 
 interface CreditRequest {
   id: string
-  requestId: string
   customerId: string
-  montant: number
-  duree: number
-  typeCredit: string
+  amount: number
+  duration: number
+  purpose: string
   status: string
   createdAt: string
+  type: "credit"
 }
 
 interface CheckbookRequest {
   id: string
-  orderId: string
-  customerId: string
   accountId: string
-  nombreCheques: number
+  numberOfCheckbooks: number
+  deliveryAddress: string
   status: string
   createdAt: string
+  type: "checkbook"
 }
 
-type Request = (CreditRequest | CheckbookRequest) & {
-  type: "credit" | "checkbook"
-}
+type Request = CreditRequest | CheckbookRequest
 
 const MOTIF_OPTIONS = [
   { value: "virement_non_effectif", label: "Virement non effectif" },
@@ -108,101 +106,6 @@ export default function ReclamationScreen() {
 
   // Tab state for segmented control
   const [activeTab, setActiveTab] = useState<"demandes" | "reclamations">("reclamations")
-
-  const loadRequests = async () => {
-    setIsLoading(true)
-    try {
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token || !tenantId) {
-        setRequests([])
-        setIsLoading(false)
-        return
-      }
-
-      // Fetch credit requests
-      const creditResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      // Fetch checkbook requests
-      const checkbookResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      const allRequests: Request[] = []
-
-      if (creditResponse.ok) {
-        const creditData = await creditResponse.json()
-        const creditRequests: Request[] = creditData.rows.map((req: any) => ({
-          id: req.id,
-          requestId: req.requestId || `CREDIT-${req.id.slice(0, 8)}`,
-          customerId: req.customerId || "",
-          montant: req.montant || 0,
-          duree: req.duree || 0,
-          typeCredit: req.typeCredit || "Personnel",
-          status: req.status || "En attente",
-          createdAt: req.createdAt,
-          type: "credit" as const,
-        }))
-        allRequests.push(...creditRequests)
-      } else {
-        console.error("[v0] Failed to fetch credit requests:", creditResponse.status, await creditResponse.text())
-      }
-
-      if (checkbookResponse.ok) {
-        const checkbookData = await checkbookResponse.json()
-        const checkbookRequests: Request[] = checkbookData.rows.map((req: any) => ({
-          id: req.id,
-          orderId: req.orderId || `CHK-${req.id.slice(0, 8)}`,
-          customerId: req.customerId || "",
-          accountId: req.accountId || "",
-          nombreCheques: req.nombreCheques || 0,
-          status: req.status || "En attente",
-          createdAt: req.createdAt,
-          type: "checkbook" as const,
-        }))
-        allRequests.push(...checkbookRequests)
-      } else {
-        console.error(
-          "[v0] Failed to fetch checkbook requests:",
-          checkbookResponse.status,
-          await checkbookResponse.text(),
-        )
-      }
-
-      // Sort by creation date (newest first)
-      allRequests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-      setRequests(allRequests)
-
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start()
-    } catch (error) {
-      console.error("[v0] Erreur lors du chargement des demandes:", error)
-      setRequests([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const loadReclamations = async () => {
     setIsLoading(true)
@@ -264,21 +167,106 @@ export default function ReclamationScreen() {
     }
   }
 
+  const loadRequests = async () => {
+    setIsLoading(true)
+    try {
+      const token = await SecureStore.getItemAsync("token")
+
+      if (!token || !tenantId) {
+        setRequests([])
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch credit requests
+      const creditResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      // Fetch checkbook requests
+      const checkbookResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const allRequests: Request[] = []
+
+      if (creditResponse.ok) {
+        const creditData = await creditResponse.json()
+        const creditRequests: CreditRequest[] = creditData.rows.map((req: any) => ({
+          id: req.id,
+          customerId: req.customerId || "",
+          amount: req.amount || 0,
+          duration: req.duration || 0,
+          purpose: req.purpose || "Non spécifié",
+          status: req.status || "En attente",
+          createdAt: req.createdAt,
+          type: "credit" as const,
+        }))
+        allRequests.push(...creditRequests)
+      }
+
+      if (checkbookResponse.ok) {
+        const checkbookData = await checkbookResponse.json()
+        const checkbookRequests: CheckbookRequest[] = checkbookData.rows.map((req: any) => ({
+          id: req.id,
+          accountId: req.accountId || "",
+          numberOfCheckbooks: req.numberOfCheckbooks || 1,
+          deliveryAddress: req.deliveryAddress || "Non spécifié",
+          status: req.status || "En attente",
+          createdAt: req.createdAt,
+          type: "checkbook" as const,
+        }))
+        allRequests.push(...checkbookRequests)
+      }
+
+      // Sort by date (most recent first)
+      allRequests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+      setRequests(allRequests)
+
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]).start()
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des demandes:", error)
+      setRequests([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const onRefresh = async () => {
     setRefreshing(true)
-    if (activeTab === "demandes") {
-      await loadRequests()
-    } else {
+    if (activeTab === "reclamations") {
       await loadReclamations()
+    } else {
+      await loadRequests()
     }
     setRefreshing(false)
   }
 
   useEffect(() => {
-    if (activeTab === "demandes") {
-      loadRequests()
-    } else {
+    if (activeTab === "reclamations") {
       loadReclamations()
+    } else {
+      loadRequests()
     }
   }, [activeTab])
 
@@ -339,7 +327,7 @@ export default function ReclamationScreen() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.JSON.stringify(requestBody),
+        body: JSON.stringify(requestBody),
       })
 
       const contentType = response.headers.get("content-type")
@@ -481,99 +469,6 @@ export default function ReclamationScreen() {
     })
   }
 
-  const RequestCard = ({ request }: { request: Request }) => {
-    const getStatusDotColor = (status: string) => {
-      const normalizedStatus = status.toLowerCase()
-      switch (normalizedStatus) {
-        case "traité":
-        case "resolved":
-        case "approuvé":
-        case "approved":
-          return "#10B981" // Green
-        case "en attente":
-        case "pending":
-          return "#FBBF24" // Yellow
-        case "rejeté":
-        case "rejected":
-          return "#EF4444" // Red
-        default:
-          return "#9CA3AF" // Gray
-      }
-    }
-
-    const getRequestTitle = () => {
-      if (request.type === "credit") {
-        const creditReq = request as CreditRequest
-        return `Crédit ${creditReq.typeCredit}`
-      } else {
-        return "Commande de chéquier"
-      }
-    }
-
-    const getRequestDetails = () => {
-      if (request.type === "credit") {
-        const creditReq = request as CreditRequest
-        return `${creditReq.montant.toLocaleString("fr-FR")} FCFA - ${creditReq.duree} mois`
-      } else {
-        const checkbookReq = request as CheckbookRequest
-        return `${checkbookReq.nombreCheques} chèques`
-      }
-    }
-
-    const getRequestId = () => {
-      if (request.type === "credit") {
-        return (request as CreditRequest).requestId
-      } else {
-        return (request as CheckbookRequest).orderId
-      }
-    }
-
-    return (
-      <TouchableOpacity activeOpacity={0.7}>
-        <Animated.View
-          style={[
-            styles.reclamationCard,
-            {
-              backgroundColor: colors.cardBackground,
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.cardContent}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
-            <View style={styles.cardInfo}>
-              <View style={styles.cardRow}>
-                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Référence</Text>
-                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type de demande</Text>
-              </View>
-              <View style={styles.cardRow}>
-                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                  {getRequestId()}
-                </Text>
-                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={2}>
-                  {getRequestTitle()}
-                </Text>
-              </View>
-              <View style={[styles.cardRow, { marginTop: 8 }]}>
-                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Détails</Text>
-                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Date</Text>
-              </View>
-              <View style={styles.cardRow}>
-                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                  {getRequestDetails()}
-                </Text>
-                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                  {formatDate(request.createdAt)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Animated.View>
-      </TouchableOpacity>
-    )
-  }
-
   const ReclamationCard = ({ reclamation }: { reclamation: Reclamation }) => {
     const getStatusDotColor = (status: string) => {
       const normalizedStatus = status.toLowerCase()
@@ -617,6 +512,79 @@ export default function ReclamationScreen() {
                 </Text>
                 <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={2}>
                   {getMotifLabel(reclamation.motifRecl)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+    )
+  }
+
+  const RequestCard = ({ request }: { request: Request }) => {
+    const getStatusDotColor = (status: string) => {
+      const normalizedStatus = status.toLowerCase()
+      switch (normalizedStatus) {
+        case "approuvé":
+        case "approved":
+        case "livré":
+        case "delivered":
+          return "#10B981" // Green
+        case "en attente":
+        case "pending":
+        case "en cours":
+          return "#FBBF24" // Yellow
+        case "rejeté":
+        case "rejected":
+        case "annulé":
+        case "cancelled":
+          return "#EF4444" // Red
+        default:
+          return "#9CA3AF" // Gray
+      }
+    }
+
+    const getRequestLabel = () => {
+      if (request.type === "credit") {
+        return "Demande de crédit"
+      } else {
+        return "Commande de chéquier"
+      }
+    }
+
+    const getRequestDetails = () => {
+      if (request.type === "credit") {
+        return `${request.amount.toLocaleString("fr-FR")} FCFA - ${request.duration} mois`
+      } else {
+        return `${request.numberOfCheckbooks} chéquier(s)`
+      }
+    }
+
+    return (
+      <TouchableOpacity activeOpacity={0.7}>
+        <Animated.View
+          style={[
+            styles.reclamationCard,
+            {
+              backgroundColor: colors.cardBackground,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.cardContent}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
+            <View style={styles.cardInfo}>
+              <View style={styles.cardRow}>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type</Text>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Détails</Text>
+              </View>
+              <View style={styles.cardRow}>
+                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                  {getRequestLabel()}
+                </Text>
+                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={2}>
+                  {getRequestDetails()}
                 </Text>
               </View>
             </View>
@@ -701,35 +669,7 @@ export default function ReclamationScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />}
       >
-        {activeTab === "demandes" ? (
-          <>
-            {!isLoading && requests.length > 0 && (
-              <View style={styles.listContainer}>
-                {requests.map((request) => (
-                  <RequestCard key={request.id} request={request} />
-                ))}
-              </View>
-            )}
-
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10B981" />
-              </View>
-            )}
-
-            {!isLoading && requests.length === 0 && (
-              <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                <View style={[styles.emptyIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
-                  <IconSymbol name="doc.text.fill" size={56} color="#10B981" />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune demande</Text>
-                <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-                  Vous n'avez pas encore de demande en cours
-                </Text>
-              </Animated.View>
-            )}
-          </>
-        ) : (
+        {activeTab === "reclamations" ? (
           <>
             {!isLoading && reclamations.length > 0 && (
               <View style={styles.listContainer}>
@@ -761,6 +701,34 @@ export default function ReclamationScreen() {
                   <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
                   <Text style={styles.createButtonText}>Réclamation</Text>
                 </TouchableOpacity>
+              </Animated.View>
+            )}
+          </>
+        ) : (
+          <>
+            {!isLoading && requests.length > 0 && (
+              <View style={styles.listContainer}>
+                {requests.map((request) => (
+                  <RequestCard key={request.id} request={request} />
+                ))}
+              </View>
+            )}
+
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#10B981" />
+              </View>
+            )}
+
+            {!isLoading && requests.length === 0 && (
+              <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                <View style={[styles.emptyIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
+                  <IconSymbol name="doc.text.fill" size={56} color="#10B981" />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune demande</Text>
+                <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
+                  Vous n'avez pas encore de demande en cours
+                </Text>
               </Animated.View>
             )}
           </>
@@ -935,7 +903,7 @@ export default function ReclamationScreen() {
             <View style={styles.detailsModalHeader}>
               <Text style={[styles.detailsModalTitle, { color: colors.text }]}>Détails de la réclamation</Text>
               <TouchableOpacity onPress={() => setDetailsModalVisible(false)} style={styles.closeButton}>
-                <IconSymbol name="xmark-circle.fill" size={28} color={colors.textSecondary} />
+                <IconSymbol name="xmark-circle-fill" size={28} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
