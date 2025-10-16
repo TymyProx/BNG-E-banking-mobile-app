@@ -23,6 +23,7 @@ import {
   View,
 } from "react-native"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
@@ -314,11 +315,6 @@ export default function LoginScreen() {
                 <Text style={styles.modernLinkText}>Créer un compte</Text>
               </TouchableOpacity>
             </View>
-          </Animated.View>
-
-          <Animated.View style={[styles.securityNotice, { opacity: fadeAnim }]}>
-            <Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.securityText}>Vos données sont protégées par un chiffrement de niveau bancaire</Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
