@@ -11,7 +11,6 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -164,11 +163,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/welcom.png")}
-      style={styles.container}
-      resizeMode="cover"
-    >
+    <ImageBackground source={require("../../assets/images/welcom.png")} style={styles.container} resizeMode="cover">
       <View style={styles.overlay} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -206,19 +201,19 @@ export default function LoginScreen() {
                 style={[
                   styles.modernInputContainer,
                   {
-                    borderColor: errors.email ? "#EF4444" : email ? "#3B82F6" : "rgba(255, 255, 255, 0.3)",
+                    borderColor: errors.email ? "#EF4444" : email ? "#2D7A4F" : "#2D7A4F",
                     borderWidth: email ? 2 : 1,
                   },
                 ]}
               >
                 <View style={styles.inputIconContainer}>
-                  <Ionicons name="mail-outline" size={22} color="#FFFFFF" />
+                  <Ionicons name="mail-outline" size={22} color="#2D7A4F" />
                 </View>
                 <TextInput
                   ref={emailRef}
                   style={styles.modernInput}
                   placeholder="Saisissez votre email"
-                  placeholderTextColor="#2D7A4F"
+                  placeholderTextColor="#fff"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -227,7 +222,7 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                 />
-                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color="#3B82F6" />}
+                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color="#2D7A4F" />}
               </View>
               {errors.email && <Animated.Text style={styles.modernErrorText}>{errors.email}</Animated.Text>}
             </View>
@@ -238,19 +233,19 @@ export default function LoginScreen() {
                 style={[
                   styles.modernInputContainer,
                   {
-                    borderColor: errors.password ? "#EF4444" : password ? "#3B82F6" : "rgba(255, 255, 255, 0.3)",
+                    borderColor: errors.password ? "#EF4444" : password ? "#2D7A4F" : "#2D7A4F",
                     borderWidth: password ? 2 : 1,
                   },
                 ]}
               >
                 <View style={styles.inputIconContainer}>
-                  <Ionicons name="lock-closed-outline" size={22} color="#FFFFFF" />
+                  <Ionicons name="lock-closed-outline" size={22} color="#2D7A4F" />
                 </View>
                 <TextInput
                   ref={passwordRef}
                   style={styles.modernInput}
                   placeholder="Saisissez votre mot de passe"
-                  placeholderTextColor="#2D7A4F"
+                  placeholderTextColor="#fff"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -263,7 +258,7 @@ export default function LoginScreen() {
                   style={styles.modernEyeIcon}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color="#FFFFFF" />
+                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color="#2D7A4F" />
                 </TouchableOpacity>
               </View>
               {errors.password && <Animated.Text style={styles.modernErrorText}>{errors.password}</Animated.Text>}
@@ -274,7 +269,7 @@ export default function LoginScreen() {
                 style={[
                   styles.modernButton,
                   {
-                    backgroundColor: isFormValid ? "#10B981" : "rgba(255, 255, 255, 0.2)",
+                    backgroundColor: isFormValid ? "#2D7A4F" : "rgba(255, 255, 255, 0.2)",
                   },
                   isLoading && styles.buttonDisabled,
                 ]}
@@ -365,7 +360,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     backdropFilter: "blur(10px)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#2D7A4F",
     marginBottom: 24,
   },
   modernInputGroup: {
@@ -387,7 +382,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 60,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderWidth: 1,
   },
   inputIconContainer: {
@@ -397,13 +392,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-    backgroundColor: "#2D7A4F",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   modernInput: {
     flex: 1,
     fontSize: 16,
     fontWeight: "500",
-    color: "#1F2937",
+    color: "#FFFFFF",
   },
   modernEyeIcon: {
     padding: 8,
