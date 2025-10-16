@@ -548,13 +548,19 @@ export default function AccountsScreen() {
             )}
           </View>
         )}
+        {/* Modernized pending accounts section */}
         {!isLoading && pendingAccounts.length > 0 && (
           <Animated.View style={[styles.pendingSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <View style={styles.pendingSectionHeader}>
               <View style={styles.pendingHeaderLeft}>
-                <View style={styles.pendingIconContainer}>
-                  <IconSymbol name="clock.fill" size={20} color="#F59E0B" />
-                </View>
+                <LinearGradient
+                  colors={["#10B981", "#059669"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.pendingIconContainer}
+                >
+                  <IconSymbol name="clock.fill" size={20} color="#FFFFFF" />
+                </LinearGradient>
                 <View>
                   <Text style={[styles.pendingSectionTitle, { color: colors.text }]}>Mes demandes</Text>
                   <Text style={[styles.pendingSectionSubtitle, { color: colors.textSecondary }]}>
@@ -572,8 +578,8 @@ export default function AccountsScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.pendingCardLeft}>
-                    <View style={[styles.pendingAccountIcon, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
-                      <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#F59E0B" />
+                    <View style={[styles.pendingAccountIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
+                      <IconSymbol name={getAccountIcon(account.type) as any} size={24} color="#10B981" />
                     </View>
                     <View style={styles.pendingAccountInfo}>
                       <Text style={[styles.pendingAccountName, { color: colors.text }]}>{account.name}</Text>
@@ -592,9 +598,11 @@ export default function AccountsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <View style={[styles.pendingInfoBox, { backgroundColor: "rgba(245, 158, 11, 0.1)" }]}>
-              <IconSymbol name="info.circle.fill" size={16} color="#F59E0B" />
-              <Text style={[styles.pendingInfoText, { color: "#000000" }]}>
+            <View style={[styles.pendingInfoBox, { backgroundColor: "#fff" }]}>
+              <View style={styles.infoIconContainer}>
+                <IconSymbol name="info.circle.fill" size={16} color="#FBBF24" />
+              </View>
+              <Text style={[styles.pendingInfoText, { color: colors.text }]}>
                 Ces comptes seront activés après validation par notre équipe
               </Text>
             </View>
@@ -1249,20 +1257,24 @@ const styles = StyleSheet.create({
   pendingHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
   },
   pendingIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   pendingSectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
     marginBottom: 4,
   },
   pendingSectionSubtitle: {
@@ -1277,37 +1289,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.2)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "rgba(16, 185, 129, 0.15)",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 3,
   },
   pendingCardLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
     flex: 1,
   },
   pendingAccountIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.2)",
   },
   pendingAccountInfo: {
     flex: 1,
   },
   pendingAccountName: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 4,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   pendingAccountNumber: {
     fontSize: 13,
@@ -1324,32 +1338,43 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 12,
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.2)",
   },
   pendingDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#FBBF24",
   },
   pendingStatusText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#F59E0B",
+    fontWeight: "700",
+    color: "#FBBF24",
   },
   pendingInfoBox: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 14,
+    alignItems: "flex-start",
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.15)",
+  },
+  infoIconContainer: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 2,
   },
   pendingInfoText: {
     flex: 1,
     fontSize: 13,
     fontWeight: "600",
-    lineHeight: 18,
+    lineHeight: 19,
   },
 })
