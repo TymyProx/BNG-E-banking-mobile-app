@@ -236,6 +236,14 @@ export default function EServicesScreen() {
     return numAmount.toLocaleString("fr-FR")
   }
 
+  const getStatusDotColor = (status: string) => {
+    if (!status) return "#9CA3AF"
+    const normalizedStatus = status.toLowerCase()
+    if (normalizedStatus.includes("approved") || normalizedStatus.includes("approuvée")) return "#10B981"
+    if (normalizedStatus.includes("rejected") || normalizedStatus.includes("rejetée")) return "#EF4444"
+    return "#F59E0B"
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -284,6 +292,21 @@ export default function EServicesScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Historique des demandes</Text>
 
+          <View style={styles.statusLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.statusDot, { backgroundColor: "#10B981" }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Approuvée</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.statusDot, { backgroundColor: "#F59E0B" }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>En attente</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.statusDot, { backgroundColor: "#EF4444" }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Rejetée</Text>
+            </View>
+          </View>
+
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
@@ -291,7 +314,6 @@ export default function EServicesScreen() {
             </View>
           ) : creditRequests.length > 0 || checkbookRequests.length > 0 ? (
             <>
-              {/* Credit Requests */}
               {creditRequests.map((request) => (
                 <TouchableOpacity
                   key={`credit-${request.id}`}
@@ -302,44 +324,42 @@ export default function EServicesScreen() {
                   onPress={() => fetchCreditDetails(request.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.requestHeader}>
-                    <View style={styles.requestTitleContainer}>
-                      <Ionicons name="cash-outline" size={24} color="#3B82F6" />
-                      <Text style={[styles.requestTitle, { color: colors.text }]}>Demande de crédit</Text>
-                    </View>
-                    <View style={[styles.typeBadge, { backgroundColor: "#EFF6FF" }]}>
-                      <Text style={[styles.typeText, { color: "#3B82F6" }]}>{request.typedemande}</Text>
+                  <View style={styles.cardContent}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
+                    <View style={styles.cardInfo}>
+                      <View style={styles.cardRow}>
+                        <View style={styles.cardLeft}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Référence</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            CREDIT-{request.id.slice(0, 8).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={styles.cardRight}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            {request.typedemande}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.cardRow}>
+                        <View style={styles.cardLeft}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Montant</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            {formatAmount(request.creditAmount)} GNF
+                          </Text>
+                        </View>
+                        <View style={styles.cardRight}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Objet</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            {request.purpose}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                  <View style={styles.requestDetails}>
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Montant:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {formatAmount(request.creditAmount)} GNF
-                      </Text>
-                    </View>
-                    {/* <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Durée:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.durationMonths} mois</Text>
-                    </View> */}
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Objet:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.purpose}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.statusBadge}>
-                    <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
-                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
-                      {getStatusText(request.status)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
-                    Demandé le {formatDate(request.createdAt)}
-                  </Text>
                 </TouchableOpacity>
               ))}
 
-              {/* Checkbook Requests */}
               {checkbookRequests.map((request) => (
                 <TouchableOpacity
                   key={`checkbook-${request.id}`}
@@ -350,41 +370,39 @@ export default function EServicesScreen() {
                   onPress={() => fetchCheckbookDetails(request.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.requestHeader}>
-                    <View style={styles.requestTitleContainer}>
-                      <Ionicons name="card-outline" size={24} color="#10B981" />
-                      <Text style={[styles.requestTitle, { color: colors.text }]}>Demande de chéquier</Text>
-                    </View>
-                  </View>
-                  <View style={styles.requestDetails}>
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Nombre de chéquiers:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.nbrechequier}</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Feuilles par chéquier:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.nbrefeuille}</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Compte:</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.numcompteId}</Text>
-                    </View>
-                    {request.commentaire && (
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Commentaire:</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>{request.commentaire}</Text>
+                  <View style={styles.cardContent}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
+                    <View style={styles.cardInfo}>
+                      <View style={styles.cardRow}>
+                        <View style={styles.cardLeft}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Référence</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            CHECK-{request.id.slice(0, 8).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={styles.cardRight}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Chéquiers</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            {request.nbrechequier} chéquier(s)
+                          </Text>
+                        </View>
                       </View>
-                    )}
+                      <View style={styles.cardRow}>
+                        <View style={styles.cardLeft}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Feuilles</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            {request.nbrefeuille} par chéquier
+                          </Text>
+                        </View>
+                        <View style={styles.cardRight}>
+                          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Compte</Text>
+                          <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
+                            {request.numcompteId}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
                   </View>
-                  <View style={styles.statusBadge}>
-                    <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
-                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
-                      {getStatusText(request.status)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
-                    Commandé le {formatDate(request.dateorder)}
-                  </Text>
                 </TouchableOpacity>
               ))}
             </>
@@ -681,84 +699,66 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   requestCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.1)",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  requestHeader: {
+  cardContent: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
+    alignItems: "flex-start",
+    gap: 12,
   },
-  requestTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
+  cardInfo: {
     flex: 1,
-  },
-  typeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  typeText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  requestTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    flex: 1,
-    letterSpacing: -0.2,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-    alignSelf: "flex-start",
-    marginTop: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  requestDetails: {
-    marginTop: 12,
-    marginBottom: 8,
     gap: 8,
   },
-  detailRow: {
+  cardRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    gap: 12,
   },
-  detailLabel: {
-    fontSize: 13,
+  cardLeft: {
+    flex: 1,
+  },
+  cardRight: {
+    flex: 1,
+  },
+  cardLabel: {
+    fontSize: 11,
     fontWeight: "500",
+    marginBottom: 2,
   },
-  detailValue: {
+  cardValue: {
     fontSize: 13,
     fontWeight: "600",
-    flex: 1,
-    textAlign: "right",
+    letterSpacing: -0.1,
   },
-  requestDate: {
+  statusLegend: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendText: {
     fontSize: 12,
     fontWeight: "500",
-    marginTop: 8,
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   emptyState: {
     alignItems: "center",
