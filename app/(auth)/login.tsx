@@ -11,6 +11,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -23,7 +24,6 @@ import {
   View,
 } from "react-native"
 import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
@@ -185,6 +185,7 @@ export default function LoginScreen() {
               },
             ]}
           >
+            <Image source={require("../../assets/images/logo-bng.png")} style={styles.logo} resizeMode="contain" />
             <Text style={styles.welcomeTitle}>Bienvenue sur</Text>
             <Text style={styles.bankName}>BNG E-Banking</Text>
           </Animated.View>
@@ -204,17 +205,13 @@ export default function LoginScreen() {
                 style={[
                   styles.modernInputContainer,
                   {
-                    borderColor: errors.email ? "#EF4444" : email ? "#10B981" : "rgba(255, 255, 255, 0.3)",
+                    borderColor: errors.email ? "#EF4444" : email ? "#3B82F6" : "rgba(255, 255, 255, 0.3)",
                     borderWidth: email ? 2 : 1,
                   },
                 ]}
               >
                 <View style={styles.inputIconContainer}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={22}
-                    color={errors.email ? "#EF4444" : email ? "#10B981" : "#10B981"}
-                  />
+                  <Ionicons name="mail-outline" size={22} color="#FFFFFF" />
                 </View>
                 <TextInput
                   ref={emailRef}
@@ -229,7 +226,7 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                 />
-                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color="#10B981" />}
+                {email && !errors.email && <Ionicons name="checkmark-circle" size={22} color="#3B82F6" />}
               </View>
               {errors.email && <Animated.Text style={styles.modernErrorText}>{errors.email}</Animated.Text>}
             </View>
@@ -240,17 +237,13 @@ export default function LoginScreen() {
                 style={[
                   styles.modernInputContainer,
                   {
-                    borderColor: errors.password ? "#EF4444" : password ? "#10B981" : "rgba(255, 255, 255, 0.3)",
+                    borderColor: errors.password ? "#EF4444" : password ? "#3B82F6" : "rgba(255, 255, 255, 0.3)",
                     borderWidth: password ? 2 : 1,
                   },
                 ]}
               >
                 <View style={styles.inputIconContainer}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={22}
-                    color={errors.password ? "#EF4444" : password ? "#10B981" : "#10B981"}
-                  />
+                  <Ionicons name="lock-closed-outline" size={22} color="#FFFFFF" />
                 </View>
                 <TextInput
                   ref={passwordRef}
@@ -343,6 +336,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 48,
   },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 16,
+  },
   welcomeTitle: {
     fontSize: 24,
     fontWeight: "400",
@@ -398,7 +396,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    backgroundColor: "rgba(59, 130, 246, 0.8)",
   },
   modernInput: {
     flex: 1,
