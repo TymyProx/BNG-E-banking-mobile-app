@@ -9,6 +9,7 @@ import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface CreditRequest {
   id: string
@@ -221,23 +222,6 @@ export default function EServicesScreen() {
     }
   }
 
-  const getStatusDotColor = (status: string) => {
-    if (!status) {
-      return "#9CA3AF" // Gray for undefined/null status
-    }
-    const normalizedStatus = status.toLowerCase()
-    switch (normalizedStatus) {
-      case "approved":
-        return "#10B981" // Green
-      case "pending":
-        return "#FBBF24" // Yellow
-      case "rejected":
-        return "#EF4444" // Red
-      default:
-        return "#9CA3AF" // Gray
-    }
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("fr-FR", {
@@ -261,10 +245,10 @@ export default function EServicesScreen() {
       >
         <View style={styles.header}>
           <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: "rgba(251, 191, 36, 0.15)" }]}
+            style={[styles.backButton, { backgroundColor: "rgba(255, 193, 7, 0.15)" }]}
             onPress={() => router.back()}
           >
-            <Ionicons name="chevron-back" size={24} color="#FBBF24" />
+            <Ionicons name="chevron-back" size={24} color="#FFC107" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>E-Services</Text>
@@ -279,26 +263,17 @@ export default function EServicesScreen() {
             {services.map((service) => (
               <TouchableOpacity
                 key={service.id}
-                style={[styles.serviceCard, { backgroundColor: colors.cardBackground }]}
+                style={[styles.serviceCard, { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow }]}
                 onPress={() => router.push(service.route as any)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.serviceGradient, { backgroundColor: `${service.color}10` }]} />
-
                 <View style={[styles.serviceIconContainer, { backgroundColor: service.color }]}>
-                  <Ionicons name={service.icon} size={36} color="#FFFFFF" />
-                  <View style={styles.iconCircle} />
+                  <Ionicons name={service.icon} size={32} color="#FFFFFF" />
                 </View>
-
-                <View style={styles.serviceContent}>
-                  <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
-                  <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>
-                    {service.description}
-                  </Text>
-                </View>
-
-                <View style={[styles.serviceArrowContainer, { backgroundColor: `${service.color}15` }]}>
-                  <Ionicons name="arrow-forward" size={20} color={service.color} />
+                <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
+                <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>{service.description}</Text>
+                <View style={styles.serviceArrow}>
+                  <Ionicons name="arrow-forward" size={20} color={colors.primary} />
                 </View>
               </TouchableOpacity>
             ))}
@@ -308,22 +283,6 @@ export default function EServicesScreen() {
         {/* Requests History */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Historique des demandes</Text>
-
-          {/* Status Legend */}
-          <View style={styles.statusLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: "#10B981" }]} />
-              <Text style={[styles.legendText, { color: colors.text }]}>Approuvée</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: "#FBBF24" }]} />
-              <Text style={[styles.legendText, { color: colors.text }]}>En attente</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: "#EF4444" }]} />
-              <Text style={[styles.legendText, { color: colors.text }]}>Rejetée</Text>
-            </View>
-          </View>
 
           {loading ? (
             <View style={styles.loadingContainer}>
@@ -336,39 +295,47 @@ export default function EServicesScreen() {
               {creditRequests.map((request) => (
                 <TouchableOpacity
                   key={`credit-${request.id}`}
-                  style={[styles.requestCard, { backgroundColor: colors.cardBackground }]}
+                  style={[
+                    styles.requestCard,
+                    { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow },
+                  ]}
                   onPress={() => fetchCreditDetails(request.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.cardContent}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
-                    <View style={styles.cardInfo}>
-                      <View style={styles.cardRow}>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Référence</Text>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type de demande</Text>
-                      </View>
-                      <View style={styles.cardRow}>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          CREDIT-{request.id.slice(0, 8)}
-                        </Text>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          {request.typedemande}
-                        </Text>
-                      </View>
-                      <View style={[styles.cardRow, { marginTop: 8 }]}>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Montant</Text>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Objet</Text>
-                      </View>
-                      <View style={styles.cardRow}>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          {formatAmount(request.creditAmount)} GNF
-                        </Text>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          {request.purpose}
-                        </Text>
-                      </View>
+                  <View style={styles.requestHeader}>
+                    <View style={styles.requestTitleContainer}>
+                      <Ionicons name="cash-outline" size={24} color="#3B82F6" />
+                      <Text style={[styles.requestTitle, { color: colors.text }]}>Demande de crédit</Text>
+                    </View>
+                    <View style={[styles.typeBadge, { backgroundColor: "#EFF6FF" }]}>
+                      <Text style={[styles.typeText, { color: "#3B82F6" }]}>{request.typedemande}</Text>
                     </View>
                   </View>
+                  <View style={styles.requestDetails}>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Montant:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {formatAmount(request.creditAmount)} GNF
+                      </Text>
+                    </View>
+                    {/* <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Durée:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.durationMonths} mois</Text>
+                    </View> */}
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Objet:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.purpose}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.statusBadge}>
+                    <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
+                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
+                      {getStatusText(request.status)}
+                    </Text>
+                  </View>
+                  <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
+                    Demandé le {formatDate(request.createdAt)}
+                  </Text>
                 </TouchableOpacity>
               ))}
 
@@ -376,39 +343,48 @@ export default function EServicesScreen() {
               {checkbookRequests.map((request) => (
                 <TouchableOpacity
                   key={`checkbook-${request.id}`}
-                  style={[styles.requestCard, { backgroundColor: colors.cardBackground }]}
+                  style={[
+                    styles.requestCard,
+                    { backgroundColor: colors.cardBackground, shadowColor: colors.cardShadow },
+                  ]}
                   onPress={() => fetchCheckbookDetails(request.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.cardContent}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
-                    <View style={styles.cardInfo}>
-                      <View style={styles.cardRow}>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Référence</Text>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type de demande</Text>
-                      </View>
-                      <View style={styles.cardRow}>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          CHK-{request.id.slice(0, 8)}
-                        </Text>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          Chéquier
-                        </Text>
-                      </View>
-                      <View style={[styles.cardRow, { marginTop: 8 }]}>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Nombre</Text>
-                        <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Compte</Text>
-                      </View>
-                      <View style={styles.cardRow}>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          {request.nbrechequier} chéquier(s)
-                        </Text>
-                        <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                          {request.numcompteId}
-                        </Text>
-                      </View>
+                  <View style={styles.requestHeader}>
+                    <View style={styles.requestTitleContainer}>
+                      <Ionicons name="card-outline" size={24} color="#10B981" />
+                      <Text style={[styles.requestTitle, { color: colors.text }]}>Demande de chéquier</Text>
                     </View>
                   </View>
+                  <View style={styles.requestDetails}>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Nombre de chéquiers:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.nbrechequier}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Feuilles par chéquier:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.nbrefeuille}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Compte:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{request.numcompteId}</Text>
+                    </View>
+                    {request.commentaire && (
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Commentaire:</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>{request.commentaire}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.statusBadge}>
+                    <Ionicons name={getStatusIcon(request.status)} size={16} color={getStatusColor(request.status)} />
+                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
+                      {getStatusText(request.status)}
+                    </Text>
+                  </View>
+                  <Text style={[styles.requestDate, { color: colors.textTertiary }]}>
+                    Commandé le {formatDate(request.dateorder)}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </>
@@ -662,96 +638,61 @@ const styles = StyleSheet.create({
   serviceCard: {
     flex: 1,
     minWidth: "45%",
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: "#000",
+    borderRadius: 20,
+    padding: 20,
     shadowOffset: {
       width: 0,
-      height: 12,
+      height: 4,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
     position: "relative",
-    overflow: "hidden",
-    minHeight: 200,
-  },
-  serviceGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 24,
-    opacity: 0.5,
   },
   serviceIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-    position: "relative",
-    zIndex: 1,
-  },
-  iconCircle: {
-    position: "absolute",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    top: -10,
-    right: -10,
-  },
-  serviceContent: {
-    flex: 1,
-    zIndex: 1,
+    marginBottom: 16,
   },
   serviceTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 10,
-    letterSpacing: -0.3,
-    lineHeight: 24,
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 8,
+    letterSpacing: -0.2,
   },
   serviceDescription: {
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  serviceArrowContainer: {
+  serviceArrow: {
     position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
+    bottom: 20,
+    right: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 20,
+    letterSpacing: -0.3,
   },
   requestCard: {
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.1)",
   },
   requestHeader: {
     flexDirection: "row",
@@ -927,58 +868,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: -0.2,
   },
-  statusLegend: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#F3F4F6",
-    marginBottom: 16,
+  closeButton: {
+    paddingVertical: 16,
     borderRadius: 12,
-    gap: 16,
-  },
-  legendItem: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  cardContent: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  cardInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  cardRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-  cardLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-    flex: 1,
-  },
-  cardValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
+  closeButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
 })
