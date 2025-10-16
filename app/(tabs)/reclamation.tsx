@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import React from "react"
 
 interface Reclamation {
   id: string
@@ -46,29 +47,6 @@ interface ReclamationDetails extends Reclamation {
   tenantId?: string
 }
 
-interface CreditRequest {
-  id: string
-  customerId: string
-  amount: number
-  duration: number
-  purpose: string
-  status: string
-  createdAt: string
-  type: "credit"
-}
-
-interface CheckbookRequest {
-  id: string
-  accountId: string
-  numberOfCheckbooks: number
-  deliveryAddress: string
-  status: string
-  createdAt: string
-  type: "checkbook"
-}
-
-type Request = CreditRequest | CheckbookRequest
-
 const MOTIF_OPTIONS = [
   { value: "virement_non_effectif", label: "Virement non effectif" },
   { value: "perception_indue_frais", label: "Perception indue de frais" },
@@ -85,7 +63,6 @@ export default function ReclamationScreen() {
 
   // List state
   const [reclamations, setReclamations] = useState<Reclamation[]>([])
-  const [requests, setRequests] = useState<Request[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [fadeAnim] = useState(new Animated.Value(0))
@@ -167,108 +144,15 @@ export default function ReclamationScreen() {
     }
   }
 
-  const loadRequests = async () => {
-    setIsLoading(true)
-    try {
-      const token = await SecureStore.getItemAsync("token")
-
-      if (!token || !tenantId) {
-        setRequests([])
-        setIsLoading(false)
-        return
-      }
-
-      // Fetch credit requests
-      const creditResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREDIT.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      // Fetch checkbook requests
-      const checkbookResponse = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CHECKBOOK.LIST(tenantId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      const allRequests: Request[] = []
-
-      if (creditResponse.ok) {
-        const creditData = await creditResponse.json()
-        const creditRequests: CreditRequest[] = creditData.rows.map((req: any) => ({
-          id: req.id,
-          customerId: req.customerId || "",
-          amount: req.amount || 0,
-          duration: req.duration || 0,
-          purpose: req.purpose || "Non spécifié",
-          status: req.status || "En attente",
-          createdAt: req.createdAt,
-          type: "credit" as const,
-        }))
-        allRequests.push(...creditRequests)
-      }
-
-      if (checkbookResponse.ok) {
-        const checkbookData = await checkbookResponse.json()
-        const checkbookRequests: CheckbookRequest[] = checkbookData.rows.map((req: any) => ({
-          id: req.id,
-          accountId: req.accountId || "",
-          numberOfCheckbooks: req.numberOfCheckbooks || 1,
-          deliveryAddress: req.deliveryAddress || "Non spécifié",
-          status: req.status || "En attente",
-          createdAt: req.createdAt,
-          type: "checkbook" as const,
-        }))
-        allRequests.push(...checkbookRequests)
-      }
-
-      // Sort by date (most recent first)
-      allRequests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-      setRequests(allRequests)
-
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start()
-    } catch (error) {
-      console.error("[v0] Erreur lors du chargement des demandes:", error)
-      setRequests([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const onRefresh = async () => {
     setRefreshing(true)
-    if (activeTab === "reclamations") {
-      await loadReclamations()
-    } else {
-      await loadRequests()
-    }
+    await loadReclamations()
     setRefreshing(false)
   }
 
   useEffect(() => {
-    if (activeTab === "reclamations") {
-      loadReclamations()
-    } else {
-      loadRequests()
-    }
-  }, [activeTab])
+    loadReclamations()
+  }, [])
 
   const handleSubmit = async () => {
     if (!email.trim()) {
@@ -521,79 +405,6 @@ export default function ReclamationScreen() {
     )
   }
 
-  const RequestCard = ({ request }: { request: Request }) => {
-    const getStatusDotColor = (status: string) => {
-      const normalizedStatus = status.toLowerCase()
-      switch (normalizedStatus) {
-        case "approuvé":
-        case "approved":
-        case "livré":
-        case "delivered":
-          return "#10B981" // Green
-        case "en attente":
-        case "pending":
-        case "en cours":
-          return "#FBBF24" // Yellow
-        case "rejeté":
-        case "rejected":
-        case "annulé":
-        case "cancelled":
-          return "#EF4444" // Red
-        default:
-          return "#9CA3AF" // Gray
-      }
-    }
-
-    const getRequestLabel = () => {
-      if (request.type === "credit") {
-        return "Demande de crédit"
-      } else {
-        return "Commande de chéquier"
-      }
-    }
-
-    const getRequestDetails = () => {
-      if (request.type === "credit") {
-        return `${request.amount.toLocaleString("fr-FR")} FCFA - ${request.duration} mois`
-      } else {
-        return `${request.numberOfCheckbooks} chéquier(s)`
-      }
-    }
-
-    return (
-      <TouchableOpacity activeOpacity={0.7}>
-        <Animated.View
-          style={[
-            styles.reclamationCard,
-            {
-              backgroundColor: colors.cardBackground,
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.cardContent}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusDotColor(request.status) }]} />
-            <View style={styles.cardInfo}>
-              <View style={styles.cardRow}>
-                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type</Text>
-                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Détails</Text>
-              </View>
-              <View style={styles.cardRow}>
-                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={1}>
-                  {getRequestLabel()}
-                </Text>
-                <Text style={[styles.cardValue, { color: colors.text }]} numberOfLines={2}>
-                  {getRequestDetails()}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Animated.View>
-      </TouchableOpacity>
-    )
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
       <View style={[styles.header, { backgroundColor: "#F9FAFB" }]}>
@@ -604,47 +415,12 @@ export default function ReclamationScreen() {
           >
             <IconSymbol name="chevron.left" size={24} color="#FBBF24" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Demandes et réclamations</Text>
+          <Text style={styles.headerTitle}>Réclamations</Text>
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: "#2D7A4F" }]}
             onPress={() => setShowForm(true)}
           >
             <IconSymbol name="plus" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.segmentedControl}>
-          <TouchableOpacity
-            style={[
-              styles.segmentButton,
-              activeTab === "demandes" ? styles.segmentButtonActive : styles.segmentButtonInactive,
-            ]}
-            onPress={() => setActiveTab("demandes")}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                activeTab === "demandes" ? styles.segmentTextActive : styles.segmentTextInactive,
-              ]}
-            >
-              Demandes
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.segmentButton,
-              activeTab === "reclamations" ? styles.segmentButtonActive : styles.segmentButtonInactive,
-            ]}
-            onPress={() => setActiveTab("reclamations")}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                activeTab === "reclamations" ? styles.segmentTextActive : styles.segmentTextInactive,
-              ]}
-            >
-              Réclamations
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -669,69 +445,37 @@ export default function ReclamationScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />}
       >
-        {activeTab === "reclamations" ? (
-          <>
-            {!isLoading && reclamations.length > 0 && (
-              <View style={styles.listContainer}>
-                {reclamations.map((reclamation) => (
-                  <ReclamationCard key={reclamation.id} reclamation={reclamation} />
-                ))}
-              </View>
-            )}
+        {!isLoading && reclamations.length > 0 && (
+          <View style={styles.listContainer}>
+            {reclamations.map((reclamation) => (
+              <ReclamationCard key={reclamation.id} reclamation={reclamation} />
+            ))}
+          </View>
+        )}
 
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10B981" />
-              </View>
-            )}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+          </View>
+        )}
 
-            {!isLoading && reclamations.length === 0 && (
-              <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                <View style={[styles.emptyIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
-                  <IconSymbol name="exclamationmark.triangle.fill" size={56} color="#10B981" />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune réclamation</Text>
-                <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-                  Vous n'avez pas encore de réclamation. Créez-en une en appuyant sur le bouton +
-                </Text>
-                <TouchableOpacity
-                  style={[styles.createButton, { backgroundColor: "#2D7A4F" }]}
-                  onPress={() => setShowForm(true)}
-                >
-                  <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
-                  <Text style={styles.createButtonText}>Réclamation</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            )}
-          </>
-        ) : (
-          <>
-            {!isLoading && requests.length > 0 && (
-              <View style={styles.listContainer}>
-                {requests.map((request) => (
-                  <RequestCard key={request.id} request={request} />
-                ))}
-              </View>
-            )}
-
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10B981" />
-              </View>
-            )}
-
-            {!isLoading && requests.length === 0 && (
-              <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                <View style={[styles.emptyIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
-                  <IconSymbol name="doc.text.fill" size={56} color="#10B981" />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune demande</Text>
-                <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-                  Vous n'avez pas encore de demande en cours
-                </Text>
-              </Animated.View>
-            )}
-          </>
+        {!isLoading && reclamations.length === 0 && (
+          <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={[styles.emptyIcon, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
+              <IconSymbol name="exclamationmark.triangle.fill" size={56} color="#10B981" />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune réclamation</Text>
+            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
+              Vous n'avez pas encore de réclamation. Créez-en une en appuyant sur le bouton +
+            </Text>
+            <TouchableOpacity
+              style={[styles.createButton, { backgroundColor: "#2D7A4F" }]}
+              onPress={() => setShowForm(true)}
+            >
+              <IconSymbol name="plus.circle.fill" size={20} color="#FFFFFF" />
+              <Text style={styles.createButtonText}>Réclamation</Text>
+            </TouchableOpacity>
+          </Animated.View>
         )}
 
         <View style={styles.bottomSpacing} />
@@ -903,7 +647,7 @@ export default function ReclamationScreen() {
             <View style={styles.detailsModalHeader}>
               <Text style={[styles.detailsModalTitle, { color: colors.text }]}>Détails de la réclamation</Text>
               <TouchableOpacity onPress={() => setDetailsModalVisible(false)} style={styles.closeButton}>
-                <IconSymbol name="xmark-circle-fill" size={28} color={colors.textSecondary} />
+                <IconSymbol name="xmark.circle.fill" size={28} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
