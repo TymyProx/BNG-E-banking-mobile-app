@@ -9,6 +9,7 @@ import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 interface FormData {
   fullName: string
@@ -641,9 +642,6 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
         {/* Informations personnelles */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.iconContainer}>
-              <IconSymbol name="person.fill" size={20} color="#10B981" />
-            </View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations personnelles</Text>
           </View>
 
@@ -683,9 +681,6 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
         {/* Type de bénéficiaire */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.iconContainer}>
-              <IconSymbol name="building.2.fill" size={20} color="#F59E0B" />
-            </View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Type de bénéficiaire</Text>
           </View>
 
@@ -743,9 +738,6 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
         {/* Informations de contact */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.iconContainer}>
-              <IconSymbol name="phone.fill" size={20} color="#8B5CF6" />
-            </View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations de contact</Text>
           </View>
 
@@ -828,7 +820,7 @@ export default function AddBeneficiaryForm({ onSuccess }: AddBeneficiaryFormProp
           style={[
             styles.submitButton,
             {
-              backgroundColor: isLoading ? "#9CA3AF" : "#10B981",
+              backgroundColor: isLoading ? "#9CA3AF" : "#2D7A4F",
               opacity: isLoading ? 0.7 : 1,
             },
           ]}
@@ -1216,7 +1208,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
-    shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

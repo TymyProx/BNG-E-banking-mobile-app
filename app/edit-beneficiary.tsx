@@ -1,24 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { IconSymbol } from "@/components/ui/IconSymbol"
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
+import { Colors } from "@/constants/Colors"
+import { useAuth } from "@/contexts/AuthContext"
+import { useColorScheme } from "@/hooks/useColorScheme"
+import { useLocalSearchParams, useRouter } from "expo-router"
+import * as SecureStore from "expo-secure-store"
+import React, { useEffect, useState } from "react"
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  TextInput,
   Alert,
   Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native"
-import { IconSymbol } from "@/components/ui/IconSymbol"
-import { Colors } from "@/constants/Colors"
-import { useColorScheme } from "@/hooks/useColorScheme"
-import { useRouter, useLocalSearchParams } from "expo-router"
-import * as SecureStore from "expo-secure-store"
-import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import { useAuth } from "@/contexts/AuthContext"
 
 interface FormData {
   fullName: string
@@ -725,7 +725,7 @@ export default function EditBeneficiary() {
                     </Text>
                   ) : (
                     <Text style={[styles.placeholder, { color: colors.textSecondary }]}>
-                      Sélectionnez le type de bénéficiaire
+                      Sélectionnez un type
                     </Text>
                   )}
                 </View>
