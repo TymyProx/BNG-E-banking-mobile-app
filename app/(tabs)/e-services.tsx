@@ -222,6 +222,9 @@ export default function EServicesScreen() {
   }
 
   const getStatusDotColor = (status: string) => {
+    if (!status) {
+      return "#9CA3AF" // Gray for undefined/null status
+    }
     const normalizedStatus = status.toLowerCase()
     switch (normalizedStatus) {
       case "approved":
