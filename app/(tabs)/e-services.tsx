@@ -275,13 +275,21 @@ export default function EServicesScreen() {
                 onPress={() => router.push(service.route as any)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.serviceIconContainer, { backgroundColor: service.color }]}>
-                  <Ionicons name={service.icon} size={32} color="#FFFFFF" />
-                </View>
-                <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
-                <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>{service.description}</Text>
-                <View style={styles.serviceArrow}>
-                  <Ionicons name="arrow-forward" size={20} color={colors.primary} />
+                <View style={styles.serviceCardGradient}>
+                  <View style={[styles.serviceIconWrapper, { backgroundColor: `${service.color}15` }]}>
+                    <View style={[styles.serviceIconContainer, { backgroundColor: service.color }]}>
+                      <Ionicons name={service.icon} size={28} color="#FFFFFF" />
+                    </View>
+                  </View>
+                  <View style={styles.serviceContent}>
+                    <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
+                    <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>
+                      {service.description}
+                    </Text>
+                  </View>
+                  <View style={[styles.serviceArrowContainer, { backgroundColor: `${service.color}20` }]}>
+                    <Ionicons name="arrow-forward" size={18} color={service.color} />
+                  </View>
                 </View>
               </TouchableOpacity>
             ))}
@@ -592,7 +600,7 @@ export default function EServicesScreen() {
             )}
 
             <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: colors.primary }]}
+              style={[styles.closeButton, { backgroundColor: "#2D7A4F"}]}
               onPress={() => setDetailsModalVisible(false)}
             >
               <Text style={styles.closeButtonText}>Fermer</Text>
@@ -648,6 +656,12 @@ const styles = StyleSheet.create({
   section: {
     padding: 24,
   },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 16,
+    letterSpacing: -0.3,
+  },
   servicesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -657,46 +671,68 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: "45%",
     borderRadius: 20,
-    padding: 20,
+    overflow: "hidden",
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
-    elevation: 4,
-    position: "relative",
+    elevation: 6,
   },
-  serviceIconContainer: {
-    width: 64,
-    height: 64,
+  serviceCardGradient: {
+    padding: 16,
+    position: "relative",
+    minHeight: 140,
+  },
+  serviceIconWrapper: {
+    width: 56,
+    height: 56,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
-  },
-  serviceTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 8,
-    letterSpacing: -0.2,
-  },
-  serviceDescription: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 20,
     marginBottom: 12,
   },
-  serviceArrow: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
+  serviceIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  sectionTitle: {
-    fontSize: 20,
+  serviceContent: {
+    marginBottom: 12,
+    paddingRight: 40,
+  },
+  serviceTitle: {
+    fontSize: 16,
     fontWeight: "700",
-    marginBottom: 20,
+    marginBottom: 6,
     letterSpacing: -0.3,
+    lineHeight: 20,
+  },
+  serviceDescription: {
+    fontSize: 12,
+    fontWeight: "500",
+    lineHeight: 16,
+    opacity: 0.8,
+  },
+  serviceArrowContainer: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   requestCard: {
     borderRadius: 12,

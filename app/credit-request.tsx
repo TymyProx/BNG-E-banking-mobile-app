@@ -601,7 +601,6 @@ export default function CreditRequestScreen() {
           ) : (
             <>
               <Text style={styles.submitButtonText}>Soumettre la demande</Text>
-              <IconSymbol name="arrow.right" size={20} color="#FFFFFF" />
             </>
           )}
         </TouchableOpacity>

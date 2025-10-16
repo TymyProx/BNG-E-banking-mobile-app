@@ -7,7 +7,7 @@
 const bngGold = "#FFD700" // Or principal du logo
 const bngGoldLight = "#FFF8DC" // Or très clair
 const bngGoldDark = "#B8860B" // Or foncé
-const bngGreen = "#10B981" // Vert du logo BNG
+const bngGreen = "#2D7A4F" // Vert du logo BNG
 const bngGreenLight = "#32CD32" // Vert clair
 const bngGreenDark = "#006400" // Vert foncé
 
