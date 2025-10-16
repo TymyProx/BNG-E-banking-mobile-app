@@ -302,7 +302,7 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={["#10b981", "#059669", "#34d399"]} style={styles.gradientBackground} />
+      <LinearGradient colors={["#8cdaa5ff", "#059669", "#2D7A4F"]} style={styles.gradientBackground} />
 
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <KeyboardAvoidingView
