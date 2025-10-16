@@ -448,9 +448,6 @@ export default function Dashboard() {
             <View style={styles.whiteSection}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Transactions récentes</Text>
-                <TouchableOpacity onPress={() => router.push("/(tabs)/statements")}>
-                  <Text style={styles.viewAllText}>Voir tout</Text>
-                </TouchableOpacity>
               </View>
 
               {transactions.length > 0 ? (
@@ -511,7 +508,7 @@ export default function Dashboard() {
             <View style={styles.chatContent}>
               <View style={styles.inputRow}>
                 <TouchableOpacity style={styles.attachButton}>
-                  <IconSymbol name="paperclip" size={20} color="#10B981" />
+                  <IconSymbol name="paperclip" size={20} color={colors.primary} />
                 </TouchableOpacity>
                 <View
                   style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}
@@ -529,7 +526,7 @@ export default function Dashboard() {
                     <IconSymbol name="mic" size={20} color={colors.tabIconDefault} />
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={[styles.sendButton, { backgroundColor: "#10B981" }]}>
+                <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]}>
                   <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
@@ -847,7 +844,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
   },
   sectionAction: {
@@ -1007,9 +1004,9 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   transactionAmount: {
-    fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: -0.3,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: -0.6,
   },
 
   chatContainer: {
@@ -1073,7 +1070,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
