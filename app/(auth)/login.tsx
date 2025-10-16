@@ -25,6 +25,7 @@ import {
 
 import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "@/contexts/AuthContext"
+import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
