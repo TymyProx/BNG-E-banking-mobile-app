@@ -283,12 +283,21 @@ export default function EServicesScreen() {
                 onPress={() => router.push(service.route as any)}
                 activeOpacity={0.7}
               >
+                <View style={[styles.serviceGradient, { backgroundColor: `${service.color}10` }]} />
+
                 <View style={[styles.serviceIconContainer, { backgroundColor: service.color }]}>
-                  <Ionicons name={service.icon} size={32} color="#FFFFFF" />
+                  <Ionicons name={service.icon} size={36} color="#FFFFFF" />
+                  <View style={styles.iconCircle} />
                 </View>
-                <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
-                <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>{service.description}</Text>
-                <View style={styles.serviceArrow}>
+
+                <View style={styles.serviceContent}>
+                  <Text style={[styles.serviceTitle, { color: colors.text }]}>{service.title}</Text>
+                  <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>
+                    {service.description}
+                  </Text>
+                </View>
+
+                <View style={[styles.serviceArrowContainer, { backgroundColor: `${service.color}15` }]}>
                   <Ionicons name="arrow-forward" size={20} color={service.color} />
                 </View>
               </TouchableOpacity>
@@ -653,56 +662,83 @@ const styles = StyleSheet.create({
   serviceCard: {
     flex: 1,
     minWidth: "45%",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 12,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
     position: "relative",
+    overflow: "hidden",
+    minHeight: 200,
+  },
+  serviceGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 24,
+    opacity: 0.5,
   },
   serviceIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
+    width: 72,
+    height: 72,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+    position: "relative",
+    zIndex: 1,
+  },
+  iconCircle: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    top: -10,
+    right: -10,
+  },
+  serviceContent: {
+    flex: 1,
+    zIndex: 1,
   },
   serviceTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 8,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 10,
+    letterSpacing: -0.3,
+    lineHeight: 24,
   },
   serviceDescription: {
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  serviceArrow: {
+  serviceArrowContainer: {
     position: "absolute",
-    bottom: 20,
-    right: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 20,
-    letterSpacing: -0.3,
+    bottom: 24,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
   },
   requestCard: {
     borderRadius: 16,
