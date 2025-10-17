@@ -419,6 +419,8 @@ const styles = StyleSheet.create({
   },
   modernButton: {
     borderRadius: 16,
+    borderColor: "#FFD700",
+    borderWidth: 1,
     height: 50,
     flexDirection: "row",
     justifyContent: "center",
