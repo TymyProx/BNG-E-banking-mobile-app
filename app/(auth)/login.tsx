@@ -1,11 +1,12 @@
 "use client"
 
 import { Colors } from "@/constants/Colors"
+import { useAuth } from "@/contexts/AuthContext"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import * as SecureStore from "expo-secure-store"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
@@ -22,8 +23,6 @@ import {
   Vibration,
   View,
 } from "react-native"
-import { useAuth } from "@/contexts/AuthContext"
-import React from "react"
 
 const { width, height } = Dimensions.get("window")
 
@@ -182,8 +181,8 @@ export default function LoginScreen() {
             ]}
           >
             {/* <Image source={require("../../assets/images/logo-bng.png")} style={styles.logo} resizeMode="contain" /> */}
-            <Text style={styles.welcomeTitle}>Bienvenue sur</Text>
-            <Text style={styles.bankName}>BNG E-Banking</Text>
+            <Text style={styles.welcomeTitle}></Text>
+            <Text style={styles.bankName}></Text>
           </Animated.View>
 
           <Animated.View
@@ -341,7 +340,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "400",
     color: "#FFFFFF",
-    marginBottom: 8,
+    marginBottom: 165,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
