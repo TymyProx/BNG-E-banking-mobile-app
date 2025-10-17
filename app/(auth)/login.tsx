@@ -181,8 +181,7 @@ export default function LoginScreen() {
                 transform: [{ translateY: slideAnim }, { scale: logoScaleAnim }],
               },
             ]}
-          >
-          </Animated.View>
+          ></Animated.View>
 
           <Animated.View
             style={[
@@ -194,6 +193,7 @@ export default function LoginScreen() {
             ]}
           >
             <Image source={require("../../assets/images/logo-bng.png")} style={styles.logoImage} resizeMode="contain" />
+            <Text style={styles.logoSubtitle}>Banque Nationale de Guinée</Text>
           </Animated.View>
 
           <Animated.View
@@ -361,18 +361,26 @@ const styles = StyleSheet.create({
   },
   logoCard: {
     borderRadius: 24,
-    padding: 24,
+    padding: 10,
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     backdropFilter: "blur(10px)",
     borderWidth: 1,
-    borderColor: "#2D7A4F",
     marginBottom: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   logoImage: {
-    width: 120,
+    width: 235,
     height: 120,
+  },
+  logoSubtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   modernForm: {
     borderRadius: 24,
@@ -380,7 +388,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     backdropFilter: "blur(10px)",
     borderWidth: 1,
-    borderColor: "#2D7A4F",
+  
     marginBottom: 24,
   },
   modernInputGroup: {
