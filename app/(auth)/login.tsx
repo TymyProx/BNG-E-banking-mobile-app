@@ -364,9 +364,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 32,
     backdropFilter: "blur(10px)",
-    borderWidth: 1,
     marginTop: 46,
     marginBottom: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   modernInputGroup: {
     marginBottom: 20,
@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 50,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderWidth: 1,
   },
   inputIconContainer: {
     width: 36,
