@@ -6,12 +6,14 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import * as SecureStore from "expo-secure-store"
-import React, { useEffect, useRef, useState } from "react"
+import React from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
+  Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -180,9 +182,18 @@ export default function LoginScreen() {
               },
             ]}
           >
-            {/* <Image source={require("../../assets/images/logo-bng.png")} style={styles.logo} resizeMode="contain" /> */}
-            <Text style={styles.welcomeTitle}></Text>
-            <Text style={styles.bankName}></Text>
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.logoCard,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: cardSlideAnim }],
+              },
+            ]}
+          >
+            <Image source={require("../../assets/images/logo-bng.png")} style={styles.logoImage} resizeMode="contain" />
           </Animated.View>
 
           <Animated.View
@@ -329,12 +340,7 @@ const styles = StyleSheet.create({
   },
   modernHeader: {
     alignItems: "center",
-    marginBottom: 48,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginTop: 16,
+    marginBottom: 24,
   },
   welcomeTitle: {
     fontSize: 24,
@@ -352,6 +358,21 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  logoCard: {
+    borderRadius: 24,
+    padding: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backdropFilter: "blur(10px)",
+    borderWidth: 1,
+    borderColor: "#2D7A4F",
+    marginBottom: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoImage: {
+    width: 120,
+    height: 120,
   },
   modernForm: {
     borderRadius: 24,
