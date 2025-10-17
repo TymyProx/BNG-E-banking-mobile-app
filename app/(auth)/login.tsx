@@ -363,7 +363,6 @@ const styles = StyleSheet.create({
   modernForm: {
     borderRadius: 24,
     padding: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     backdropFilter: "blur(10px)",
     borderWidth: 1,
     marginTop: 46,
