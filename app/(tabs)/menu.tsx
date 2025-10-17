@@ -1,12 +1,12 @@
 "use client"
 
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensions } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
-import { router } from "expo-router"
 import { useAuth } from "@/contexts/AuthContext"
+import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
+import { router } from "expo-router"
 import React from "react"
+import { Dimensions, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 interface MenuItem {
   id: string
@@ -294,10 +294,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   logoutContainer: {
-    marginTop: 24,
+    marginTop: 14,
   },
   logoutButton: {
-    borderRadius: 20,
+    borderRadius: 20, 
     overflow: "hidden",
     shadowColor: "#6B7280",
     shadowOffset: {
@@ -316,8 +316,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   logoutIconContainer: {
-    width: 48,
-    height: 48,
+    width: 30,
+    height: 30,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
     alignItems: "center",

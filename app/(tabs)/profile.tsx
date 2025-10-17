@@ -4,7 +4,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter } from "expo-router"
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Platform } from "react-native"
+import { SafeAreaView, ScrollView, StyleSheet, Text, View, Platform, TouchableOpacity, Alert } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "@/contexts/AuthContext"
 import React from "react"
@@ -13,7 +13,7 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   const getUserInitials = () => {
     if (!user?.firstName && !user?.lastName) return "U"
@@ -22,6 +22,23 @@ export default function ProfileScreen() {
 
   const handleBack = () => {
     router.back()
+  }
+
+  const handleLogout = () => {
+    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
+      {
+        text: "Annuler",
+        style: "cancel",
+      },
+      {
+        text: "Déconnexion",
+        style: "destructive",
+        onPress: async () => {
+          await logout()
+          router.replace("/(auth)/login")
+        },
+      },
+    ])
   }
 
   return (
@@ -44,6 +61,11 @@ export default function ProfileScreen() {
                   <Text style={styles.userName}>{user?.firstName?.toLocaleUpperCase() || "Utilisateur"}</Text>
                   <Text style={styles.userEmail}>{user?.email || ""}</Text>
                 </View>
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
+                  <View style={styles.logoutIconContainer}>
+                    <IconSymbol name="arrow.right.square" size={24} color="#FFFFFF" />
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -193,6 +215,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "rgba(255, 255, 255, 0.8)",
+  },
+  logoutButton: {
+    marginLeft: 12,
+  },
+  logoutIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+   
   },
   whiteSection: {
     backgroundColor: "#FFFFFF",

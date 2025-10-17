@@ -122,6 +122,11 @@ const MAPPING = {
 "line.3.horizontal": "menu",
 "square.grid.2x2": "apps",
 
+ // Déconnexion / Logout
+  "power": "logout",
+  "arrow.turn.down.left": "logout", // alternative symbole "sortie"
+  "rectangle.portrait.and.arrow.right": "logout", // style iOS logout
+
 } as unknown as IconMapping
 
 /**
