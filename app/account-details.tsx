@@ -127,7 +127,9 @@ export default function AccountDetailsScreen() {
           )
           .map((transaction: any) => ({
             id: transaction.id || transaction.transactionId || String(Math.random()),
-            type: transaction.type === "credit" || transaction.type === "CREDIT" ? "credit" : "debit",
+            type: (transaction.type === "credit" || transaction.type === "CREDIT" ? "credit" : "debit") as
+              | "credit"
+              | "debit",
             amount: Number.parseFloat(transaction.amount || transaction.montant || "0"),
             description: transaction.description || transaction.label || transaction.libelle || "Transaction",
             date: transaction.date || transaction.createdAt || new Date().toISOString(),

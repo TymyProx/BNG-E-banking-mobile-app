@@ -4,8 +4,9 @@
  */
 
 import { apiClient } from "./api"
-import { API_ENDPOINTS } from "@/constants/Api"
+import { API_ENDPOINTS, API_CONFIG } from "@/constants/Api"
 import { logger } from "@/utils/logger"
+import * as SecureStore from "expo-secure-store"
 
 export interface Account {
   id: string
@@ -24,28 +25,34 @@ export interface AccountListResponse {
 
 export class AccountService {
   /**
-   * Fetch all accounts for a tenant
+   * Fetch all active accounts for a tenant
    */
-  static async getAccounts(tenantId: string): Promise<Account[]> {
+  static async fetchAccounts(tenantId: string): Promise<Account[]> {
     try {
       logger.info("Fetching accounts", { tenantId })
 
-      const response = await apiClient.get<AccountListResponse>(API_ENDPOINTS.ACCOUNT.LIST(tenantId))
+      const token = await SecureStore.getItemAsync("token")
+      if (!token) {
+        throw new Error("Token d'authentification non trouvé")
+      }
 
-      const accounts: Account[] = (response.data.rows || [])
-        .filter((acc: any) => acc.status === "ACTIF")
-        .map((acc: any) => ({
-          id: acc.id,
-          name: acc.accountName || "Compte sans nom",
-          number: acc.accountNumber || "Non attribué",
-          availableBalance: Number.parseFloat(acc.availableBalance || "0"),
-          type: acc.type?.toLowerCase() || "courant",
-          currency: acc.currency || "GNF",
-          status: acc.status,
-        }))
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.ACCOUNT.LIST(tenantId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
 
-      logger.info("Accounts fetched successfully", { count: accounts.length })
-      return accounts
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const activeAccounts = data.rows?.filter((acc: any) => acc.status?.toLowerCase() === "actif") || []
+
+      logger.info("Accounts fetched successfully", { count: activeAccounts.length })
+      return activeAccounts
     } catch (error) {
       logger.error("Failed to fetch accounts", error)
       throw error
