@@ -71,4 +71,60 @@ export class Formatters {
     if (accountNumber.length <= 4) return accountNumber
     return `**** **** ${accountNumber.slice(-4)}`
   }
+
+  /**
+   * Get beneficiary status text
+   */
+  static getBeneficiaryStatusText(status: number): string {
+    switch (status) {
+      case 0:
+        return "Actif"
+      case 1:
+        return "Inactif"
+      default:
+        return "Inconnu"
+    }
+  }
+
+  /**
+   * Get beneficiary status color
+   */
+  static getBeneficiaryStatusColor(status: number): string {
+    switch (status) {
+      case 0:
+        return "#22c55e"
+      case 1:
+        return "#ef4444"
+      default:
+        return "#6b7280"
+    }
+  }
+}
+
+export const formatAmount = (amount: string | number): string => {
+  return Formatters.formatAmount(amount)
+}
+
+export const formatCurrency = (amount: number, currency = "GNF"): string => {
+  return Formatters.formatCurrency(amount, currency)
+}
+
+export const formatDate = (date: string | Date): string => {
+  return Formatters.formatDate(date)
+}
+
+export const formatDateTime = (date: string | Date): string => {
+  return Formatters.formatDateTime(date)
+}
+
+export const formatPhone = (phone: string): string => {
+  return Formatters.formatPhone(phone)
+}
+
+export const formatAccountNumber = (accountNumber: string): string => {
+  return Formatters.formatAccountNumber(accountNumber)
+}
+
+export const maskAccountNumber = (accountNumber: string): string => {
+  return Formatters.maskAccountNumber(accountNumber)
 }

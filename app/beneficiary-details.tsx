@@ -1,22 +1,11 @@
 "use client"
-
-import { useState, useCallback } from "react"
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  ActivityIndicator,
-  Alert,
-} from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from "react-native"
 import { IconSymbol } from "@/components/ui/IconSymbol"
 import { Colors } from "@/constants/Colors"
 import { useColorScheme } from "@/hooks/useColorScheme"
-import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router"
-import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
-import * as SecureStore from "expo-secure-store"
+import { useRouter, useLocalSearchParams } from "expo-router"
+import { useBeneficiaryDetails } from "@/hooks/useBeneficiaryDetails"
+import { Formatters } from "@/utils/formatters"
 
 interface BeneficiaryDetails {
   id: string
@@ -34,224 +23,13 @@ interface BeneficiaryDetails {
 }
 
 export default function BeneficiaryDetails() {
-  const [beneficiary, setBeneficiary] = useState<BeneficiaryDetails | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [updating, setUpdating] = useState(false)
   const colorScheme = useColorScheme() ?? "light"
   const colors = Colors[colorScheme]
   const router = useRouter()
   const { beneficiaryId } = useLocalSearchParams()
 
-  const fetchBeneficiaryDetails = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const token = await SecureStore.getItemAsync("token")
-      if (!token) {
-        throw new Error("Token d'authentification non trouvé")
-      }
-
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.DETAILS(API_CONFIG.TENANT_ID, beneficiaryId as string)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      )
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des détails")
-      }
-
-      const data = await response.json()
-      setBeneficiary(data)
-    } catch (err) {
-      console.error("Error fetching beneficiary details:", err)
-      setError(err instanceof Error ? err.message : "Une erreur est survenue")
-      Alert.alert("Erreur", "Impossible de charger les détails du bénéficiaire")
-    } finally {
-      setLoading(false)
-    }
-  }, [beneficiaryId])
-
-  useFocusEffect(
-    useCallback(() => {
-      if (beneficiaryId) {
-        fetchBeneficiaryDetails()
-      }
-    }, [beneficiaryId, fetchBeneficiaryDetails]),
-  )
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    })
-  }
-
-  const getStatusText = (status: number) => {
-    switch (status) {
-      case 0:
-        return "Actif"
-      case 1:
-        return "Inactif"
-      default:
-        return "Inconnu"
-    }
-  }
-
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case 0:
-        return "#22c55e"
-      case 1:
-        return "#ef4444"
-      default:
-        return colors.textSecondary
-    }
-  }
-
-  const handleDeactivate = async () => {
-    if (!beneficiary) return
-
-    Alert.alert("Désactiver le bénéficiaire", `Êtes-vous sûr de vouloir désactiver ${beneficiary.name} ?`, [
-      {
-        text: "Annuler",
-        style: "cancel",
-      },
-      {
-        text: "Désactiver",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setUpdating(true)
-
-            const token = await SecureStore.getItemAsync("token")
-            if (!token) {
-              throw new Error("Token d'authentification non trouvé")
-            }
-
-            const response = await fetch(
-              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiary.id)}`,
-              {
-                method: "PUT",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  data: {
-                    beneficiaryId: beneficiary.beneficiaryId,
-                    customerId: beneficiary.customerId,
-                    name: beneficiary.name,
-                    accountNumber: beneficiary.accountNumber,
-                    bankCode: beneficiary.bankCode,
-                    bankName: beneficiary.bankName,
-                    status: 1, // Set status to 1 for inactive
-                    typeBeneficiary: beneficiary.typeBeneficiary,
-                    favoris: beneficiary.favoris,
-                  },
-                }),
-              },
-            )
-
-            if (!response.ok) {
-              throw new Error("Erreur lors de la désactivation")
-            }
-
-            Alert.alert("Succès", "Le bénéficiaire a été désactivé avec succès", [
-              {
-                text: "OK",
-                onPress: () => {
-                  // Refresh the beneficiary details
-                  fetchBeneficiaryDetails()
-                },
-              },
-            ])
-          } catch (err) {
-            console.error("Error deactivating beneficiary:", err)
-            Alert.alert("Erreur", "Impossible de désactiver le bénéficiaire")
-          } finally {
-            setUpdating(false)
-          }
-        },
-      },
-    ])
-  }
-
-  const handleReactivate = async () => {
-    if (!beneficiary) return
-
-    Alert.alert("Réactiver le bénéficiaire", `Êtes-vous sûr de vouloir réactiver ${beneficiary.name} ?`, [
-      {
-        text: "Annuler",
-        style: "cancel",
-      },
-      {
-        text: "Réactiver",
-        onPress: async () => {
-          try {
-            setUpdating(true)
-
-            const token = await SecureStore.getItemAsync("token")
-            if (!token) {
-              throw new Error("Token d'authentification non trouvé")
-            }
-
-            const response = await fetch(
-              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.BENEFICIARY.UPDATE(API_CONFIG.TENANT_ID, beneficiary.id)}`,
-              {
-                method: "PUT",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  data: {
-                    beneficiaryId: beneficiary.beneficiaryId,
-                    customerId: beneficiary.customerId,
-                    name: beneficiary.name,
-                    accountNumber: beneficiary.accountNumber,
-                    bankCode: beneficiary.bankCode,
-                    bankName: beneficiary.bankName,
-                    status: 0, // Set status to 0 for active
-                    typeBeneficiary: beneficiary.typeBeneficiary,
-                    favoris: beneficiary.favoris,
-                  },
-                }),
-              },
-            )
-
-            if (!response.ok) {
-              throw new Error("Erreur lors de la réactivation")
-            }
-
-            Alert.alert("Succès", "Le bénéficiaire a été réactivé avec succès", [
-              {
-                text: "OK",
-                onPress: () => {
-                  // Refresh the beneficiary details
-                  fetchBeneficiaryDetails()
-                },
-              },
-            ])
-          } catch (err) {
-            console.error("Error reactivating beneficiary:", err)
-            Alert.alert("Erreur", "Impossible de réactiver le bénéficiaire")
-          } finally {
-            setUpdating(false)
-          }
-        },
-      },
-    ])
-  }
+  const { beneficiary, loading, error, updating, fetchBeneficiaryDetails, handleDeactivate, handleReactivate } =
+    useBeneficiaryDetails(beneficiaryId)
 
   if (loading) {
     return (
@@ -308,10 +86,17 @@ export default function BeneficiaryDetails() {
             </Text>
           </View>
           <Text style={[styles.beneficiaryName, { color: colors.text }]}>{beneficiary.name}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(beneficiary.status) + "20" }]}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(beneficiary.status) }]} />
-            <Text style={[styles.statusText, { color: getStatusColor(beneficiary.status) }]}>
-              {getStatusText(beneficiary.status)}
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: Formatters.getBeneficiaryStatusColor(beneficiary.status) + "20" },
+            ]}
+          >
+            <View
+              style={[styles.statusDot, { backgroundColor: Formatters.getBeneficiaryStatusColor(beneficiary.status) }]}
+            />
+            <Text style={[styles.statusText, { color: Formatters.getBeneficiaryStatusColor(beneficiary.status) }]}>
+              {Formatters.getBeneficiaryStatusText(beneficiary.status)}
             </Text>
           </View>
           {beneficiary.favoris && (
@@ -381,11 +166,15 @@ export default function BeneficiaryDetails() {
             <View style={styles.cardContent}>
               <View style={styles.infoRow}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Créé le</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(beneficiary.createdAt)}</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>
+                  {Formatters.formatDate(beneficiary.createdAt)}
+                </Text>
               </View>
               <View style={styles.infoRow}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Modifié le</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(beneficiary.updatedAt)}</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>
+                  {Formatters.formatDate(beneficiary.updatedAt)}
+                </Text>
               </View>
             </View>
           </View>
