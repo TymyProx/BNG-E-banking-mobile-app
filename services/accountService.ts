@@ -26,14 +26,26 @@ export class AccountService {
   /**
    * Fetch all accounts for a tenant
    */
-  static async getAccounts(tenantId: string): Promise<AccountListResponse> {
+  static async getAccounts(tenantId: string): Promise<Account[]> {
     try {
       logger.info("Fetching accounts", { tenantId })
 
       const response = await apiClient.get<AccountListResponse>(API_ENDPOINTS.ACCOUNT.LIST(tenantId))
 
-      logger.info("Accounts fetched successfully", { count: response.data.rows?.length || 0 })
-      return response.data
+      const accounts: Account[] = (response.data.rows || [])
+        .filter((acc: any) => acc.status === "ACTIF")
+        .map((acc: any) => ({
+          id: acc.id,
+          name: acc.accountName || "Compte sans nom",
+          number: acc.accountNumber || "Non attribué",
+          availableBalance: Number.parseFloat(acc.availableBalance || "0"),
+          type: acc.type?.toLowerCase() || "courant",
+          currency: acc.currency || "GNF",
+          status: acc.status,
+        }))
+
+      logger.info("Accounts fetched successfully", { count: accounts.length })
+      return accounts
     } catch (error) {
       logger.error("Failed to fetch accounts", error)
       throw error
@@ -62,23 +74,18 @@ export class AccountService {
   /**
    * Update account balance
    */
-  static async updateAccountBalance(tenantId: string, accountId: string, amountChange: number): Promise<void> {
+  static async updateAccountBalance(
+    tenantId: string,
+    accountId: string,
+    newBalance: number,
+    accountData: any,
+  ): Promise<void> {
     try {
       logger.info("Updating account balance", {
         tenantId,
         accountId,
-        amountChange,
+        newBalance,
       })
-
-      // Fetch current account data
-      const accountData = await this.getAccountDetails(tenantId, accountId)
-      const currentBalance = Number.parseFloat(accountData.availableBalance || "0")
-      const newBalance = currentBalance + amountChange
-
-      // Verify sufficient balance for debits
-      if (newBalance < 0) {
-        throw new Error(`Solde insuffisant. Solde disponible: ${currentBalance}, Montant: ${Math.abs(amountChange)}`)
-      }
 
       const updateData = {
         data: {
@@ -113,5 +120,3 @@ export class AccountService {
     }
   }
 }
-
-export const accountService = AccountService

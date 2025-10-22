@@ -6,7 +6,7 @@
 import { apiClient } from "./api"
 import { API_ENDPOINTS } from "@/constants/Api"
 import { logger } from "@/utils/logger"
-import { accountService } from "./accountService"
+import { AccountService } from "./accountService"
 
 export interface TransactionData {
   txnId: string
@@ -55,12 +55,26 @@ export class TransactionService {
         amount,
       })
 
-      // Update source account (debit)
-      await accountService.updateAccountBalance(tenantId, sourceAccountId, -amount)
+      // 1. Fetch and update source account (debit)
+      const sourceAccount = await AccountService.getAccountDetails(tenantId, sourceAccountId)
+      const currentSourceBalance = Number.parseFloat(sourceAccount.availableBalance || "0")
+      const newSourceBalance = currentSourceBalance - amount
 
-      // If destination account exists, update it (credit)
+      // Verify sufficient balance
+      if (newSourceBalance < 0) {
+        throw new Error(`Solde insuffisant. Solde disponible: ${currentSourceBalance}, Montant: ${amount}`)
+      }
+
+      // Update source account balance
+      await AccountService.updateAccountBalance(tenantId, sourceAccountId, newSourceBalance, sourceAccount)
+
+      // 2. If destination account exists, update it (credit)
       if (destinationAccountId) {
-        await accountService.updateAccountBalance(tenantId, destinationAccountId, amount)
+        const destAccount = await AccountService.getAccountDetails(tenantId, destinationAccountId)
+        const currentDestBalance = Number.parseFloat(destAccount.availableBalance || "0")
+        const newDestBalance = currentDestBalance + amount
+
+        await AccountService.updateAccountBalance(tenantId, destinationAccountId, newDestBalance, destAccount)
       }
 
       logger.info("Transfer processed successfully")
@@ -73,20 +87,19 @@ export class TransactionService {
   /**
    * Get transaction list
    */
-  static async getTransactions(tenantId: string): Promise<any> {
+  static async getTransactions(tenantId: string): Promise<any[]> {
     try {
       logger.info("Fetching transactions", { tenantId })
 
       const response = await apiClient.get(API_ENDPOINTS.TRANSACTION.LIST(tenantId))
 
-      logger.info("Transactions fetched successfully", { count: response.data.rows?.length || 0 })
+      const transactions = response.data.rows || []
+      logger.info("Transactions fetched successfully", { count: transactions.length })
 
-      return response.data
+      return transactions
     } catch (error) {
       logger.error("Failed to fetch transactions", error)
       throw error
     }
   }
 }
-
-export const transactionService = TransactionService
