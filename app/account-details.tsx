@@ -24,6 +24,7 @@ import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
 import * as Print from "expo-print"
 import * as XLSX from "xlsx"
+import React from "react"
 
 interface Transaction {
   id: string

@@ -17,6 +17,7 @@ import { useColorScheme } from "@/hooks/useColorScheme"
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router"
 import { API_CONFIG, API_ENDPOINTS } from "@/constants/Api"
 import * as SecureStore from "expo-secure-store"
+import React from "react"
 
 interface BeneficiaryDetails {
   id: string
